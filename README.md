@@ -31,3 +31,4 @@ Siga os passos abaixo para clonar e abrir o projeto em seu VSCode:
     cd eventura 
     code .
 
+TESTE
