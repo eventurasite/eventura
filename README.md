@@ -8,7 +8,7 @@ Slogan: *"Cada evento, uma aventura."*
 
 **Pré-requisitos**
 
-- Git instalado e configurado.
+- Git instalado e configurado. 
 
 - Visual Studio Code (ou outro editor/IDE de sua preferência).
 
