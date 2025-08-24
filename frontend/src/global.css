@@ -1,0 +1,14 @@
+:root {
+  --cor_1-branco: #FDFEFF;
+  --cor_2-preto: #2C2C2C;
+  --cor_3-roxo_escuro: #4849E8;
+  --cor_4-azul_claro: #ABC4FF;
+  --cor_5-amarelo: #FEF15F;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
