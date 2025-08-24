@@ -1,0 +1,116 @@
+/* frontend/src/components/EventCarousel.css */
+.carousel-section {
+  background-color: var(--cor_3-roxo_escuro);
+  color: var(--cor_1-branco);
+  padding: 50px 0;
+}
+
+.carousel-container-fixed {
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+.carousel-header {
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.carousel-header h1 {
+  font-family: 'Rubik One', sans-serif;
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.carousel-header p {
+  font-family: 'Roboto', sans-serif;
+  font-size: 18px;
+  margin-bottom: 0;
+}
+
+.carousel-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.event-card {
+  background-color: transparent;
+  color: var(--cor_1-branco);
+  padding-bottom: 20px;
+  box-shadow: none;
+  text-align: left;
+  width: 310px;
+}
+
+/* Contentor da imagem para aplicar o filtro */
+.image-container {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 310px;
+  height: 200px;
+}
+
+.image-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--cor_3-roxo_escuro);
+  opacity: 0.3;
+  z-index: 1;
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.event-card h4 {
+  font-family: 'Roboto', sans-serif;
+  font-size: 18px;
+  margin: 15px 0 10px;
+}
+
+.event-card .carousel-button {
+  background-color: var(--cor_5-amarelo);
+  color: var(--cor_3-roxo_escuro);
+  font-weight: bold;
+  border: none;
+  padding: 8px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.carousel-navigation {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.carousel-navigation button {
+  background-color: transparent;
+  color: var(--cor_1-branco);
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.carousel-navigation button:hover {
+  color: var(--cor_5-amarelo);
+}
+
+.carousel-navigation button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
