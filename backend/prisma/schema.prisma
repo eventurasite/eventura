@@ -27,6 +27,8 @@ model Usuario {
   tipo             TipoUsuario
   data_criacao     DateTime @default(now())
   data_modificacao DateTime @updatedAt
+  descricao        String
+  url_foto_perfil  String
 
   // Relacionamentos
   eventos_criados  Evento[]
@@ -65,6 +67,7 @@ model Evento {
   comentarios Comentario[] 
   denuncias   Denuncia[]   
   inscricoes  Inscricao[] 
+  imagemEvento ImagemEvento[]
 }
 
 model Curtida {
@@ -124,4 +127,12 @@ model Inscricao {
   evento    Evento  @relation(fields: [id_evento], references: [id_evento])
 
   @@unique([id_evento, id_usuario])
+}
+
+model ImagemEvento {
+  id_imagem       Int @id @default(autoincrement())
+  url             String
+
+  id_evento       Int
+  evento          Evento @relation(fields: [id_evento], references: [id_evento])
 }
