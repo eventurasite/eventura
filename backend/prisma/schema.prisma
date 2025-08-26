@@ -23,10 +23,10 @@ model Usuario {
   nome             String
   email            String   @unique
   senha            String
+  telefone         String
   tipo             TipoUsuario
   data_criacao     DateTime @default(now())
   data_modificacao DateTime @updatedAt
-  status           String
 
   // Relacionamentos
   eventos_criados  Evento[]
