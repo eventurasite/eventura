@@ -1,0 +1,33 @@
+.tf {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tf label {
+  font-size: 14px;
+  color: #444;
+  font-weight: 700;
+}
+.tf-box {
+  position: relative;
+}
+.tf input {
+  width: 100%;
+  padding: 12px 44px 12px 12px;
+  border: 1.5px solid #e6e6e6;
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  transition: 0.15s;
+  background: #fff;
+}
+.tf input:focus {
+  border-color: var(--cor_3-roxo_escuro);
+  box-shadow: 0 0 0 3px rgba(45, 44, 255, 0.12);
+}
+.tf-right {
+  position: absolute;
+  inset: 0 10px 0 auto;
+  display: flex;
+  align-items: center;
+}

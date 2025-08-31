@@ -4,6 +4,10 @@
   --cor_3-roxo_escuro: #4849E8;
   --cor_4-azul_claro: #ABC4FF;
   --cor_5-amarelo: #FEF15F;
+  --text: #222222;
+  --text-muted: #6c6c6c;
+  --bg: #ffffff;
+  --shadow: 0 10px 24px rgba(0,0,0,.08);
 }
 
 * {
@@ -12,3 +16,8 @@
   padding: 0;
 }
 
+html, body {
+  font-family: "Roboto", system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
