@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
@@ -15,9 +15,35 @@ export default function Login() {
   const [pwd, setPwd] = useState("");
   const sideRef = useRef(null);
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    alert(`(demo) email=${email}  senha=${pwd ? "••••" : ""}`);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha: pwd }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("authToken", data.token);
+        alert("Login realizado com sucesso!");
+        window.location.href = "/"; // redirecionar para home
+      } else {
+        const error = await response.json();
+
+        if (error.provider === "google") {
+          // redireciona automaticamente para o fluxo Google
+          window.location.href = "http://localhost:5000/api/auth/google";
+        } else {
+          alert(error.message || "Erro ao fazer login");
+        }
+      }
+    } catch (err) {
+      console.error("Erro no login", err);
+      alert("Erro inesperado no login.");
+    }
   };
 
   return (
@@ -68,7 +94,14 @@ export default function Login() {
           <span>ou</span>
         </div>
 
-        <Button type="button" variant="google" className="full">
+        <Button
+          type="button"
+          variant="google"
+          className="full"
+          onClick={() => {
+            window.location.href = "http://localhost:5000/api/auth/google";
+          }}
+        >
           <img
             alt=""
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"

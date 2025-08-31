@@ -19,23 +19,24 @@ enum TipoUsuario {
 }
 
 model Usuario {
-  id_usuario       Int      @id @default(autoincrement())
+  id_usuario       Int         @id @default(autoincrement())
   nome             String
-  email            String   @unique
-  senha            String
-  telefone         String
-  tipo             TipoUsuario
-  data_criacao     DateTime @default(now())
-  data_modificacao DateTime @updatedAt
-  descricao        String
-  url_foto_perfil  String
+  email            String      @unique
+  senha            String? // Torna opcional
+  telefone         String?
+  tipo             TipoUsuario @default(comum)
+  data_criacao     DateTime    @default(now())
+  data_modificacao DateTime    @updatedAt
+  descricao        String?
+  url_foto_perfil  String?
+  authProvider     String      @default("local") // "local" ou "google"
 
   // Relacionamentos
-  eventos_criados  Evento[]
-  curtidas         Curtida[]
-  comentarios      Comentario[]
-  denuncias        Denuncia[]
-  inscricoes       Inscricao[]
+  eventos_criados Evento[]
+  curtidas        Curtida[]
+  comentarios     Comentario[]
+  denuncias       Denuncia[]
+  inscricoes      Inscricao[]
 }
 
 model Categoria {
@@ -46,27 +47,27 @@ model Categoria {
 }
 
 model Evento {
-  id_evento        Int      @id @default(autoincrement())
+  id_evento        Int          @id @default(autoincrement())
   titulo           String
   descricao        String
   data             DateTime
   local            String
   preco            Decimal
   status           StatusEvento @default(ativo)
-  data_criacao     DateTime @default(now())
-  data_modificacao DateTime @updatedAt
+  data_criacao     DateTime     @default(now())
+  data_modificacao DateTime     @updatedAt
 
-  id_organizador   Int
-  organizador      Usuario  @relation(fields: [id_organizador], references: [id_usuario])
+  id_organizador Int
+  organizador    Usuario @relation(fields: [id_organizador], references: [id_usuario])
 
   id_categoria Int
   categoria    Categoria @relation(fields: [id_categoria], references: [id_categoria])
 
   // Relacionamentos
-  curtidas    Curtida[] 
-  comentarios Comentario[] 
-  denuncias   Denuncia[]   
-  inscricoes  Inscricao[] 
+  curtidas     Curtida[]
+  comentarios  Comentario[]
+  denuncias    Denuncia[]
+  inscricoes   Inscricao[]
   imagemEvento ImagemEvento[]
 }
 
@@ -78,7 +79,7 @@ model Curtida {
   usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario])
 
   id_evento Int
-  evento    Evento  @relation(fields: [id_evento], references: [id_evento])
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 
   @@unique([id_usuario, id_evento])
 }
@@ -92,7 +93,7 @@ model Comentario {
   usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario])
 
   id_evento Int
-  evento    Evento  @relation(fields: [id_evento], references: [id_evento])
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 }
 
 enum StatusDenuncia {
@@ -111,7 +112,7 @@ model Denuncia {
   usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario])
 
   id_evento Int // Evento denunciado
-  evento    Evento  @relation(fields: [id_evento], references: [id_evento])
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 }
 
 // Agenda
@@ -124,15 +125,15 @@ model Inscricao {
   usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario])
 
   id_evento Int
-  evento    Evento  @relation(fields: [id_evento], references: [id_evento])
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 
   @@unique([id_evento, id_usuario])
 }
 
 model ImagemEvento {
-  id_imagem       Int @id @default(autoincrement())
-  url             String
+  id_imagem Int    @id @default(autoincrement())
+  url       String
 
-  id_evento       Int
-  evento          Evento @relation(fields: [id_evento], references: [id_evento])
+  id_evento Int
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 }
