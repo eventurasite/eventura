@@ -1,46 +1,49 @@
-import passport from 'passport';
-import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
-import prisma from '../../prisma/client';
+import passport from "passport";
+import { Strategy as GoogleStrategy, Profile } from "passport-google-oauth20";
+import { PrismaClient } from "@prisma/client";
+import { generateToken } from "../utils/jwt";
 
-// Tipagem explícita para o callback do Passport
-type VerifyCallback = (error: any, user?: any) => void;
+const prisma = new PrismaClient();
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: `${process.env.API_BASE_URL}/auth/google/callback`,
+      clientID: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      callbackURL: process.env.GOOGLE_REDIRECT_URI,
     },
     async (
       accessToken: string,
       refreshToken: string,
       profile: Profile,
-      done: VerifyCallback
+      done
     ) => {
       try {
-        const email = profile.emails?.[0].value;
-        if (!email) return done(new Error('No email'));
+        let user = await prisma.usuario.findUnique({
+          where: { email: profile.emails?.[0].value || "" },
+        });
 
-        // Verifica se o usuário já existe
-        let usuario = await prisma.usuario.findUnique({ where: { email } });
-
-        if (!usuario) {
-          // Cria novo usuário com tipo "comum"
-          usuario = await prisma.usuario.create({
+        if (!user) {
+          user = await prisma.usuario.create({
             data: {
-              nome: profile.displayName,
-              email,
-              senha: '',      
-              tipo: 'comum',
-              telefone: '',    
+              nome: profile.displayName || "Usuário Google",
+              email: profile.emails?.[0].value || "",
+              senha: null,
+              authProvider: "google",
+              telefone: "",
+              descricao: "",
+              url_foto_perfil: profile.photos?.[0].value || "",
+              tipo: "comum",
             },
           });
         }
 
-        done(null, usuario);
+        const token = generateToken({ id: user.id_usuario, email: user.email });
+
+        return done(null, { user, token });
       } catch (err) {
-        done(err);
+        console.error("Erro no GoogleStrategy:", err);
+        return done(err, false);
       }
     }
   )

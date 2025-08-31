@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { 
-  registerUser, 
-  loginUser, 
-  editUser, 
-  removeUser, 
-  findUserById, 
-  findAllUsers 
+import {
+  registerUser,
+  loginUser,
+  editUser,
+  removeUser,
+  findUserById,
+  findAllUsers,
 } from "../services/authService";
 
 /**
@@ -16,12 +16,14 @@ export async function register(req: Request, res: Response): Promise<void> {
     const usuario = await registerUser(req.body);
     res.status(201).json({
       message: "Usuário registrado com sucesso",
-      id_usuario: usuario.id_usuario
+      id_usuario: usuario.id_usuario,
     });
   } catch (error: any) {
     console.error(error);
 
-    if (error.message.includes("E-mail já cadastrado")) {
+    if (error.message.includes("E-mail já cadastrado via Google")) {
+      res.status(409).json({ provider: "google", message: error.message });
+    } else if (error.message.includes("E-mail já cadastrado")) {
       res.status(409).json({ message: error.message }); // 409 Conflict
     } else {
       res.status(500).json({ message: "Erro ao registrar usuário" });
@@ -39,12 +41,16 @@ export async function login(req: Request, res: Response): Promise<void> {
       message: "Login bem-sucedido",
       id_usuario: usuario.id_usuario,
       nome: usuario.nome,
-      tipo: usuario.tipo
+      tipo: usuario.tipo,
+      token: usuario.token,
     });
   } catch (error: any) {
     console.error(error);
 
-    if (error.message.includes("Usuário não encontrado")) {
+    if (error.code === "GOOGLE_LOGIN") {
+      // 👉 resposta especial para o frontend redirecionar
+      res.status(400).json({ provider: "google", message: error.message });
+    } else if (error.message.includes("Usuário não encontrado")) {
       res.status(404).json({ message: error.message });
     } else if (error.message.includes("Senha incorreta")) {
       res.status(401).json({ message: error.message });
@@ -64,7 +70,7 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
 
     res.status(200).json({
       message: "Usuário atualizado com sucesso",
-      usuario
+      usuario,
     });
   } catch (error: any) {
     console.error(error);

@@ -1,17 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useId } from "react";
 import TextField from "./TextField";
 
 export default function PasswordField({
-  id = "pwd",
+  id,
   label = "Senha",
   placeholder = "Digite sua senha",
   ...props
 }) {
+  const autoId = useId(); // gera um id único por instância
   const [show, setShow] = useState(false);
 
   return (
     <TextField
-      id={id}
+      id={id || autoId} // usa o id manual se passado, senão gera automático
       label={label}
       type={show ? "text" : "password"}
       placeholder={placeholder}

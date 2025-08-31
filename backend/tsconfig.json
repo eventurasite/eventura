@@ -1,31 +1,29 @@
 {
   "compilerOptions": {
     /* Entrada e saída */
-    "rootDir": "src",             // código-fonte
-    "outDir": "dist",             // para onde vai o JS compilado
+    "rootDir": "src",
+    "outDir": "dist",
 
     /* Compatibilidade com Node moderno */
-    "target": "ES2020",           // recursos modernos de JS
-    "module": "CommonJS",         // CommonJS para rodar fácil no Node
-    "moduleResolution": "Node",   // como os módulos são resolvidos
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
 
     /* Suporte a import/export */
-    "esModuleInterop": true,      // permite importar libs antigas com "import express from 'express'"
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
     /* Segurança e consistência */
-    "strict": true,               // ativa todas as checagens de tipo
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,         // não checa tipos dentro de node_modules
+    "skipLibCheck": true,
 
     /* Extras úteis */
-    "resolveJsonModule": true     // permite importar arquivos .json
+    "resolveJsonModule": true,
+
+    /* Força usar apenas as tipagens do backend */
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": [
-    "src"                         // código principal
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -43,9 +43,7 @@ export default function Register() {
       <BackLink to="/" />
 
       <h1>CADASTRE-SE</h1>
-      <p className="muted">
-        Crie sua conta para acessar os melhores eventos!
-      </p>
+      <p className="muted">Crie sua conta para interagir e divulgar eventos!</p>
 
       <form onSubmit={onSubmit} className="form" noValidate>
         <TextField
@@ -109,7 +107,14 @@ export default function Register() {
           <span>ou</span>
         </div>
 
-        <Button type="button" variant="google" className="full">
+        <Button
+          type="button"
+          variant="google"
+          className="full"
+          onClick={() => {
+            window.location.href = "http://localhost:5000/api/auth/google";
+          }}
+        >
           <img
             alt=""
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
