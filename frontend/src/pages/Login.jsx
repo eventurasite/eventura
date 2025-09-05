@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
 import BackLink from "../components/BackLink";
@@ -11,9 +11,20 @@ import "../components/TextField.css";
 import "./Login.css";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const sideRef = useRef(null);
+
+  // Captura token do Google se vier na query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("authToken", token);
+      navigate("/"); // redireciona para home
+    }
+  }, [navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();

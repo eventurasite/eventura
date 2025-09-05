@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
@@ -20,6 +20,16 @@ export default function Register() {
   const [confirmPwd, setConfirmPwd] = useState("");
   const [agree, setAgree] = useState(false);
   const navigate = useNavigate();
+
+  // Captura token do Google se vier na query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("authToken", token);
+      navigate("/"); // redireciona para home
+    }
+  }, [navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
