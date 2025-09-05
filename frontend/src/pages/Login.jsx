@@ -25,19 +25,23 @@ export default function Login() {
         body: JSON.stringify({ email, senha: pwd }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("authToken", data.token);
-        alert("Login realizado com sucesso!");
-        window.location.href = "/"; // redirecionar para home
-      } else {
-        const error = await response.json();
+      const data = await response.json();
 
-        if (error.provider === "google") {
+      if (response.ok) {
+        // Salva o token JWT e dados do usuário no localStorage
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("userId", data.id_usuario);
+        localStorage.setItem("userName", data.nome);
+        localStorage.setItem("userType", data.tipo);
+
+        alert("Login realizado com sucesso!");
+        window.location.href = "/"; // redireciona para home
+      } else {
+        if (data.provider === "google") {
           // redireciona automaticamente para o fluxo Google
           window.location.href = "http://localhost:5000/api/auth/google";
         } else {
-          alert(error.message || "Erro ao fazer login");
+          alert(data.message || "Erro ao fazer login");
         }
       }
     } catch (err) {
