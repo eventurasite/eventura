@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
 import BackLink from "../components/BackLink";
@@ -11,9 +11,20 @@ import "../components/TextField.css";
 import "./Login.css";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const sideRef = useRef(null);
+
+  // Captura token do Google se vier na query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("authToken", token);
+      navigate("/"); // redireciona para home
+    }
+  }, [navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -25,19 +36,23 @@ export default function Login() {
         body: JSON.stringify({ email, senha: pwd }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("authToken", data.token);
-        alert("Login realizado com sucesso!");
-        window.location.href = "/"; // redirecionar para home
-      } else {
-        const error = await response.json();
+      const data = await response.json();
 
-        if (error.provider === "google") {
+      if (response.ok) {
+        // Salva o token JWT e dados do usuário no localStorage
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("userId", data.id_usuario);
+        localStorage.setItem("userName", data.nome);
+        localStorage.setItem("userType", data.tipo);
+
+        alert("Login realizado com sucesso!");
+        window.location.href = "/"; // redireciona para home
+      } else {
+        if (data.provider === "google") {
           // redireciona automaticamente para o fluxo Google
           window.location.href = "http://localhost:5000/api/auth/google";
         } else {
-          alert(error.message || "Erro ao fazer login");
+          alert(data.message || "Erro ao fazer login");
         }
       }
     } catch (err) {

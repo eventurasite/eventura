@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import AuthLayout from "../components/AuthLayout";
@@ -6,6 +6,8 @@ import BackLink from "../components/BackLink";
 import Button from "../components/Button";
 import TextField from "../components/TextField";
 import PasswordField from "../components/PasswordField";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 import "../components/TextField.css";
 import "./Login.css";
@@ -17,18 +19,52 @@ export default function Register() {
   const [pwd, setPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [agree, setAgree] = useState(false);
+  const navigate = useNavigate();
 
-  const onSubmit = (e) => {
+  // Captura token do Google se vier na query string
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("authToken", token);
+      navigate("/"); // redireciona para home
+    }
+  }, [navigate]);
+
+  const onSubmit = async (e) => {
     e.preventDefault();
+
     if (!agree) {
       alert("Você deve aceitar os Termos de Uso.");
       return;
     }
+
     if (pwd !== confirmPwd) {
       alert("As senhas não conferem.");
       return;
     }
-    alert(`(demo) nome=${name}, email=${email}, telefone=${phone}`);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        {
+          nome: name,
+          email,
+          telefone: phone,
+          senha: pwd,
+        }
+      );
+
+      alert("Usuário registrado com sucesso! ID: " + response.data.id_usuario);
+      navigate("/login"); // redireciona para login após registro
+    } catch (error) {
+      console.error(error);
+      if (error.response) {
+        alert("Erro: " + error.response.data.message);
+      } else {
+        alert("Erro ao conectar com o servidor");
+      }
+    }
   };
 
   return (
