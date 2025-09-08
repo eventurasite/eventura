@@ -94,27 +94,27 @@ async function main() {
 
   await prisma.evento.create({
     data: {
-      titulo: "Feira de Artesanato Local",
-      descricao: "Peças únicas, comidas típicas e música ao vivo com artesãos de Uberaba.",
+      titulo: "Peirópolis",
+      descricao: "Local histórico com sítios arqueológicos e trilhas ecológicas para toda a família.",
       data: new Date("2025-09-28T09:00:00Z"),
-      local: "Praça Rui Barbosa",
+      local: "Distrito de Peirópolis",
       preco: 0.0,
       id_organizador: admin.id_usuario,
       id_categoria: categoriaArte!.id_categoria,
-      imagemEvento: { create: [{ url: "/assets/imagens/eventos-4.jpg" }] }
+      imagemEvento: { create: [{ url: "/assets/imagens/foto_3 - dinossauros.jpg" }] }
     },
   });
 
   await prisma.evento.create({
     data: {
-      titulo: "Encontro de Carros Antigos",
-      descricao: "Exposição de carros clássicos e raros que marcaram época.",
+      titulo: "Show",
+      descricao: "Apresentação ao vivo com bandas locais",
       data: new Date("2025-10-12T08:00:00Z"),
-      local: "Estacionamento do Shopping Uberaba",
+      local: "Praça Rui Barbosa",
       preco: 5.0,
       id_organizador: admin.id_usuario,
       id_categoria: categoriaTecnologia!.id_categoria,
-      imagemEvento: { create: [{ url: "/assets/imagens/eventos-5.jpg" }] }
+      imagemEvento: { create: [{ url: "/assets/imagens/foto_2 - show.jpg" }] }
     },
   });
 
@@ -127,7 +127,7 @@ async function main() {
       preco: 0.0,
       id_organizador: admin.id_usuario,
       id_categoria: categoriaEsportes!.id_categoria,
-      imagemEvento: { create: [{ url: "/assets/imagens/eventos-6.jpg" }] }
+      imagemEvento: { create: [{ url: "/assets/imagens/foto_evento - ipe.jpg" }] }
     },
   });
 

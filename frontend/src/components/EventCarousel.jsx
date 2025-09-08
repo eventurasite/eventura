@@ -1,20 +1,25 @@
 // frontend/src/components/EventCarousel.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './EventCarousel.css';
 
-// Dados de exemplo para o carrossel
-const events = [
-  { id: 1, title: 'Noite Astronômica no Parque', image: '/assets/imagens/foto_evento - noite astronomica.jpg' },
-  { id: 2, title: 'Festival do Queijo & Zebu', image: '/assets/imagens/foto_evento - festival de queijo.jpeg' },
-  { id: 3, title: 'Festival Uberaba Games', image: '/assets/imagens/foto_evento - games.webp' },
-  { id: 4, title: 'Feira de Artesanato Local', image: '/assets/imagens/eventos-4.jpg' },
-  { id: 5, title: 'Encontro de Carros Antigos', image: '/assets/imagens/eventos-5.jpg' },
-  { id: 6, title: 'Caminhada Ecológica', image: '/assets/imagens/eventos-6.jpg' },
-];
-
 const EventCarousel = () => {
+  const [events, setEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardsPerPage = 3;
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/events');
+        setEvents(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar eventos:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const handleNext = () => {
     if (currentIndex < events.length - cardsPerPage) {
@@ -39,11 +44,14 @@ const EventCarousel = () => {
         </div>
         <div className="carousel-content">
           {visibleEvents.map(event => (
-            <div key={event.id} className="event-card">
+            <div key={event.id_evento} className="event-card">
               <div className="image-container">
-                <img src={event.image} alt={event.title} />
+                <img 
+                  src={event.imagemEvento[0]?.url || '/assets/imagens/default-event.jpg'} 
+                  alt={event.titulo} 
+                />
               </div>
-              <h4>{event.title}</h4>
+              <h4>{event.titulo}</h4>
               <button className="carousel-button">Veja Mais</button>
             </div>
           ))}
