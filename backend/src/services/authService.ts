@@ -4,6 +4,27 @@ import { generateToken } from "../utils/jwt";
 
 const prisma = new PrismaClient();
 
+function validatePasswordStrength(password: string): void {
+  const minLength = 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[@$!%*?&]/.test(password);
+
+  if (
+    password.length < minLength ||
+    !hasUppercase ||
+    !hasLowercase ||
+    !hasNumber ||
+    !hasSpecialChar
+  ) {
+    throw new Error(
+      "A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais."
+    );
+  }
+}
+
+
 /**
  * Criar usuário local
  */
@@ -15,6 +36,8 @@ export async function registerUser(data: {
   descricao?: string;
 }) {
   const { nome, email, senha, telefone, descricao } = data;
+  
+  validatePasswordStrength(senha);
 
   const existing = await prisma.usuario.findUnique({ where: { email } });
   if (existing) {

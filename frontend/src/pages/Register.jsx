@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
+import { toast } from "react-toastify";
 import AuthLayout from "../components/AuthLayout";
 import BackLink from "../components/BackLink";
 import Button from "../components/Button";
@@ -55,14 +55,14 @@ export default function Register() {
         }
       );
 
-      alert("Usuário registrado com sucesso! ID: " + response.data.id_usuario);
+      toast.success("Usuário registrado com sucesso!");
       navigate("/login"); // redireciona para login após registro
     } catch (error) {
       console.error(error);
       if (error.response) {
-        alert("Erro: " + error.response.data.message);
+        toast.error(error.response.data.message);
       } else {
-        alert("Erro ao conectar com o servidor");
+        toast.error("Erro ao conectar com o servidor");
       }
     }
   };
