@@ -8,6 +8,8 @@ import {
   findAllUsers,
 } from "../services/authService";
 
+
+
 /**
  * Criar usuário
  */
@@ -21,7 +23,9 @@ export async function register(req: Request, res: Response): Promise<void> {
   } catch (error: any) {
     console.error(error);
 
-    if (error.message.includes("E-mail já cadastrado via Google")) {
+    if (error.message.includes("senha")) {
+      res.status(400).json({ message: error.message }); // mensagem de senha fraca
+    } else if (error.message.includes("E-mail já cadastrado via Google")) {
       res.status(409).json({ provider: "google", message: error.message });
     } else if (error.message.includes("E-mail já cadastrado")) {
       res.status(409).json({ message: error.message }); // 409 Conflict
