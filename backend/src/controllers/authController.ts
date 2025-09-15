@@ -29,7 +29,11 @@ export async function register(req: Request, res: Response): Promise<void> {
       res.status(409).json({ provider: "google", message: error.message });
     } else if (error.message.includes("E-mail já cadastrado")) {
       res.status(409).json({ message: error.message }); // 409 Conflict
-    } else {
+    } else if (error.message.includes("Email não informado")) {
+      res.status(400).json({ message: error.message });
+    } else if (error.message.includes("Senha não informada")) {
+      res.status(400).json({ message: error.message });
+    }else {
       res.status(500).json({ message: "Erro ao registrar usuário" });
     }
   }

@@ -4,27 +4,7 @@ import { generateToken } from "../utils/jwt";
 
 const prisma = new PrismaClient();
 
-function validatePasswordStrength(password: string): void {
-  const minLength = 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasLowercase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[@$!%*?&]/.test(password);
-
-  if (
-    password.length < minLength ||
-    !hasUppercase ||
-    !hasLowercase ||
-    !hasNumber ||
-    !hasSpecialChar
-  ) {
-    throw new Error(
-      "A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais."
-    );
-  }
-}
-
-
+import { validateEmail, validateSenha,validatePasswordStrength } from "../utils/validation";
 /**
  * Criar usuário local
  */
@@ -36,7 +16,9 @@ export async function registerUser(data: {
   descricao?: string;
 }) {
   const { nome, email, senha, telefone, descricao } = data;
-  
+
+  validateEmail(email);
+  validateSenha(senha);
   validatePasswordStrength(senha);
 
   const existing = await prisma.usuario.findUnique({ where: { email } });
@@ -84,14 +66,14 @@ export async function loginUser({
     throw err;
   }
 
-  if (!usuario.senha) {
-    throw new Error("Usuário não possui senha cadastrada");
-  }
+  validateEmail(usuario.email);
+  validateSenha(usuario.senha);
 
-  const isPasswordValid = await bcrypt.compare(senha, usuario.senha);
-  if (!isPasswordValid) {
-    throw new Error("Senha incorreta");
-  }
+const isPasswordValid = await bcrypt.compare(senha, usuario.senha!); 
+if (!isPasswordValid) {
+  throw new Error("Senha incorreta");
+}
+
 
   const token = generateToken({ id: usuario.id_usuario, email: usuario.email });
 
