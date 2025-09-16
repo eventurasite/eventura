@@ -1,5 +1,7 @@
+// frontend/src/pages/Login.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; // <-- 1. Importe o toast
 
 import AuthLayout from "../components/AuthLayout";
 import BackLink from "../components/BackLink";
@@ -45,19 +47,23 @@ export default function Login() {
         localStorage.setItem("userName", data.nome);
         localStorage.setItem("userType", data.tipo);
 
-        alert("Login realizado com sucesso!");
-        window.location.href = "/"; // redireciona para home
+        toast.success("Login realizado com sucesso!");
+
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500); // 1.5 segundos
+
       } else {
         if (data.provider === "google") {
           // redireciona automaticamente para o fluxo Google
           window.location.href = "http://localhost:5000/api/auth/google";
         } else {
-          alert(data.message || "Erro ao fazer login");
+          toast.error(data.message || "Erro ao fazer login");
         }
       }
     } catch (err) {
       console.error("Erro no login", err);
-      alert("Erro inesperado no login.");
+      toast.error("Erro inesperado no login.");
     }
   };
 
