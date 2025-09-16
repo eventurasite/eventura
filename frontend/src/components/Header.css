@@ -25,6 +25,7 @@ header {
 .header-nav {
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .header-link {
