@@ -6,6 +6,7 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Reset_Password from "../pages/ResetPassword";
+import UserProfile from "../pages/UserProfile";
 
 import AdminDashboard from "../pages/AdminDashboard";
 
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/resetpassword", element: <Reset_Password /> },
+  { path: "/perfil", element: <UserProfile /> },
   
   {
     path: "/admin",
