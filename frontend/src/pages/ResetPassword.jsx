@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+// frontend/src/pages/ResetPassword.jsx
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import AuthLayout from "../components/AuthLayout";
@@ -11,42 +11,45 @@ import PasswordField from "../components/PasswordField";
 import "./Login.css";
 
 export default function ResetPassword() {
-  const [pwd, setPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const token = params.get("token") || "";
+
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
+  useEffect(() => {
+    if (!token) {
+      toast.error("Link inválido ou expirado.");
+    }
+  }, [token]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    if (pwd !== confirmPwd) {
+    if (password !== confirm) {
       toast.error("As senhas não conferem.");
       return;
     }
 
-    // pega token da URL
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-
-    if (!token) {
-      toast.error("Token inválido ou expirado.");
-      return;
-    }
-
     try {
-      await axios.post("http://localhost:5000/api/auth/reset-password", {
-        token,
-        senha: pwd,
+      const response = await fetch("http://localhost:5000/api/auth/password/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
       });
 
-      toast.success("Senha redefinida com sucesso!");
-      navigate("/login");
-    } catch (error) {
-      console.error(error);
-      if (error.response) {
-        toast.error(error.response.data.message);
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Senha redefinida com sucesso. Você já pode entrar.");
+        setTimeout(() => navigate("/login"), 1500);
       } else {
-        toast.error("Erro ao conectar com o servidor.");
+        toast.error(data.message || "Erro ao redefinir senha.");
       }
+    } catch (err) {
+      console.error("Erro ao redefinir senha:", err);
+      toast.error("Erro inesperado ao redefinir senha.");
     }
   };
 
@@ -62,22 +65,19 @@ export default function ResetPassword() {
       <BackLink to="/login" />
 
       <h1>REDEFINIR SENHA</h1>
-      <p className="muted">Digite a nova senha</p>
+      <p className="muted">Digite a nova senha para concluir a redefinição.</p>
 
       <form onSubmit={onSubmit} className="form" noValidate>
         <PasswordField
-          label="Nova senha"
-          value={pwd}
-          onChange={(e) => setPwd(e.target.value)}
-          placeholder="Digite sua nova senha"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
 
         <PasswordField
-          label="Confirmar nova senha"
-          value={confirmPwd}
-          onChange={(e) => setConfirmPwd(e.target.value)}
-          placeholder="Confirme a nova senha"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Confirme sua nova senha"
           required
         />
 

@@ -19,10 +19,7 @@
     "skipLibCheck": true,
 
     /* Extras úteis */
-    "resolveJsonModule": true,
-
-    /* Força usar apenas as tipagens do backend */
-    "typeRoots": ["./node_modules/@types"]
+    "resolveJsonModule": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
