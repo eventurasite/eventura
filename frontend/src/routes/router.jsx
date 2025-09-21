@@ -20,7 +20,6 @@ export const router = createBrowserRouter([
   { path: "/profile", element: <UserProfile /> },
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/resetpassword", element: <ResetPassword /> },
-
   {
     path: "/admin",
     element: (
