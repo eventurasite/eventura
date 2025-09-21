@@ -12,10 +12,25 @@ import AdminDashboard from "../pages/AdminDashboard";
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
 
+import ForgotPassword from "../pages/ForgotPassword";
+
+import Reset_Password from "../pages/ResetPassword";
+
+import AdminDashboard from "../pages/AdminDashboard";
+
+// import do nosso componente de proteção
+import ProtectedRoute from "../components/ProtectedRoute";
+
+
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
+
+
+  { path: "/forgotpassword", element: <ForgotPassword /> },
+
+
   { path: "/resetpassword", element: <Reset_Password /> },
   
   {
@@ -26,5 +41,6 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+
 ]);
 
