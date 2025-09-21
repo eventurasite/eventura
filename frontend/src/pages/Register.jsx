@@ -44,6 +44,11 @@ export default function Register() {
       return;
     }
 
+    if(!email){
+      return toast.error("O campo de email é obrigatório.");
+    }
+
+
     try {
       const response = await axios.post(
         "http://localhost:5000/api/auth/register",

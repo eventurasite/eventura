@@ -1,0 +1,52 @@
+/* O contêiner do menu suspenso */
+.dropdown-menu {
+  position: absolute;
+  top: 65px; /* Posição abaixo do botão "Sua Conta" */
+  right: 0;
+  background-color: var(--cor_1-branco);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 200px;
+  border: 1px solid #eee;
+  padding: 8px;
+  z-index: 100; /* Garante que o menu fique sobre outros elementos */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+/* Estilo para quando o menu está ativo/visível */
+.dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Itens do menu */
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: var(--cor_2-preto);
+  text-decoration: none;
+  border-radius: 8px;
+  background-color: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Efeito ao passar o mouse sobre os itens */
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Linha separadora antes do botão de Sair */
+.dropdown-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 8px 0;
+}
