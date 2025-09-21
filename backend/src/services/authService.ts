@@ -1,6 +1,7 @@
 import { PrismaClient, TipoUsuario } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../utils/jwt";
+import { generateToken, verifyToken } from "../utils/jwt";
+import { sendResetEmail } from "./mailService";
 
 const prisma = new PrismaClient();
 
@@ -78,6 +79,54 @@ if (!isPasswordValid) {
   const token = generateToken({ id: usuario.id_usuario, email: usuario.email });
 
   return { ...usuario, token };
+}
+
+export async function forgotPassword(email: string) {
+  validateEmail(email);
+
+  const user = await prisma.usuario.findUnique({ where: { email } });
+
+  if (!user) {
+    return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
+  }
+
+  const token = generateToken({ id: user.id_usuario });
+  const resetLink = `${process.env.APP_URL}/resetpassword?token=${token}`;
+
+  // agora dispara o e-mail
+  await sendResetEmail(user.email, resetLink);
+
+  return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
+}
+
+export async function resetPassword(token: string, password: string) {
+  // validações
+  validateSenha(password);
+  validatePasswordStrength(password);
+
+  if (!token) throw new Error("Token não informado");
+
+  let payload: any;
+  try {
+    payload = verifyToken(token);
+  } catch {
+    throw new Error("Token inválido ou expirado");
+  }
+
+  const user = await prisma.usuario.findUnique({
+    where: { id_usuario: payload.id },
+  });
+
+  if (!user) throw new Error("Usuário não encontrado");
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await prisma.usuario.update({
+    where: { id_usuario: user.id_usuario },
+    data: { senha: hashedPassword },
+  });
+
+  return { message: "Senha redefinida com sucesso" };
 }
 
 /**

@@ -7,7 +7,7 @@ import {
   findUserById,
   findAllUsers,
 } from "../services/authService";
-
+import * as authService from "../services/authService";
 
 
 /**
@@ -130,5 +130,28 @@ export async function getAllUsers(req: Request, res: Response): Promise<void> {
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Erro ao listar usuários" });
+  }
+}
+
+export async function forgotPasswordController(req: Request, res: Response) {
+  const { email } = req.body;
+  try {
+    const result = await authService.forgotPassword(email);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(400).json({ message: err.message || "Erro ao solicitar redefinição" });
+  }
+}
+
+export async function resetPasswordController(req: Request, res: Response) {
+  const { token, password } = req.body;
+
+  try {
+    const result = await authService.resetPassword(token, password);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res
+      .status(400)
+      .json({ message: err.message || "Erro ao redefinir senha" });
   }
 }
