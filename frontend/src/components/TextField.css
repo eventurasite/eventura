@@ -31,3 +31,14 @@
   display: flex;
   align-items: center;
 }
+
+.tf input.is-editable,
+.tf input.is-editable:focus {
+  border-color: var(--cor_3-roxo_escuro);
+  box-shadow: 0 0 0 3px rgba(45, 44, 255, 0.12);
+}
+
+.tf input.is-editable {
+  border-color: var(--cor_3-roxo_escuro);
+  box-shadow: 0 0 0 3px rgba(45, 44, 255, 0.12);
+}
