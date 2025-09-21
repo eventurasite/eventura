@@ -1,0 +1,157 @@
+/* frontend/src/pages/UserProfile.css */
+.user-profile-container {
+  min-height: calc(100vh - 100px); /* Subtrai a altura do cabeçalho */
+  background-image: url("/assets/imagens/Pattern de Fundo.png");
+  background-repeat: repeat;
+  background-size: cover;
+  background-position: center;
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-wrapper {
+  max-width: 940px;
+  width: 100%;
+  padding: 30px;
+  background-color: var(--cor_1-branco);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', sans-serif;
+}
+
+.profile-header-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-title {
+  font-family: 'Rubik One', sans-serif;
+  font-size: 24px;
+  color: var(--cor_3-roxo_escuro);
+}
+
+.profile-content {
+  padding: 0 20px;
+}
+
+.profile-info-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.profile-picture img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-text h2 {
+  font-family: 'Rubik One', sans-serif;
+  font-size: 28px;
+  color: var(--cor_3-roxo_escuro);
+}
+
+.profile-text p {
+  font-size: 16px;
+  color: var(--cor_2-preto);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.profile-edit-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.profile-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-edit-fields .tf label,
+.profile-description-field label {
+  font-family: 'Roboto', sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  color: var(--cor_2-preto);
+}
+
+.profile-description-field {
+  position: relative;
+}
+
+.profile-description-field textarea {
+  width: 100%;
+  height: 150px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: 'Roboto', sans-serif;
+  resize: vertical;
+}
+
+.edit-button,
+.edit-button-desc {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cor_3-roxo_escuro);
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.edit-button-desc {
+  top: 30px;
+  right: 10px;
+  transform: translateY(0);
+}
+
+.profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.profile-actions .save-button {
+  background-color: var(--cor_3-roxo_escuro);
+  color: var(--cor_1-branco);
+  border: none;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.profile-actions .save-button:hover {
+  background-color: #3132B0;
+}
+
+.profile-actions .delete-button {
+  background-color: transparent;
+  color: #a94442;
+  border: 2px solid #a94442;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-actions .delete-button:hover {
+  background-color: #a94442;
+  color: var(--cor_1-branco);
+}
