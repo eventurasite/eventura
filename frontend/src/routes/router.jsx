@@ -7,7 +7,6 @@ import Register from "../pages/Register";
 import ResetPassword from "../pages/ResetPassword";
 import ForgotPassword from "../pages/ForgotPassword";
 import AdminDashboard from "../pages/AdminDashboard";
-
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -25,5 +24,6 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+
 ]);
 
