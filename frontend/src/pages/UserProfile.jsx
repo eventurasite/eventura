@@ -54,8 +54,9 @@ export default function UserProfile() {
       <div className="user-profile-container">
         <div className="profile-wrapper">
           <div className="profile-header-section">
-            <BackLink to="/" />
+            
             <h1 className="profile-title">Perfil do usuário</h1>
+            <BackLink />
           </div>
           <div className="profile-content">
             {/* Seção de foto, nome e descrição */}
@@ -77,7 +78,7 @@ export default function UserProfile() {
                   name="nome"
                   value={user.nome}
                   onChange={handleChange}
-                  readOnly={!editMode.nome}
+                  isEditable={editMode.nome} // <-- Nova propriedade
                   rightSlot={
                     <button onClick={() => handleEditToggle('nome')} className="edit-button">
                       <i className="bi bi-pencil-fill"></i>
@@ -90,7 +91,7 @@ export default function UserProfile() {
                   name="email"
                   value={user.email}
                   onChange={handleChange}
-                  readOnly={!editMode.email}
+                  isEditable={editMode.email} // <-- Nova propriedade
                   rightSlot={
                     <button onClick={() => handleEditToggle('email')} className="edit-button">
                       <i className="bi bi-pencil-fill"></i>
@@ -103,7 +104,7 @@ export default function UserProfile() {
                   name="telefone"
                   value={user.telefone}
                   onChange={handleChange}
-                  readOnly={!editMode.telefone}
+                  isEditable={editMode.telefone} // <-- Nova propriedade
                   rightSlot={
                     <button onClick={() => handleEditToggle('telefone')} className="edit-button">
                       <i className="bi bi-pencil-fill"></i>
@@ -120,6 +121,7 @@ export default function UserProfile() {
                   value={user.descricao}
                   onChange={handleChange}
                   readOnly={!editMode.descricao}
+                  className={editMode.descricao ? 'is-editable-textarea' : ''}
                 />
                 <button onClick={() => handleEditToggle('descricao')} className="edit-button-desc">
                   <i className="bi bi-pencil-fill"></i>

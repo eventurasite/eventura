@@ -51,7 +51,6 @@
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--cor_5-amarelo);
 }
 
 .profile-text h2 {

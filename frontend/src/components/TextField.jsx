@@ -1,3 +1,4 @@
+// frontend/src/components/TextField.jsx
 import React from "react"; 
 export default function TextField({
   id,
@@ -8,6 +9,7 @@ export default function TextField({
   placeholder = "",
   required = false,
   rightSlot = null,
+  isEditable = false, // <-- Nova propriedade
 }) {
   return (
     <div className="tf">
@@ -21,6 +23,8 @@ export default function TextField({
           placeholder={placeholder}
           required={required}
           autoComplete="on"
+          readOnly={!isEditable} 
+          className={isEditable ? "is-editable" : ""} 
         />
         {rightSlot && <div className="tf-right">{rightSlot}</div>}
       </div>
