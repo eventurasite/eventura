@@ -8,6 +8,7 @@ import {
   getUser,
   getAllUsers,
 } from "../controllers/authController";
+import { resetPasswordController, forgotPasswordController } from "../controllers/authController";
 
 const router = Router();
 
@@ -38,6 +39,9 @@ router.get(
     res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
   }
 );
+
+router.post("/password/forgot", forgotPasswordController);
+router.post("/password/reset", resetPasswordController);
 
 // Rotas locais
 router.post("/register", register);

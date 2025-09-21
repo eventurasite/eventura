@@ -6,10 +6,9 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Reset_Password from "../pages/ResetPassword";
+import ForgotPassword from "../pages/ForgotPassword";
 import UserProfile from "../pages/UserProfile";
-
 import AdminDashboard from "../pages/AdminDashboard";
-
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -18,8 +17,10 @@ export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/resetpassword", element: <Reset_Password /> },
-  { path: "/perfil", element: <UserProfile /> },
-  
+  { path: "/profile", element: <UserProfile /> },
+  { path: "/forgotpassword", element: <ForgotPassword /> },
+  { path: "/resetpassword", element: <ResetPassword /> },
+
   {
     path: "/admin",
     element: (
@@ -28,5 +29,6 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
   },
+
 ]);
 

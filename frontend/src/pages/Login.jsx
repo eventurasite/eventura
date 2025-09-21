@@ -104,7 +104,7 @@ export default function Login() {
         />
 
         <div className="forgot-wrap">
-          <a href="#">Esqueci minha senha</a>
+          <Link to="/forgotpassword">Esqueci minha senha</Link>
         </div>
 
         <Button type="submit" className="full">
