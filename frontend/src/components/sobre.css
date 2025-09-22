@@ -1,0 +1,158 @@
+/* Geral */
+
+.sobre-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background-color: var(--cor_fundo, #fafafa);
+  font-family: "Roboto", sans-serif;
+  color: var(--cor_texto, #333);
+  margin: 0;
+  padding: 0;
+}
+
+/* HEADER */
+
+.sobre-header {
+  width: 100%;
+  padding: 5rem 2rem;
+  background-color: var(--cor_3-roxo_escuro);
+  color: var(--cor_1-branco);
+  text-align: center;
+}
+
+.sobre-header h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.sobre-header p {
+  font-size: 1.3rem;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Seção Missão */
+
+.sobre-missao {
+  padding: 4rem 2rem;
+  max-width: 900px;
+  text-align: center;
+}
+
+.sobre-missao h2 {
+  font-size: 2.25rem;
+  color: var(--cor_3-roxo_escuro);
+  margin-bottom: 1rem;
+}
+
+.sobre-missao p {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--cor_texto_secondary, #555);
+}
+
+/* Valores / Diferenciais */
+
+.sobre-valores {
+  width: 100%;
+  padding: 4rem 2rem;
+  background-color: var(--cor_1-branco);
+}
+
+.sobre-valores h2 {
+  text-align: center;
+  font-size: 2.25rem;
+  color: var(--cor_3-roxo_escuro);
+  margin-bottom: 2rem;
+}
+
+.valores-grid {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.valor-card {
+  background-color: var(--cor_5-amarelo, #ffcc00);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.valor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.valor-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--cor_3-roxo_escuro);
+}
+
+.valor-card p {
+  font-size: 1rem;
+  color: var(--cor_texto_secondary, #444);
+}
+
+/* Equipe */
+
+.sobre-equipe {
+  width: 100%;
+  padding: 4rem 2rem;
+  max-width: 1100px;
+  background-color: var(--cor_fundo, #fafafa);
+  text-align: center;
+}
+
+.sobre-equipe h2 {
+  font-size: 2.25rem;
+  color: var(--cor_3-roxo_escuro);
+  margin-bottom: 1rem;
+}
+
+.sobre-equipe p {
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  color: var(--cor_texto_secondary, #555);
+}
+
+.equipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2.5rem;
+  justify-items: center;
+}
+
+.equipe-card {
+  background-color: var(--cor_1-branco);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 280px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.equipe-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.equipe-card .foto {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  margin: 0 auto 1rem;
+  object-fit: cover;
+}
