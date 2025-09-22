@@ -30,7 +30,7 @@ export default function UserProfile() {
         const response = await axios.get(`http://localhost:5000/api/auth/${userId}`);
         setUser(response.data);
       } catch (error) {
-        console.error("Erro ao buscar dados do usuário:", error);
+        console.error("Erro ao buscar os dados do usuário:", error);
         toast.error("Não foi possível carregar os dados do perfil.");
       }
     };
