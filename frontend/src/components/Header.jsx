@@ -50,7 +50,7 @@ function Header() {
 
             {isAuthenticated && (
               <div className={`dropdown-menu ${isDropdownOpen ? 'active' : ''}`}>
-                <Link to="/perfil" className="dropdown-item">Perfil</Link>
+                <Link to="/profile" className="dropdown-item">Perfil</Link>
                 <Link to="/meus-eventos" className="dropdown-item">Meus Eventos</Link>
                 <Link to="/meus-interesses" className="dropdown-item">Meus Interesses</Link>
                 <div className="dropdown-divider"></div>
