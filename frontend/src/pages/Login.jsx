@@ -95,12 +95,14 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Digite seu email"
           required
+          isEditable={true}
         />
 
         <PasswordField
           value={pwd}
           onChange={(e) => setPwd(e.target.value)}
           required
+          isEditable={true}
         />
 
         <div className="forgot-wrap">

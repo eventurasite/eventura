@@ -95,6 +95,7 @@ export default function Register() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome Completo"
           required
+          isEditable={true}
         />
 
         <TextField
@@ -105,6 +106,7 @@ export default function Register() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="E-mail"
           required
+          isEditable={true}
         />
 
         <TextField
@@ -114,6 +116,7 @@ export default function Register() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Telefone"
+          isEditable={true}
         />
 
         <PasswordField
@@ -121,6 +124,7 @@ export default function Register() {
           onChange={(e) => setPwd(e.target.value)}
           placeholder="Senha"
           required
+          isEditable={true}
         />
 
         <PasswordField
@@ -128,6 +132,7 @@ export default function Register() {
           onChange={(e) => setConfirmPwd(e.target.value)}
           placeholder="Confirmar Senha"
           required
+          isEditable={true}
         />
 
         <label style={{ fontSize: 14, margin: "8px 0" }}>

@@ -73,8 +73,18 @@ export async function login(req: Request, res: Response): Promise<void> {
  */
 export async function updateUser(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number(req.params.id);
-    const usuario = await editUser(id, req.body);
+    const targetUserId = Number(req.params.id);
+    // @ts-ignore - Ignoramos o erro do TS aqui pois sabemos que req.user é populado pelo middleware
+    const authenticatedUserId = req.user.id; // ID do usuário logado (vem do token)
+
+    // Regra de segurança: um usuário só pode editar o seu próprio perfil.
+    // (Futuramente, um admin poderia ser uma exceção a essa regra).
+    if (targetUserId !== authenticatedUserId) {
+      res.status(403).json({ message: "Acesso negado. Você não tem permissão para editar este usuário." });
+      return;
+    }
+
+    const usuario = await editUser(targetUserId, req.body);
 
     res.status(200).json({
       message: "Usuário atualizado com sucesso",
@@ -91,8 +101,16 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
  */
 export async function deleteUser(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number(req.params.id);
-    await removeUser(id);
+    const targetUserId = Number(req.params.id);
+    // @ts-ignore
+    const authenticatedUserId = req.user.id; // ID do usuário logado (vem do token)
+
+    if (targetUserId !== authenticatedUserId) {
+      res.status(403).json({ message: "Acesso negado. Você não tem permissão para excluir este usuário." });
+      return;
+    }
+
+    await removeUser(targetUserId);
     res.status(200).json({ message: "Usuário removido com sucesso" });
   } catch (error: any) {
     console.error(error);
@@ -153,5 +171,26 @@ export async function resetPasswordController(req: Request, res: Response) {
     return res
       .status(400)
       .json({ message: err.message || "Erro ao redefinir senha" });
+  }
+}
+
+/**
+ * Buscar dados do próprio usuário autenticado
+ */
+export async function getMe(req: Request, res: Response): Promise<void> {
+  try {
+    // @ts-ignore
+    const userId = req.user.id;
+    const usuario = await findUserById(userId);
+
+    if (!usuario) {
+      res.status(404).json({ message: "Usuário não encontrado" });
+      return;
+    }
+
+    res.status(200).json(usuario);
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar dados do usuário" });
   }
 }

@@ -62,6 +62,7 @@ export default function ForgotPassword() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          isEditable={true}
         />
 
         <Button type="submit" className="full">Enviar E-mail</Button>

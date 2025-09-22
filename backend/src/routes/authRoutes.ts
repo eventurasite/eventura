@@ -7,8 +7,10 @@ import {
   deleteUser,
   getUser,
   getAllUsers,
+  getMe,
 } from "../controllers/authController";
 import { resetPasswordController, forgotPasswordController } from "../controllers/authController";
+import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -46,9 +48,14 @@ router.post("/password/reset", resetPasswordController);
 // Rotas locais
 router.post("/register", register);
 router.post("/login", login);
-router.get("/:id", getUser);
+
+// --- Rotas Protegidas ---
+router.get("/me", authenticateToken, getMe);
+router.put("/:id", authenticateToken, updateUser);
+router.delete("/:id", authenticateToken, deleteUser);
+
+// no final, para não conflitarem com /me
+router.get("/:id", getUser); 
 router.get("/", getAllUsers);
-router.put("/:id", updateUser);
-router.delete("/:id", deleteUser);
 
 export default router;
