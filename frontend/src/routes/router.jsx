@@ -9,7 +9,7 @@ import ResetPassword from "../pages/ResetPassword";
 import ForgotPassword from "../pages/ForgotPassword";
 import UserProfile from "../pages/UserProfile";
 import AdminDashboard from "../pages/AdminDashboard";
-
+import Sobre from "../pages/Sobre";
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -21,13 +21,13 @@ export const router = createBrowserRouter([
   { path: "/profile", element: <UserProfile /> },
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/resetpassword", element: <ResetPassword /> },
+  { path: "/sobre", element: <Sobre /> },
   {
     path: "/admin",
     element: (
-      <ProtectedRoute allowedRoles={['administrador']}>
+      <ProtectedRoute allowedRoles={["administrador"]}>
         <AdminDashboard />
       </ProtectedRoute>
     ),
   },
-
 ]);
