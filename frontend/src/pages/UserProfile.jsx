@@ -1,5 +1,4 @@
-// frontend/src/pages/UserProfile.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -9,12 +8,37 @@ import Button from '../components/Button';
 import TextField from '../components/TextField';
 import './UserProfile.css';
 
+const API_BASE_URL = 'http://localhost:5000';
+
+// Componente para o corpo do Toast de Confirmação
+const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
+  <div className="toast-confirmation-body">
+    <p>{message}</p>
+    <div className="toast-confirmation-buttons">
+      <button className="toast-btn toast-btn-cancel" onClick={closeToast}>
+        Cancelar
+      </button>
+      <button 
+        className="toast-btn toast-btn-confirm"
+        onClick={() => {
+          onConfirm();
+          closeToast();
+        }}
+      >
+        Confirmar
+      </button>
+    </div>
+  </div>
+);
+
 export default function UserProfile() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null); // Inicia como nulo para sabermos quando está carregando
+  const [user, setUser] = useState(null);
   const [editMode, setEditMode] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
-  // Efeito para buscar os dados do usuário ao carregar a página
   useEffect(() => {
     const fetchUserData = async () => {
       const userId = localStorage.getItem('userId');
@@ -27,8 +51,14 @@ export default function UserProfile() {
       }
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/auth/${userId}`);
-        setUser(response.data);
+        const response = await axios.get(`${API_BASE_URL}/api/auth/${userId}`);
+        const userData = response.data;
+        setUser(userData);
+        
+        if (userData.url_foto_perfil) {
+          setPreview(`${API_BASE_URL}${userData.url_foto_perfil}`);
+        }
+
       } catch (error) {
         console.error("Erro ao buscar os dados do usuário:", error);
         toast.error("Não foi possível carregar os dados do perfil.");
@@ -47,42 +77,128 @@ export default function UserProfile() {
     setUser(prev => ({ ...prev, [name]: value }));
   };
 
-  // Função para salvar as alterações
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSave = async () => {
     const token = localStorage.getItem('authToken');
+    let updatedUser = { ...user };
+  
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('profileImage', selectedFile);
+  
+      try {
+        const uploadResponse = await axios.post(`${API_BASE_URL}/api/auth/upload/${user.id_usuario}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`
+          }
+        });
+        updatedUser.url_foto_perfil = uploadResponse.data.url_foto_perfil;
+      } catch (error) {
+        console.error("Erro ao fazer upload da imagem:", error);
+        toast.error(error.response?.data?.message || "Erro ao fazer upload da imagem.");
+        return;
+      }
+    }
+  
     try {
-      await axios.put(`http://localhost:5000/api/auth/${user.id_usuario}`, user, {
+      await axios.put(`${API_BASE_URL}/api/auth/${user.id_usuario}`, updatedUser, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
+      setUser(updatedUser);
+      if (updatedUser.url_foto_perfil) {
+        const fullUrl = `${API_BASE_URL}${updatedUser.url_foto_perfil}`;
+        setPreview(fullUrl);
+        localStorage.setItem('userPhotoUrl', updatedUser.url_foto_perfil);
+      } else {
+        setPreview(null);
+        localStorage.setItem('userPhotoUrl', '');
+      }
+
       toast.success("Perfil atualizado com sucesso!");
-      setEditMode({}); // Desativa todos os modos de edição
+      setEditMode({});
+      setSelectedFile(null);
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
       toast.error(error.response?.data?.message || "Erro ao salvar o perfil.");
     }
   };
   
-  // Função para excluir a conta
   const handleDeleteAccount = async () => {
-    if (window.confirm("Tem certeza de que deseja excluir a sua conta? Esta ação é irreversível.")) {
+    const confirmAction = async () => {
       const token = localStorage.getItem('authToken');
       try {
-        await axios.delete(`http://localhost:5000/api/auth/${user.id_usuario}`, {
+        await axios.delete(`${API_BASE_URL}/api/auth/${user.id_usuario}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Conta excluída com sucesso.");
-        // Limpa o storage e redireciona
         localStorage.clear();
         navigate('/');
-        window.location.reload(); // Força a recarga para atualizar o estado do Header
+        window.location.reload(); 
       } catch (error) {
         console.error("Erro ao excluir conta:", error);
         toast.error(error.response?.data?.message || "Não foi possível excluir a conta.");
       }
-    }
+    };
+
+    toast.warn(
+      <ConfirmationToast
+        message="Tem certeza de que deseja excluir a sua conta? Esta ação é irreversível."
+        onConfirm={confirmAction}
+      />, {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        theme: "colored"
+      }
+    );
   };
 
-  // Renderiza um estado de carregamento enquanto os dados não chegam
+  const handleRemovePhoto = async () => {
+    if (!user) return;
+
+    const confirmAction = async () => {
+      const token = localStorage.getItem('authToken');
+      try {
+        await axios.delete(`${API_BASE_URL}/api/auth/upload/${user.id_usuario}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setPreview(null);
+        setUser(prevUser => ({ ...prevUser, url_foto_perfil: null }));
+        localStorage.setItem('userPhotoUrl', '');
+
+        toast.success("Foto de perfil removida com sucesso!");
+
+      } catch (error) {
+        console.error("Erro ao remover a foto:", error);
+        toast.error(error.response?.data?.message || "Não foi possível remover a foto.");
+      }
+    };
+
+    toast.warn(
+      <ConfirmationToast
+        message="Tem certeza de que deseja remover sua foto de perfil?"
+        onConfirm={confirmAction}
+      />, {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        theme: "colored"
+      }
+    );
+  };
+
   if (!user) {
     return (
       <>
@@ -104,7 +220,24 @@ export default function UserProfile() {
           <div className="profile-content">
             <div className="profile-info-section">
               <div className="profile-picture">
-                <img src={user.url_foto_perfil || 'https://via.placeholder.com/150'} alt="Foto de perfil" />
+                {preview && <img src={preview} alt="Foto de perfil" />}
+                
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                />
+                <button className="edit-photo-button" onClick={() => fileInputRef.current.click()}>
+                  <i className="bi bi-camera-fill"></i> Alterar Foto
+                </button>
+
+                {preview && (
+                  <button className="remove-photo-button" onClick={handleRemovePhoto} title="Remover foto">
+                    <i className="bi bi-trash-fill"></i>
+                  </button>
+                )}
               </div>
               <div className="profile-text">
                 <h2>{user.nome}</h2>
@@ -133,10 +266,8 @@ export default function UserProfile() {
                   name="email"
                   value={user.email}
                   onChange={handleChange}
-                  // Lógica condicional: só é editável se o provedor NÃO for 'google'
                   isEditable={user.authProvider !== 'google' && editMode.email} 
                   rightSlot={
-                    // Desabilitamos o botão de edição se for um usuário Google
                     <button 
                       onClick={() => handleEditToggle('email')} 
                       className="edit-button"

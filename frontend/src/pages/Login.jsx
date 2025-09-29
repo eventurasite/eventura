@@ -46,6 +46,7 @@ export default function Login() {
         localStorage.setItem("userId", data.id_usuario);
         localStorage.setItem("userName", data.nome);
         localStorage.setItem("userType", data.tipo);
+        localStorage.setItem("userPhotoUrl", data.url_foto_perfil || "");
 
         toast.success("Login realizado com sucesso!");
 

@@ -35,19 +35,18 @@ export default function Register() {
     e.preventDefault();
 
     if (!agree) {
-      alert("Você deve aceitar os Termos de Uso.");
+      toast.warn("Você deve aceitar os Termos de Uso.");
       return;
     }
 
     if (pwd !== confirmPwd) {
-      alert("As senhas não conferem.");
+      toast.error("As senhas não conferem.");
       return;
     }
 
     if(!email){
       return toast.error("O campo de email é obrigatório.");
     }
-
 
     try {
       const response = await axios.post(

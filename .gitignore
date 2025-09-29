@@ -46,3 +46,7 @@ build/
 .cache/
 .next/
 out/
+# ------------------------
+# Uploads de Usuários
+# ------------------------
+/backend/uploads/

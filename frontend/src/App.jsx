@@ -26,6 +26,7 @@ export default function App({ children }) {
           localStorage.setItem("userId", userData.id_usuario);
           localStorage.setItem("userName", userData.nome);
           localStorage.setItem("userType", userData.tipo);
+          localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
 
         } catch (error) {
           console.error("Erro ao buscar dados do usuário após login com Google:", error);
