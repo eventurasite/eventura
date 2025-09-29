@@ -51,6 +51,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       nome: usuario.nome,
       tipo: usuario.tipo,
       token: usuario.token,
+      url_foto_perfil: usuario.url_foto_perfil,
     });
   } catch (error: any) {
     console.error(error);

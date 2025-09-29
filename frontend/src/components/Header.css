@@ -52,7 +52,6 @@ header {
 }
 
 .header-button {
-  width: 160px;
   height: 50px;
   background-color: var(--cor_5-amarelo);
   color: var(--cor_3-roxo_escuro);
@@ -66,6 +65,7 @@ header {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  padding: 0 25px; /* Adicionado padding para acomodar o texto e a imagem */
 }
 
 .header-button:hover {
@@ -75,4 +75,15 @@ header {
 
 .header-button i {
   margin-left: 8px;
+  font-size: 24px; /* Aumenta um pouco o ícone padrão */
+}
+
+/* --- ESTILO PARA A FOTO DENTRO DO BOTÃO --- */
+.header-avatar-in-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-left: 10px;
+  object-fit: cover;
+  background-color: #fff;
 }
