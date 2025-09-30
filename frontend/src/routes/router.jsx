@@ -12,7 +12,7 @@ import AdminDashboard from "../pages/AdminDashboard";
 import Sobre from "../pages/Sobre";
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
-import EventRegistration from "../pages/EventRegistration"
+
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -22,7 +22,6 @@ export const router = createBrowserRouter([
   { path: "/profile", element: <UserProfile /> },
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/resetpassword", element: <ResetPassword /> },
-  { path: "/eventregistration", element: <EventRegistration/>},
   { path: "/sobre", element: <Sobre /> },
 
   {
