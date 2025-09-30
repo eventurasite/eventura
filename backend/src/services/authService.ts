@@ -133,7 +133,42 @@ export async function resetPassword(token: string, password: string) {
  * Atualizar usuário
  */
 export async function editUser(id: number, data: any) {
-  return prisma.usuario.update({ where: { id_usuario: id }, data });
+  // 1. Busca o estado atual do usuário no banco.
+  const currentUser = await prisma.usuario.findUnique({
+    where: { id_usuario: id },
+  });
+
+  if (!currentUser) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  // 2. REGRA DE NEGÓCIO: Impede que usuários Google alterem o e-mail.
+  if (currentUser.authProvider === 'google' && data.email && currentUser.email !== data.email) {
+    throw new Error("Usuários autenticados com o Google não podem alterar o endereço de e-mail.");
+  }
+
+  // 3. "LISTA BRANCA": Define quais campos são seguros para atualização.
+  const updatableData: {
+    nome?: string;
+    email?: string;
+    telefone?: string;
+    descricao?: string;
+    url_foto_perfil?: string;
+  } = {};
+
+  // 4. Preenche o objeto apenas com os dados permitidos que vieram na requisição.
+  if (data.nome) updatableData.nome = data.nome;
+  if (data.email) updatableData.email = data.email;
+  // Permite salvar telefone como string vazia para "limpar" o campo
+  if (typeof data.telefone !== 'undefined') updatableData.telefone = data.telefone;
+  if (typeof data.descricao !== 'undefined') updatableData.descricao = data.descricao;
+  if (data.url_foto_perfil) updatableData.url_foto_perfil = data.url_foto_perfil;
+
+  // 5. Envia ao Prisma apenas os dados seguros para a atualização.
+  return prisma.usuario.update({
+    where: { id_usuario: id },
+    data: updatableData,
+  });
 }
 
 /**

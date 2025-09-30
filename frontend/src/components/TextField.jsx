@@ -3,6 +3,7 @@ import React from "react";
 export default function TextField({
   id,
   label,
+  name,
   type = "text",
   value,
   onChange,
@@ -17,6 +18,7 @@ export default function TextField({
       <div className="tf-box">
         <input
           id={id}
+          name={name}
           type={type}
           value={value}
           onChange={onChange}
