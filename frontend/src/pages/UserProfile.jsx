@@ -1,27 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
 import Header from '../components/Header';
 import BackLink from '../components/BackLink';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
 import './UserProfile.css';
 
-// Dados de exemplo para o perfil do usuário
-const mockUser = {
-  nome: 'Paola Silva',
-  email: 'paola.silva@gmail.com.br',
-  telefone: '(34) 99112-2334',
-  descricao:
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed at turpis eu urna semper fringilla. Ut ut condimentum mauris, eget tincidunt ligula. Sed mattis iaculis magna, et commodo odio molestie vel. Integer imperdiet accumsan ante at molestie. Sed eget feugiat dui, eu tempus nibh.',
-  url_foto_perfil: 'https://via.placeholder.com/150',
-};
-
-export default function UserProfile() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(mockUser);
+const API_BASE_URL = 'http://localhost:5000';
 
 // Componente para o corpo do Toast de Confirmação
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
@@ -87,25 +74,9 @@ export default function UserProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser((prev) => ({ ...prev, [name]: value }));
+    setUser(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    console.log('Dados do usuário salvos:', user);
-    navigate('/');
-  };
-
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        'Tem certeza de que deseja excluir a sua conta? Esta ação é irreversível.'
-      )
-    ) {
-      console.log('Conta do usuário excluída.');
-      localStorage.clear();
-      navigate('/');
-      window.location.reload();
-      
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -246,7 +217,6 @@ export default function UserProfile() {
             <h1 className="profile-title">Perfil do usuário</h1>
             <BackLink />
           </div>
-
           <div className="profile-content">
             <div className="profile-info-section">
               <div className="profile-picture">
@@ -275,59 +245,73 @@ export default function UserProfile() {
               </div>
             </div>
 
-            {/* Campos editáveis */}
             <div className="profile-edit-section">
               <div className="profile-edit-fields">
-                <TextField
+                <TextField 
                   label="Nome Completo"
                   id="nome"
                   name="nome"
                   value={user.nome}
                   onChange={handleChange}
-                  rightSlot={<i className="bi bi-pencil-fill"></i>}
+                  isEditable={editMode.nome}
+                  rightSlot={
+                    <button onClick={() => handleEditToggle('nome')} className="edit-button">
+                      <i className="bi bi-pencil-fill"></i>
+                    </button>
+                  }
                 />
-
-                <TextField
+                <TextField 
                   label="E-mail"
                   id="email"
                   name="email"
                   value={user.email}
                   onChange={handleChange}
-                  rightSlot={<i className="bi bi-pencil-fill"></i>}
+                  isEditable={user.authProvider !== 'google' && editMode.email} 
+                  rightSlot={
+                    <button 
+                      onClick={() => handleEditToggle('email')} 
+                      className="edit-button"
+                      disabled={user.authProvider === 'google'}
+                      title={user.authProvider === 'google' ? "Não é possível editar o e-mail de contas Google" : "Editar e-mail"}
+                    >
+                      <i className="bi bi-pencil-fill"></i>
+                    </button>
+                  }
                 />
-
-                <TextField
+                <TextField 
                   label="Telefone"
                   id="telefone"
                   name="telefone"
                   value={user.telefone || ''}
                   onChange={handleChange}
-                  rightSlot={<i className="bi bi-pencil-fill"></i>}
+                  isEditable={editMode.telefone}
+                  rightSlot={
+                    <button onClick={() => handleEditToggle('telefone')} className="edit-button">
+                      <i className="bi bi-pencil-fill"></i>
+                    </button>
+                  }
                 />
               </div>
 
               <div className="profile-description-field">
                 <label htmlFor="descricao">Descrição</label>
-
-                <div className="textarea-box">
-                  <textarea
-                    id="descricao"
-                    name="descricao"
-                    value={user.descricao}
-                    onChange={handleChange}
-                    className="is-editable-textarea"
-                  />
-
+                <textarea
+                  id="descricao"
+                  name="descricao"
+                  value={user.descricao || ''}
+                  onChange={handleChange}
+                  readOnly={!editMode.descricao}
+                  className={editMode.descricao ? 'is-editable-textarea' : ''}
+                />
+                <button onClick={() => handleEditToggle('descricao')} className="edit-button-desc">
                   <i className="bi bi-pencil-fill"></i>
-                </div>
+                </button>
               </div>
             </div>
 
             <div className="profile-actions">
-
               <Button onClick={handleDeleteAccount} className="delete-button">Excluir conta</Button>
               <Button onClick={handleSave} className="save-button">Salvar Alterações</Button>
-
             </div>
           </div>
         </div>
