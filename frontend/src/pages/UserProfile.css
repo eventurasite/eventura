@@ -1,6 +1,5 @@
-/* frontend/src/pages/UserProfile.css */
 .user-profile-container {
-  min-height: calc(100vh - 100px); /* Subtrai a altura do cabeçalho */
+  min-height: calc(100vh - 100px);
   background-image: url("/assets/imagens/Pattern de Fundo.png");
   background-repeat: repeat;
   background-size: cover;
@@ -86,38 +85,46 @@
   color: var(--cor_2-preto);
 }
 
+/* ===== Textarea com ícone ===== */
 .profile-description-field {
   position: relative;
 }
 
-.profile-description-field textarea {
+.textarea-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.textarea-box textarea {
   width: 100%;
   height: 150px;
-  padding: 10px;
+  padding: 10px 35px 10px 10px; /* espaço pro ícone */
   border: 1px solid #ccc;
   border-radius: 5px;
   font-family: 'Roboto', sans-serif;
   resize: vertical;
 }
 
-.edit-button,
-.edit-button-desc {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--cor_3-roxo_escuro);
+.textarea-box i {
   position: absolute;
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
+  color: var(--cor_3-roxo_escuro);
+  pointer-events: none;
 }
 
-.edit-button-desc {
-  top: 30px;
+/* ===== Ícones do TextField ===== */
+.tf-right i,
+.textarea-box i {
+  color: var(--cor_3-roxo_escuro);
+  font-size: 16px;
+  top: 20px;
   right: 10px;
-  transform: translateY(0);
 }
 
+/* ===== Botões ===== */
 .profile-actions {
   display: flex;
   justify-content: flex-end;
@@ -155,3 +162,4 @@
   background-color: #a94442;
   color: var(--cor_1-branco);
 }
+

@@ -8,8 +8,7 @@ export default function TextField({
   onChange,
   placeholder = "",
   required = false,
-  rightSlot = null,
-  isEditable = false, // <-- Nova propriedade
+  rightSlot = null
 }) {
   return (
     <div className="tf">
@@ -17,14 +16,13 @@ export default function TextField({
       <div className="tf-box">
         <input
           id={id}
+          name={name || id}
           type={type}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
           required={required}
           autoComplete="on"
-          readOnly={!isEditable} 
-          className={isEditable ? "is-editable" : ""} 
         />
         {rightSlot && <div className="tf-right">{rightSlot}</div>}
       </div>
