@@ -21,3 +21,41 @@ html, body {
   color: var(--text);
   background: var(--bg);
 }
+
+/* Estilos para o Toast de Confirmação */
+.toast-confirmation-body {
+  font-family: 'Roboto', sans-serif;
+}
+
+.toast-confirmation-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.toast-btn {
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s;
+}
+
+.toast-btn-confirm {
+  background-color: var(--cor_3-roxo_escuro);
+  color: var(--cor_1-branco);
+}
+.toast-btn-confirm:hover {
+  opacity: 0.85;
+}
+
+.toast-btn-cancel {
+  background-color: #eee;
+  color: #555;
+  border: 1px solid #ddd;
+}
+.toast-btn-cancel:hover {
+  background-color: #e2e2e2;
+}

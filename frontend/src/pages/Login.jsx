@@ -46,6 +46,7 @@ export default function Login() {
         localStorage.setItem("userId", data.id_usuario);
         localStorage.setItem("userName", data.nome);
         localStorage.setItem("userType", data.tipo);
+        localStorage.setItem("userPhotoUrl", data.url_foto_perfil || "");
 
         toast.success("Login realizado com sucesso!");
 
@@ -95,12 +96,14 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Digite seu email"
           required
+          isEditable={true}
         />
 
         <PasswordField
           value={pwd}
           onChange={(e) => setPwd(e.target.value)}
           required
+          isEditable={true}
         />
 
         <div className="forgot-wrap">
