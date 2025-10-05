@@ -72,6 +72,7 @@ export default function ResetPassword() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          isEditable={true}
         />
 
         <PasswordField
@@ -79,6 +80,7 @@ export default function ResetPassword() {
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Confirme sua nova senha"
           required
+          isEditable={true}
         />
 
         <Button type="submit" className="full">
