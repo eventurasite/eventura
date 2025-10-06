@@ -1,0 +1,44 @@
+.event-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  transition: transform 0.2s;
+}
+
+.event-card:hover {
+  transform: scale(1.02);
+}
+
+.event-card-image {
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+}
+
+.event-card-content {
+  padding: 16px;
+}
+
+.event-card-title {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.event-card-button {
+  display: inline-block;
+  margin-top: 8px;
+  background-color: #3b82f6;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.event-card-button:hover {
+  background-color: #2563eb;
+}

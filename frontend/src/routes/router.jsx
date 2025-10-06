@@ -17,7 +17,6 @@ import EventRegistration from "../pages/EventRegistration";
 import EventDetail from "../pages/EventDetail";
 import MyEvents from "../pages/MyEvents";
 
-
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/login", element: <Login /> },
@@ -27,12 +26,11 @@ export const router = createBrowserRouter([
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/resetpassword", element: <ResetPassword /> },
   { path: "/sobre", element: <Sobre /> },
-  // A nova rota fixa para o nosso evento único
-  { path: "/evento", element: <EventDetail /> },
+  // consertando rota para mandar o id
+  { path: "/evento/:id", element: <EventDetail /> },
   { path: "/agenda", element: <Agenda /> },
   { path: "/registrarevento", element: <EventRegistration /> },
-  { path: "/meuseventos", element: <MyEvents/>},
-  
+  { path: "/meuseventos", element: <MyEvents /> },
 
   {
     path: "/admin",
