@@ -27,7 +27,7 @@ export const router = createBrowserRouter([
   { path: "/resetpassword", element: <ResetPassword /> },
   { path: "/sobre", element: <Sobre /> },
   // consertando rota para mandar o id
-  { path: "/evento/:id", element: <EventDetail /> },
+  { path: "/event/:id", element: <EventDetail /> },
   { path: "/agenda", element: <Agenda /> },
   { path: "/registrarevento", element: <EventRegistration /> },
   { path: "/meuseventos", element: <MyEvents /> },

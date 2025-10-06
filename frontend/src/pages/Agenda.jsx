@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
+import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
 import EventCard from "../components/EventCard";
-import "./Agenda.css";
-
-// Importa apenas o CSS da Agenda, que agora contém as regras de fundo e centralização.
 import "./Agenda.css";
 
 const CATEGORIAS = [
@@ -15,32 +13,6 @@ const CATEGORIAS = [
   "Comédia",
 ];
 
-// Função utilitária para formatar a data
-const formatDateTime = (isoDate) => {
-  const date = new Date(isoDate);
-  const dateOptions = { day: "2-digit", month: "2-digit" };
-  return date.toLocaleDateString("pt-BR", dateOptions);
-};
-
-// Função para agrupar eventos por Mês/Ano
-const groupEventsByMonth = (events) => {
-  const grouped = {};
-  events.forEach((event) => {
-    const date = new Date(event.data);
-    const year = date.getFullYear();
-    const monthName = date.toLocaleDateString("pt-BR", { month: "long" });
-
-    const key = `${
-      monthName.charAt(0).toUpperCase() + monthName.slice(1)
-    } ${year}`;
-
-    if (!grouped[key]) {
-      grouped[key] = [];
-    }
-    grouped[key].push(event);
-  });
-  return grouped;
-};
 export default function Agenda() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,24 +39,7 @@ export default function Agenda() {
   if (error) return <p>Erro: {error}</p>;
 
   const groupedEvents = groupEventsByMonth(events);
-
-  // Ordena os meses por data
-  const monthsOrder = Object.keys(groupedEvents).sort((a, b) => {
-    const findDate = (groupKey) =>
-      events.find((e) => {
-        const date = new Date(e.data);
-        const monthName = date.toLocaleDateString("pt-BR", { month: "long" });
-        return (
-          `${
-            monthName.charAt(0).toUpperCase() + monthName.slice(1)
-          } ${date.getFullYear()}` === groupKey
-        );
-      })?.data;
-
-    const dateA = new Date(findDate(a));
-    const dateB = new Date(findDate(b));
-    return dateA.getTime() - dateB.getTime();
-  });
+  const monthsOrder = sortMonths(groupedEvents);
 
   return (
     <>
