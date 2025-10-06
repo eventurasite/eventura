@@ -51,8 +51,13 @@ export async function findAllCategories() {
  */
 export async function findAllEvents() {
   return prisma.evento.findMany({
+    // ADICIONADO: Ordena os resultados pela data de criação, em ordem decrescente
+    orderBy: {
+      data_criacao: "desc",
+    },
     include: {
       imagemEvento: true,
+      categoria: true, // Mantém a inclusão da categoria
     },
   });
 }
@@ -76,9 +81,34 @@ export const getEventById = async (id: number): Promise<Evento | null> => {
   try {
     const event = await prisma.evento.findUnique({
       where: { id_evento: id },
+      // ADIÇÃO: Inclui os dados relacionados que o frontend precisa
+      include: {
+        imagemEvento: true, // Para mostrar as imagens
+        categoria: true,    // Para mostrar o nome da categoria
+        organizador: {      // Para mostrar o nome do organizador
+          select: {
+            nome: true,
+          },
+        },
+      },
     });
     return event;
   } catch (error: any) {
     throw new Error(`Erro ao buscar evento: ${error.message}`);
   }
 };
+
+export async function findEventsByOrganizer(organizerId: number) {
+  return prisma.evento.findMany({
+    where: {
+      id_organizador: organizerId,
+    },
+    include: {
+      imagemEvento: true,
+      categoria: true,
+    },
+    orderBy: {
+      data: 'desc', // Opcional: ordena os eventos do mais recente para o mais antigo
+    },
+  });
+}

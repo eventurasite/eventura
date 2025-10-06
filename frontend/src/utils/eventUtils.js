@@ -1,3 +1,5 @@
+// frontend/src/utils/eventUtils.js
+
 // Formata uma data ISO para pt-BR
 export const formatDate = (isoDate) => {
   if (!isoDate) return "N/A";
@@ -13,7 +15,8 @@ export const formatDate = (isoDate) => {
 export const groupEventsByMonth = (events) => {
   const grouped = {};
   events.forEach((event) => {
-    const date = new Date(event.date);
+    // CORREÇÃO: Usar 'event.data' em vez de 'event.date'
+    const date = new Date(event.data);
     const year = date.getFullYear();
     const monthName = date.toLocaleDateString("pt-BR", { month: "long" });
     const key = `${
@@ -29,8 +32,9 @@ export const groupEventsByMonth = (events) => {
 // Ordena as chaves do grupo (Mês/Ano) por data
 export const sortMonths = (groupedEvents) => {
   return Object.keys(groupedEvents).sort((a, b) => {
-    const dateA = new Date(groupedEvents[a][0].date);
-    const dateB = new Date(groupedEvents[b][0].date);
+    // CORREÇÃO: Usar 'event.data' em vez de 'event.date'
+    const dateA = new Date(groupedEvents[a][0].data);
+    const dateB = new Date(groupedEvents[b][0].data);
     return dateA.getTime() - dateB.getTime();
   });
 };

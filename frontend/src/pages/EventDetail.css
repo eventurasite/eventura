@@ -1,8 +1,7 @@
-/* src/pages/EventDetail.css */
+/* frontend/src/pages/EventDetail.css */
 
 /* -------------------- VARIÁVEIS DE CORES -------------------- */
 :root {
-    /* Cor primária exata (o novo roxo) */
     --primary-color: #4849E8; 
     --secondary-bg-color: #f0f2f5; 
     --text-color: #333;
@@ -11,75 +10,97 @@
     --submit-hover-color: #4849E8;
 }
 
-/* Nota: A regra de fundo do 'body' foi REMOVIDA daqui, será importada do Login.css */
-
 .page-container {
     max-width: 900px; 
-    /* Centralização Horizontal */
     margin: 20px auto; 
-    
     padding: 20px;
     background-color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    /* Espaçamento Inferior (resolve o problema da "colagem" na borda) */
+    border-radius: 8px; /* Borda um pouco mais suave */
     margin-bottom: 50px; 
 }
 
-/* Título do Evento Roxo */
+/* Título do Evento */
 .event-title {
-    font-size: 2em;
+    font-size: 2.2em; /* Um pouco maior para mais destaque */
+    font-family: 'Rubik One', sans-serif;
     color: var(--primary-color, var(--fallback-primary));
     margin-bottom: 20px;
 }
 
-/* Títulos das Seções (Roxo) */
+/* Títulos das Seções */
 .event-section h2, .add-comment-section h2 {
-    font-size: 1.3em;
+    font-size: 1.5em; /* Aumenta o título da seção */
+    font-family: 'Rubik One', sans-serif;
     color: var(--primary-color, var(--fallback-primary)); 
-    margin-top: 25px;
+    margin-top: 30px;
     margin-bottom: 15px;
-    border-bottom: 1px solid #eee; 
-    padding-bottom: 5px;
+    border-bottom: 2px solid #f0f2f5; 
+    padding-bottom: 8px;
 }
 
 /* -------------------- SEÇÃO DE IMAGENS -------------------- */
 .event-images {
     display: flex;
-    gap: 10px;
+    gap: 15px; /* Aumenta o espaçamento */
     margin-bottom: 20px;
 }
 
 .main-image {
     flex: 3;
-    background-color: #dcdcdc; 
+    background-color: #e0e0e0; 
     min-height: 300px;
-    border-radius: 4px;
+    max-height: 450px; /* Limita a altura máxima do contêiner */
+    border-radius: 8px;
+    overflow: hidden; /* Garante que a imagem não vaze para fora do raio da borda */
+}
+
+/* CORREÇÃO: Faz a imagem preencher o contêiner sem distorcer */
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* A "mágica" acontece aqui! */
 }
 
 .thumbnail-gallery {
     flex: 1; 
     display: flex;
     flex-direction: column; 
-    gap: 10px;
+    gap: 15px;
 }
 
 .thumbnail {
     flex: 1;
-    background-color: #dcdcdc;
-    border-radius: 4px;
+    background-color: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
 }
+
+/* Aplica o mesmo ajuste de imagem para as miniaturas */
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 
 /* -------------------- INFORMAÇÕES GERAIS -------------------- */
 .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr; 
-    gap: 15px;
+    gap: 15px 25px; /* Aumenta o espaçamento entre colunas */
+    font-size: 1.1em;
+    color: var(--text-color);
 }
 
-.info-column p {
+.info-grid p {
     margin-bottom: 10px;
 }
+
+.info-grid strong {
+    color: var(--primary-color);
+}
+
 
 /* -------------------- INTERAÇÕES (Ícones e Hover) -------------------- */
 .action-buttons {
@@ -93,24 +114,23 @@
     background-color: var(--secondary-bg-color, #f5f5f5); 
     border: 1px solid #eee;
     padding: 15px 0;
-    border-radius: 5px;
-    margin-top: 15px;
-    margin-bottom: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .interaction-item {
     display: flex;
     align-items: center;
-    gap: 5px;
-    /* Cor padrão para texto e ícones */
-    color: var(--text-color, #333); 
+    gap: 8px;
+    color: var(--text-muted, #6c6c6c); 
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.3s;
+    transition: color 0.3s ease;
 }
 
 .interaction-item i {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
 }
 
 .interaction-item:hover {
@@ -122,7 +142,7 @@
 .add-comment-section {
     margin-top: 30px;
     padding-top: 15px;
-    border-top: 1px solid #eee;
+    border-top: 2px solid #f0f2f5;
 }
 
 .comment-input-wrapper {
@@ -134,26 +154,33 @@
 .comment-input {
     width: 100%;
     min-height: 100px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px;
+    border: 1.5px solid #ccc;
+    border-radius: 8px;
     resize: vertical;
     font-size: 1em;
     box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(72, 73, 232, 0.2);
 }
 
 .submit-comment-btn {
     background-color: var(--primary-color, var(--fallback-primary));
     color: white;
-    padding: 10px 20px;
+    padding: 12px 25px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1em;
     transition: background-color 0.3s ease, color 0.3s ease;
-    font-weight: bolder;
-    align-self: flex-start;
-    width: 150px; 
+    font-weight: bold;
+    align-self: flex-end; /* Alinha o botão à direita */
+    width: auto; 
 }
 
 .submit-comment-btn:hover {
@@ -161,16 +188,20 @@
     color: var(--submit-hover-color);
 }
 
-/* -------------------- COMENTÁRIOS -------------------- */
+/* -------------------- SEÇÃO DE COMENTÁRIOS -------------------- */
+.comments-section {
+    margin-top: 20px;
+}
+
 .comment-box {
     display: flex;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     align-items: flex-start;
 }
 
 .comment-avatar {
-    width: 40px; 
-    height: 40px;
+    width: 45px; 
+    height: 45px;
     background-color: #ccc; 
     border-radius: 50%;
     margin-right: 15px;
@@ -185,4 +216,11 @@
 
 .comment-content {
     flex-grow: 1;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 0 12px 12px 12px;
+}
+
+.comment-text {
+    line-height: 1.6;
 }

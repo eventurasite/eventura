@@ -42,3 +42,9 @@
 .event-card-button:hover {
   background-color: #2563eb;
 }
+
+.event-card-link {
+  text-decoration: none; /* ADICIONE: Remove o sublinhado */
+  color: inherit;        /* ADICIONE: Faz o texto herdar a cor do elemento pai */
+  display: block;
+}

@@ -8,6 +8,8 @@
 .carousel-container-fixed {
   max-width: 940px;
   margin: 0 auto;
+  padding: 0 20px; /* Adiciona padding para telas menores */
+  box-sizing: border-box;
 }
 
 .carousel-header {
@@ -29,30 +31,28 @@
 
 .carousel-content {
   display: flex;
-  justify-content: space-between;
   gap: 30px;
 }
 
-.event-card {
+/* Card específico para o carrossel */
+.carousel-section .event-card {
   background-color: transparent;
-  color: var(--cor_1-branco);
   padding-bottom: 20px;
   box-shadow: none;
   text-align: left;
-  width: 310px;
+  width: 100%; /* Deixa a grade controlar a largura */
 }
 
-/* Contentor da imagem para aplicar o filtro */
-.image-container {
+.carousel-section .image-container {
   position: relative;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  width: 310px;
+  width: 100%; /* Ajusta-se à largura do card */
   height: 200px;
 }
 
-.image-container::before {
+.carousel-section .image-container::before {
   content: '';
   position: absolute;
   top: 0;
@@ -64,20 +64,23 @@
   z-index: 1;
 }
 
-.image-container img {
+.carousel-section .image-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.event-card h4 {
+/* --- CORREÇÃO DO TEXTO INVISÍVEL AQUI --- */
+.carousel-section .event-card h4 {
   font-family: 'Roboto', sans-serif;
   font-size: 18px;
   margin: 15px 0 10px;
+  color: var(--cor_1-branco); /* Garante que o texto seja branco */
+  font-weight: 700;
 }
 
-.event-card .carousel-button {
+.carousel-section .carousel-button {
   background-color: var(--cor_5-amarelo);
   color: var(--cor_3-roxo_escuro);
   font-weight: bold;
@@ -85,7 +88,15 @@
   padding: 8px 25px;
   border-radius: 5px;
   cursor: pointer;
+  text-decoration: none; /* Garante que o link não seja sublinhado */
+  display: inline-block;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+.carousel-section .carousel-button:hover {
+  background-color: #fff;
+}
+
 
 .carousel-navigation {
   margin-top: 30px;
