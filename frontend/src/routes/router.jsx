@@ -15,6 +15,7 @@ import Agenda from "../pages/Agenda";
 import ProtectedRoute from "../components/ProtectedRoute";
 import EventRegistration from "../pages/EventRegistration";
 import EventDetail from "../pages/EventDetail";
+import MyEvents from "../pages/MyEvents";
 
 
 export const router = createBrowserRouter([
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
   { path: "/evento", element: <EventDetail /> },
   { path: "/agenda", element: <Agenda /> },
   { path: "/registrarevento", element: <EventRegistration /> },
+  { path: "/meuseventos", element: <MyEvents/>},
   
 
   {
