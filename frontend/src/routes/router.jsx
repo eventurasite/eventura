@@ -10,6 +10,7 @@ import ForgotPassword from "../pages/ForgotPassword";
 import UserProfile from "../pages/UserProfile";
 import AdminDashboard from "../pages/AdminDashboard";
 import Sobre from "../pages/Sobre";
+import EventRegistration from "../pages/EventRegistration"; // <-- Importe a nova página
 import Agenda from "../pages/Agenda";
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -26,12 +27,20 @@ export const router = createBrowserRouter([
   { path: "/forgotpassword", element: <ForgotPassword /> },
   { path: "/resetpassword", element: <ResetPassword /> },
   { path: "/sobre", element: <Sobre /> },
-  // consertando rota para mandar o id
+  //ATENÇÃO AQUI ANTIGO CÓDIGO PARA REGISTAR O EVENTO  
+  /*{
+    path: "/event-registration",
+    element: (
+      <ProtectedRoute> {/* Protege a rota */}
+  //      <EventRegistration />
+  //    </ProtectedRoute>
+  //  ),
+  //},
+  // consertando rota para mandar o id 
   { path: "/event/:id", element: <EventDetail /> },
   { path: "/agenda", element: <Agenda /> },
   { path: "/registrarevento", element: <EventRegistration /> },
   { path: "/meuseventos", element: <MyEvents /> },
-
   {
     path: "/admin",
     element: (

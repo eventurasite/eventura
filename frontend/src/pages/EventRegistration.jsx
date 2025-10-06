@@ -1,46 +1,44 @@
 // frontend/src/pages/EventRegistration.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Button from "../components/Button";
 import TextField from "../components/TextField";
 import BackLink from "../components/BackLink";
 import { toast } from "react-toastify";
+import axios from "axios";
 
-// Importa os estilos (vamos criar este arquivo no próximo passo)
-import "./EventRegistration.css"; 
+import "./EventRegistration.css";
 
-// Opções mockadas para Categoria e Tipo de Ingresso
-// No projeto real, Categoria viria da API
-const CATEGORIAS = [
-  "Música",
-  "Esportes",
-  "Tecnologia",
-  "Arte e Cultura",
-  "Gastronomia",
-  "Comédia",
-];
-
-const TIPOS_INGRESSO = [
-  { value: "gratuito", label: "Gratuito" },
-  { value: "pago", label: "Pago" },
-];
+const API_BASE_URL = 'http://localhost:5000';
 
 export default function EventRegistration() {
-  // Estado dos campos
+  const navigate = useNavigate();
+  const [categorias, setCategorias] = useState([]);
   const [formData, setFormData] = useState({
     titulo: "",
     data: "",
-    hora: "",
-    categoria: "",
     local: "",
-    tipoIngresso: "gratuito",
-    preco: 0.0,
+    preco: "0",
+    id_categoria: "",
     descricao: "",
-    imagens: null, // Para armazenar o objeto FileList
   });
-
-  // Estado para a pré-visualização das imagens (opcional, para visualização no frontend)
+  const [imagens, setImagens] = useState([]); // Armazena os arquivos
   const [imagePreviews, setImagePreviews] = useState([]);
+
+  useEffect(() => {
+    // Busca as categorias da API quando o componente é montado
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        setCategorias(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error);
+        toast.error("Não foi possível carregar as categorias.");
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,44 +47,52 @@ export default function EventRegistration() {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setFormData((prev) => ({ ...prev, imagens: files }));
-    
-    // Gera pré-visualização das imagens
+    setImagens(files);
+
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
 
     if (files.length > 5) {
-      toast.warn("Recomendamos não subir mais de 5 imagens por evento.");
+      toast.warn("Você pode enviar no máximo 5 imagens.");
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (formData.tipoIngresso === "gratuito") {
-        formData.preco = 0.0;
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        toast.error("Você precisa estar logado para criar um evento.");
+        return;
     }
 
-    console.log("Dados do Evento a serem enviados (Ação Mockada):", formData);
-    toast.success("Evento submetido para cadastro! (Ação mockada)");
-
-    // TODO: Implementar a lógica de envio para a API (usando FormData para as imagens)
-    // Exemplo de como serializar:
-    /*
     const eventData = new FormData();
     eventData.append('titulo', formData.titulo);
-    // ... outros campos
-    formData.imagens.forEach((file, index) => {
-        eventData.append(`imagem_${index}`, file);
+    eventData.append('descricao', formData.descricao);
+    eventData.append('data', formData.data);
+    eventData.append('local', formData.local);
+    eventData.append('preco', formData.preco);
+    eventData.append('id_categoria', formData.id_categoria);
+    
+    imagens.forEach(imagem => {
+        eventData.append('imagens', imagem);
     });
 
-    axios.post('http://localhost:5000/api/events/create', eventData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-    })
-    */
+    try {
+        await axios.post(`${API_BASE_URL}/api/events`, eventData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        toast.success("Evento cadastrado com sucesso!");
+        setTimeout(() => navigate('/'), 2000); // Redireciona para a home
+
+    } catch (error) {
+        console.error("Erro ao cadastrar evento:", error);
+        toast.error(error.response?.data?.message || "Erro ao cadastrar o evento.");
+    }
   };
 
   return (
@@ -108,50 +114,37 @@ export default function EventRegistration() {
                   id="titulo"
                   label="Nome do Evento *"
                   name="titulo"
-                  type="text"
                   value={formData.titulo}
                   onChange={handleChange}
-                  placeholder="Nome do Evento"
                   required
                   isEditable={true}
                 />
                 
                 <TextField
                   id="data"
-                  label="Data *"
+                  label="Data e Hora *"
                   name="data"
-                  type="date"
+                  type="datetime-local"
                   value={formData.data}
                   onChange={handleChange}
                   required
                   isEditable={true}
                 />
 
-                <TextField
-                  id="hora"
-                  label="Hora *"
-                  name="hora"
-                  type="time"
-                  value={formData.hora}
-                  onChange={handleChange}
-                  required
-                  isEditable={true}
-                />
-
                 <div className="tf">
-                  <label htmlFor="categoria">Categoria *</label>
+                  <label htmlFor="id_categoria">Categoria *</label>
                   <select
-                    id="categoria"
-                    name="categoria"
-                    value={formData.categoria}
+                    id="id_categoria"
+                    name="id_categoria"
+                    value={formData.id_categoria}
                     onChange={handleChange}
                     required
-                    className="custom-select is-editable"
+                    className="custom-select"
                   >
                     <option value="" disabled>Selecione uma categoria</option>
-                    {CATEGORIAS.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                    {categorias.map((cat) => (
+                      <option key={cat.id_categoria} value={cat.id_categoria}>
+                        {cat.nome}
                       </option>
                     ))}
                   </select>
@@ -164,48 +157,25 @@ export default function EventRegistration() {
                   id="local"
                   label="Endereço *"
                   name="local"
-                  type="text"
                   value={formData.local}
                   onChange={handleChange}
-                  placeholder="Endereço completo do evento"
                   required
                   isEditable={true}
                 />
                 
-                <div className="tf">
-                  <label htmlFor="tipoIngresso">Tipo de Ingresso *</label>
-                  <select
-                    id="tipoIngresso"
-                    name="tipoIngresso"
-                    value={formData.tipoIngresso}
-                    onChange={handleChange}
-                    required
-                    className="custom-select is-editable"
-                  >
-                    {TIPOS_INGRESSO.map((tipo) => (
-                      <option key={tipo.value} value={tipo.value}>
-                        {tipo.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <TextField
                   id="preco"
-                  label="Preço do Ingresso"
+                  label="Preço do Ingresso (R$)"
                   name="preco"
                   type="number"
                   value={formData.preco}
                   onChange={handleChange}
-                  placeholder="0.00"
-                  required={formData.tipoIngresso === 'pago'}
-                  isEditable={formData.tipoIngresso === 'pago'}
-                  // Desabilita se for gratuito
-                  disabled={formData.tipoIngresso === 'gratuito'} 
+                  placeholder="0.00 para gratuito"
+                  isEditable={true}
                 />
 
                 <div className="tf">
-                  <label htmlFor="imagens">Anexar Imagens</label>
+                  <label htmlFor="imagens">Anexar Imagens (até 5) *</label>
                   <input
                     id="imagens"
                     type="file"
@@ -214,6 +184,7 @@ export default function EventRegistration() {
                     multiple
                     accept="image/*"
                     className="file-input"
+                    required
                   />
                   {imagePreviews.length > 0 && (
                     <div className="image-preview-container">
@@ -228,11 +199,9 @@ export default function EventRegistration() {
                     </div>
                   )}
                 </div>
-
               </div>
             </div>
 
-            {/* DESCRIÇÃO - ABAIXO DAS DUAS COLUNAS */}
             <div className="description-field">
               <label htmlFor="descricao">Descrição do Evento *</label>
               <textarea
@@ -240,12 +209,10 @@ export default function EventRegistration() {
                 name="descricao"
                 value={formData.descricao}
                 onChange={handleChange}
-                placeholder="Detalhes sobre o evento, atrações, público-alvo, etc."
                 required
               />
             </div>
             
-            {/* BOTÃO */}
             <div className="form-actions">
                 <Button type="submit" className="full">Cadastrar Evento</Button>
             </div>
