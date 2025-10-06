@@ -10,6 +10,7 @@ import ForgotPassword from "../pages/ForgotPassword";
 import UserProfile from "../pages/UserProfile";
 import AdminDashboard from "../pages/AdminDashboard";
 import Sobre from "../pages/Sobre";
+import Agenda from "../pages/Agenda";
 // import do nosso componente de proteção
 import ProtectedRoute from "../components/ProtectedRoute";
 import EventRegistration from "../pages/EventRegistration";
@@ -27,9 +28,9 @@ export const router = createBrowserRouter([
   { path: "/sobre", element: <Sobre /> },
   // A nova rota fixa para o nosso evento único
   { path: "/evento", element: <EventDetail /> },
+  { path: "/agenda", element: <Agenda /> },
+  { path: "/registrarevento", element: <EventRegistration /> },
   
-  // Linha AJUSTADA para usar :eventId
-  { path: "/evento/:eventId", element: <EventDetail /> },
 
   {
     path: "/admin",
