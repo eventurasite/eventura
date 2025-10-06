@@ -1,5 +1,5 @@
 // backend/src/services/eventService.ts
-import { PrismaClient } from "@prisma/client";
+import { Evento, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -20,7 +20,7 @@ export async function findAllEvents() {
 export async function findLatestEvents() {
   return prisma.evento.findMany({
     orderBy: {
-      data_criacao: 'desc', // Ordena pela data de criação, do mais novo para o mais antigo
+      data_criacao: "desc", // Ordena pela data de criação, do mais novo para o mais antigo
     },
     take: 3, // Limita o resultado a 3 eventos
     include: {
@@ -28,3 +28,14 @@ export async function findLatestEvents() {
     },
   });
 }
+//buscar por id
+export const getEventById = async (id: number): Promise<Evento | null> => {
+  try {
+    const event = await prisma.evento.findUnique({
+      where: { id_evento: id },
+    });
+    return event;
+  } catch (error: any) {
+    throw new Error(`Erro ao buscar evento: ${error.message}`);
+  }
+};

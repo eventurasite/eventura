@@ -1,6 +1,10 @@
 // backend/src/routes/eventRoutes.ts
 import { Router } from "express";
-import { getAllEvents, getLatestEvents } from "../controllers/eventController";
+import {
+  getAllEvents,
+  getLatestEvents,
+  getEvent,
+} from "../controllers/eventController";
 
 const router = Router();
 
@@ -10,4 +14,6 @@ router.get("/latest", getLatestEvents);
 // Rota para listar todos os eventos
 router.get("/", getAllEvents);
 
+// Rota para listar o evento pelo id
+router.get("/:id", getEvent);
 export default router;
