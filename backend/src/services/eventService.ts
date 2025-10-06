@@ -4,6 +4,49 @@ import { Evento, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 /**
+ * Criar um novo evento.
+ */
+export async function createEvent(eventData: { 
+  titulo: string;
+  descricao: string;
+  data: Date;
+  local: string;
+  preco: number;
+  id_categoria: number;
+  id_organizador: number;
+  imagens: { url: string }[];
+}) {
+  const { titulo, descricao, data, local, preco, id_categoria, id_organizador, imagens } = eventData;
+
+  // Cria o evento e as imagens associadas em uma única transação
+  return prisma.evento.create({
+    data: {
+      titulo,
+      descricao,
+      data,
+      local,
+      preco,
+      id_organizador,
+      id_categoria,
+      imagemEvento: {
+        create: imagens,
+      },
+    },
+    include: {
+      imagemEvento: true, // Retorna as imagens criadas
+    },
+  });
+}
+
+/**
+ * Listar todas as categorias de eventos.
+ */
+export async function findAllCategories() {
+  return prisma.categoria.findMany();
+}
+
+
+/**
  * Listar todos os eventos com suas imagens
  */
 export async function findAllEvents() {

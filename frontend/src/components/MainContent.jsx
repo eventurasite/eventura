@@ -1,10 +1,12 @@
 // frontend/src/components/MainContent.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- Importe o useNavigate
 import axios from 'axios';
 import './MainContent.css';
 
 function MainContent() {
   const [latestEvents, setLatestEvents] = useState([]);
+  const navigate = useNavigate(); // <-- Instancie o hook
 
   useEffect(() => {
     const fetchLatestEvents = async () => {
@@ -28,7 +30,10 @@ function MainContent() {
           <h1>Cada Evento Uma Nova Aventura!</h1>
           <p>Encontre e Divulgue os seus eventos na cidade de Uberaba!</p>
           <div className="main-buttons">
-            <button className="main-button divulgar">Divulgar</button>
+            {/* O botão agora usa o navigate para redirecionar */}
+            <button className="main-button divulgar" onClick={() => navigate('/event-registration')}>
+              Divulgar
+            </button>
             <button className="main-button encontre">
               Encontre
               <i className="bi bi-search"></i>
@@ -36,26 +41,25 @@ function MainContent() {
           </div>
         </div>
         <div className="main-right">
-          {/* Renderiza as imagens apenas se os dados já tiverem sido carregados */}
           {latestEvents.length > 0 && (
             <>
               <div className="image-container large-image">
                 <img 
-                  src={firstEvent?.imagemEvento[0]?.url || ''} 
-                  alt={firstEvent?.titulo || 'Evento'} 
+                  src={`http://localhost:5000${firstEvent?.imagemEvento[0]?.url}`} 
+                  alt={firstEvent?.titulo} 
                 />
               </div>
               <div className="main-right-column">
                 <div className="image-container small-image">
                   <img 
-                    src={secondEvent?.imagemEvento[0]?.url || ''} 
-                    alt={secondEvent?.titulo || 'Evento'} 
+                    src={`http://localhost:5000${secondEvent?.imagemEvento[0]?.url}`} 
+                    alt={secondEvent?.titulo}
                   />
                 </div>
                 <div className="image-container smallest-image">
                   <img 
-                    src={thirdEvent?.imagemEvento[0]?.url || ''} 
-                    alt={thirdEvent?.titulo || 'Evento'} 
+                    src={`http://localhost:5000${thirdEvent?.imagemEvento[0]?.url}`} 
+                    alt={thirdEvent?.titulo}
                   />
                 </div>
               </div>
