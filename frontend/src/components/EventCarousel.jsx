@@ -1,7 +1,10 @@
 // frontend/src/components/EventCarousel.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import './EventCarousel.css';
+
+const API_BASE_URL = "http://localhost:5000";
 
 const EventCarousel = () => {
   const [events, setEvents] = useState([]);
@@ -11,13 +14,12 @@ const EventCarousel = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/events');
+        const response = await axios.get(`${API_BASE_URL}/api/events`);
         setEvents(response.data);
       } catch (error) {
         console.error("Erro ao buscar eventos:", error);
       }
     };
-
     fetchEvents();
   }, []);
 
@@ -32,7 +34,7 @@ const EventCarousel = () => {
       setCurrentIndex(prevIndex => prevIndex - 1);
     }
   };
-
+  
   const visibleEvents = events.slice(currentIndex, currentIndex + cardsPerPage);
 
   return (
@@ -47,12 +49,14 @@ const EventCarousel = () => {
             <div key={event.id_evento} className="event-card">
               <div className="image-container">
                 <img 
-                  src={event.imagemEvento[0]?.url || '/assets/imagens/default-event.jpg'} 
+                  src={`${API_BASE_URL}${event.imagemEvento[0]?.url}`} 
                   alt={event.titulo} 
                 />
               </div>
               <h4>{event.titulo}</h4>
-              <button className="carousel-button">Veja Mais</button>
+              <Link to={`/event/${event.id_evento}`} className="carousel-button">
+                Veja Mais
+              </Link>
             </div>
           ))}
         </div>

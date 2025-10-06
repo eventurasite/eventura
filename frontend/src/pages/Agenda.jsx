@@ -100,11 +100,12 @@ export default function Agenda() {
                       <EventCard
                         key={event.id_evento}
                         id={event.id_evento}
-                        title={event.titulo}
+                        title={event.titulo} // O título já estava correto
                         date={event.data}
                         location={event.local}
                         category={event.categoria?.nome || "Sem categoria"}
-                        imageUrl={event.url_imagem}
+                        // CORREÇÃO AQUI: Passando a URL da primeira imagem do array
+                        imageUrl={event.imagemEvento[0]?.url} 
                       />
                     ))}
                   </div>

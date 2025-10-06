@@ -1,28 +1,32 @@
 // src/pages/EventDetail.jsx
 import React, { useState, useEffect } from "react";
-//usar id como parametro
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Header from "./../components/Header";
-// IMPORTAÇÃO CHAVE: Puxando o fundo que comprovadamente funciona
-import "./../pages/Login.css";
+import "./../pages/UserProfile.css"; // Reutiliza o estilo do container
 import "./EventDetail.css";
+
+// URL base da nossa API
+const API_BASE_URL = "http://localhost:5000";
 
 const EventDetail = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Função para buscar o evento na API
+  // Função para buscar o evento na API (com a URL correta)
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/eventos/${id}`);
-        if (!response.ok) throw new Error("Erro ao carregar evento");
-
+        // CORREÇÃO: URL, porta e caminho ajustados para a nossa API
+        const response = await fetch(`${API_BASE_URL}/api/events/${id}`);
+        if (!response.ok) {
+          throw new Error("Evento não encontrado");
+        }
         const data = await response.json();
         setEvent(data);
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
+        setEvent(null);
       } finally {
         setLoading(false);
       }
@@ -31,128 +35,84 @@ const EventDetail = () => {
     fetchEvent();
   }, [id]);
 
-  // Função auxiliar para formatar a data
+  // Função para formatar data e hora
   const formatDate = (isoDate) => {
-    return new Date(isoDate).toLocaleDateString("pt-BR", {
+    if (!isoDate) return "Data indefinida";
+    return new Date(isoDate).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "long",
       year: "numeric",
-      month: "numeric",
-      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
-
-  // Componente de Comentário (com avatar)
-  const CommentBox = ({ author, text }) => (
-    <div className="comment-box">
-      <div className="comment-avatar"></div>
-      <div className="comment-content">
-        <p className="comment-author">{author}</p>
-        <p className="comment-text">{text}</p>
-      </div>
-    </div>
-  );
-
-  // Componente de interação (curtidas, comentários etc.)
-  const InteractionButton = ({ type, label }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    const icons = {
-      heart: ["bi bi-heart", "bi bi-heart-fill"],
-      like: ["bi bi-hand-thumbs-up", "bi bi-hand-thumbs-up-fill"],
-      comment: ["bi bi-chat-dots", "bi bi-chat-dots-fill"],
-    };
-
-    const [baseIconClass, hoverIconClass] = icons[type] || [];
-
+  
+  // Tela de Carregamento
+  if (loading) {
     return (
-      <div
-        className="interaction-item"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <i className={isHovered ? hoverIconClass : baseIconClass}></i>
-        <span className="interaction-label">{label}</span>
-      </div>
+      <>
+        <Header />
+        <div className="user-profile-container" style={{ textAlign: 'center' }}>
+          <p>Carregando detalhes do evento...</p>
+        </div>
+      </>
     );
-  };
+  }
 
-  if (loading) return <p>Carregando evento...</p>;
-  if (!event) return <p>Evento não encontrado.</p>;
+  // Tela de Evento não Encontrado
+  if (!event) {
+    return (
+      <>
+        <Header />
+        <div className="user-profile-container" style={{ textAlign: 'center' }}>
+          <h2>Evento Não Encontrado</h2>
+          <p>O evento que você procura não existe ou foi removido.</p>
+          <Link to="/agenda">Voltar para a Agenda</Link>
+        </div>
+      </>
+    );
+  }
+
+  // Separa a imagem principal das miniaturas
+  const mainImage = event.imagemEvento?.[0];
+  const thumbnails = event.imagemEvento?.slice(1, 4) || [];
 
   return (
     <>
       <Header />
+      <div className="user-profile-container">
+        <div className="profile-wrapper">
+          <h1 className="event-title">{event.titulo}</h1>
 
-      <div className="page-container">
-        <h1 className="event-title">{event.titulo}</h1>
-
-        <section className="event-images">
-          <div className="main-image"></div>
-          <div className="thumbnail-gallery">
-            <div className="thumbnail"></div>
-            <div className="thumbnail"></div>
-            <div className="thumbnail"></div>
-          </div>
-        </section>
-
-        <section className="event-section description-section">
-          <h2>Descrição:</h2>
-          <p>{event.descricao}</p>
-        </section>
-
-        <section className="event-section info-section">
-          <h2>Informações Gerais:</h2>
-          <div className="info-grid">
-            <div className="info-column">
-              <p>
-                <strong>Data:</strong> {formatDate(event.data)}
-              </p>
-              <p>
-                <strong>Local:</strong> {event.local}
-              </p>
+          <section className="event-images">
+            <div className="main-image">
+              {mainImage && <img src={`${API_BASE_URL}${mainImage.url}`} alt={event.titulo} />}
             </div>
-            <div className="info-column">
-              <p>
-                <strong>Preço:</strong> R$ {event.preco}
-              </p>
-              <p>
-                <strong>Categoria:</strong> {event.categoria?.nome || "—"}
-              </p>
+            <div className="thumbnail-gallery">
+              {thumbnails.map((img) => (
+                <div key={img.id_imagem} className="thumbnail">
+                  <img src={`${API_BASE_URL}${img.url}`} alt="Miniatura do evento" />
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="event-section action-buttons">
-          <div className="interactions-container">
-            <InteractionButton type="heart" label="Curtidas" />
-            <InteractionButton type="like" label="Interesses" />
-            <InteractionButton type="comment" label="Comentários" />
-          </div>
-        </section>
+          <section className="event-section description-section">
+            <h2>Descrição do Evento</h2>
+            <p>{event.descricao}</p>
+          </section>
 
-        <section className="add-comment-section">
-          <h2>Adicionar Comentário</h2>
-          <div className="comment-input-wrapper">
-            <textarea
-              placeholder="Escreva seu comentário aqui..."
-              className="comment-input"
-            ></textarea>
-            <button className="submit-comment-btn">Comentar</button>
-          </div>
-        </section>
-
-        <section className="event-section comments-section">
-          <h2>Comentários:</h2>
-
-          <CommentBox
-            author="Ana Maria"
-            text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
-          />
-
-          <CommentBox
-            author="João"
-            text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
-          />
-        </section>
+          <section className="event-section info-section">
+            <h2>Informações Gerais</h2>
+            <div className="info-grid">
+              <p><strong>Data e Hora:</strong> {formatDate(event.data)}</p>
+              <p><strong>Local:</strong> {event.local}</p>
+              <p><strong>Preço:</strong> {parseFloat(event.preco) > 0 ? `R$ ${parseFloat(event.preco).toFixed(2)}` : "Gratuito"}</p>
+              <p><strong>Categoria:</strong> {event.categoria?.nome || "Não informada"}</p>
+              <p><strong>Organizador:</strong> {event.organizador?.nome || "Não informado"}</p>
+            </div>
+          </section>
+        </div>
       </div>
     </>
   );

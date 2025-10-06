@@ -1,23 +1,24 @@
 // frontend/src/components/MainContent.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Importe o useNavigate
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './MainContent.css';
 
+const API_BASE_URL = "http://localhost:5000";
+
 function MainContent() {
   const [latestEvents, setLatestEvents] = useState([]);
-  const navigate = useNavigate(); // <-- Instancie o hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLatestEvents = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/events/latest');
+        const response = await axios.get(`${API_BASE_URL}/api/events/latest`);
         setLatestEvents(response.data);
       } catch (error) {
         console.error("Erro ao buscar os últimos eventos:", error);
       }
     };
-
     fetchLatestEvents();
   }, []);
 
@@ -30,11 +31,10 @@ function MainContent() {
           <h1>Cada Evento Uma Nova Aventura!</h1>
           <p>Encontre e Divulgue os seus eventos na cidade de Uberaba!</p>
           <div className="main-buttons">
-            {/* O botão agora usa o navigate para redirecionar */}
-            <button className="main-button divulgar" onClick={() => navigate('/event-registration')}>
+            <button className="main-button divulgar" onClick={() => navigate('/registrarevento')}>
               Divulgar
             </button>
-            <button className="main-button encontre">
+            <button className="main-button encontre" onClick={() => navigate('/agenda')}>
               Encontre
               <i className="bi bi-search"></i>
             </button>
@@ -45,21 +45,21 @@ function MainContent() {
             <>
               <div className="image-container large-image">
                 <img 
-                  src={`http://localhost:5000${firstEvent?.imagemEvento[0]?.url}`} 
-                  alt={firstEvent?.titulo} 
+                  src={`${API_BASE_URL}${firstEvent?.imagemEvento[0]?.url}`} 
+                  alt={firstEvent?.titulo || 'Evento'} 
                 />
               </div>
               <div className="main-right-column">
                 <div className="image-container small-image">
                   <img 
-                    src={`http://localhost:5000${secondEvent?.imagemEvento[0]?.url}`} 
-                    alt={secondEvent?.titulo}
+                    src={`${API_BASE_URL}${secondEvent?.imagemEvento[0]?.url}`} 
+                    alt={secondEvent?.titulo || 'Evento'} 
                   />
                 </div>
                 <div className="image-container smallest-image">
                   <img 
-                    src={`http://localhost:5000${thirdEvent?.imagemEvento[0]?.url}`} 
-                    alt={thirdEvent?.titulo}
+                    src={`${API_BASE_URL}${thirdEvent?.imagemEvento[0]?.url}`} 
+                    alt={thirdEvent?.titulo || 'Evento'} 
                   />
                 </div>
               </div>

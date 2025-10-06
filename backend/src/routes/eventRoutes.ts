@@ -7,18 +7,19 @@ import {
   getLatestEvents,
   createEventController,
   getEvent,
-  getAllCategories
+  getAllCategories,
+  getMyEvents,
 } from "../controllers/eventController";
 import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = Router();
 const upload = multer(multerConfig);
 
-// Rota para criar um novo evento (protegida e com upload de imagens)
+// Rota para criar um novo evento
 router.post(
   "/", 
   authenticateToken, 
-  upload.array('imagens', 5), // 'imagens' é o nome do campo, 5 é o número máximo de arquivos
+  upload.array('imagens', 5),
   createEventController
 );
 
@@ -28,9 +29,14 @@ router.get("/categories", getAllCategories);
 // Rota para os últimos eventos
 router.get("/latest", getLatestEvents);
 
-// Rota para listar todos os eventos
+// NOVA ROTA: Listar eventos do próprio usuário (protegida)
+router.get("/my-events", authenticateToken, getMyEvents);
+
+// --- ORDEM CORRIGIDA AQUI ---
+// Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
+router.get("/:id", getEvent);
+
+// Rota para listar todos os eventos (agora é a última)
 router.get("/", getAllEvents);
 
-// Rota para listar o evento pelo id
-router.get("/:id", getEvent);
 export default router;

@@ -6,6 +6,7 @@ import {
   getEventById,
   createEvent,
   findAllCategories, 
+  findEventsByOrganizer, 
 } from "../services/eventService";
 
 /**
@@ -107,3 +108,16 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export async function getMyEvents(req: Request, res: Response): Promise<void> {
+  try {
+    // @ts-ignore - O req.user é adicionado pelo middleware de autenticação
+    const userId = req.user.id; 
+
+    const eventos = await findEventsByOrganizer(userId);
+    res.status(200).json(eventos);
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao listar seus eventos" });
+  }
+}

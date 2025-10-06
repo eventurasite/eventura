@@ -61,18 +61,17 @@ export default function MyEvents() {
                   <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
                   <div className="events-grid">
                     {groupedEvents[monthYear].map((event) => (
-                      <EventCard
-                        key={event.id_evento}
-                        id={event.id_evento}
-                        title={event.titulo}
-                        date={event.data}
-                        location={event.local}
-                        category={event.categoria?.nome || "N/A"}
-                        imageUrl={
-                          event.url_imagem || "/assets/imagens/default.jpg"
-                        }
-                      />
-                    ))}
+                    <EventCard
+                      key={event.id_evento}
+                      id={event.id_evento}
+                      title={event.titulo}
+                      date={event.data}
+                      location={event.local}
+                      category={event.categoria?.nome || "N/A"}
+                      // CORREÇÃO AQUI: Usando a propriedade correta
+                      imageUrl={event.imagemEvento[0]?.url}
+                    />
+                  ))}
                   </div>
                 </div>
               ))}
