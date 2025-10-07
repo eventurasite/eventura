@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import Header from "./../components/Header";
 import "./../pages/UserProfile.css"; // Reutiliza o estilo do container
 import "./EventDetail.css";
+import Button from "../components/Button"; // Importa o botão
 
 // URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
@@ -12,18 +13,27 @@ const EventDetail = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
 
-  // Função para buscar o evento na API (com a URL correta)
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        // CORREÇÃO: URL, porta e caminho ajustados para a nossa API
         const response = await fetch(`${API_BASE_URL}/api/events/${id}`);
         if (!response.ok) {
           throw new Error("Evento não encontrado");
         }
         const data = await response.json();
         setEvent(data);
+
+        // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
+        const loggedInUserId = localStorage.getItem('userId');
+
+        // Compara o ID do usuário logado com o ID do organizador que agora vem da API
+        if (loggedInUserId && data.organizador?.id_usuario == loggedInUserId) {
+          setIsOwner(true);
+        }
+        // ----------------------------------------
+
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
         setEvent(null);
@@ -35,7 +45,6 @@ const EventDetail = () => {
     fetchEvent();
   }, [id]);
 
-  // Função para formatar data e hora
   const formatDate = (isoDate) => {
     if (!isoDate) return "Data indefinida";
     return new Date(isoDate).toLocaleString("pt-BR", {
@@ -46,8 +55,7 @@ const EventDetail = () => {
       minute: "2-digit",
     });
   };
-  
-  // Tela de Carregamento
+
   if (loading) {
     return (
       <>
@@ -59,7 +67,6 @@ const EventDetail = () => {
     );
   }
 
-  // Tela de Evento não Encontrado
   if (!event) {
     return (
       <>
@@ -73,7 +80,6 @@ const EventDetail = () => {
     );
   }
 
-  // Separa a imagem principal das miniaturas
   const mainImage = event.imagemEvento?.[0];
   const thumbnails = event.imagemEvento?.slice(1, 4) || [];
 
@@ -82,6 +88,18 @@ const EventDetail = () => {
       <Header />
       <div className="user-profile-container">
         <div className="profile-wrapper">
+
+          {isOwner && (
+            <div className="owner-actions">
+              <Button className="edit-event-btn">
+                <i className="bi bi-pencil-fill"></i> Editar
+              </Button>
+              <Button className="delete-event-btn">
+                <i className="bi bi-trash-fill"></i> Excluir
+              </Button>
+            </div>
+          )}
+
           <h1 className="event-title">{event.titulo}</h1>
 
           <section className="event-images">

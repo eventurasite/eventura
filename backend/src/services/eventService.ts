@@ -87,6 +87,7 @@ export const getEventById = async (id: number): Promise<Evento | null> => {
         categoria: true,    // Para mostrar o nome da categoria
         organizador: {      // Para mostrar o nome do organizador
           select: {
+            id_usuario: true, // <-- CORREÇÃO AQUI: Precisamos do ID do organizador
             nome: true,
           },
         },
@@ -108,7 +109,7 @@ export async function findEventsByOrganizer(organizerId: number) {
       categoria: true,
     },
     orderBy: {
-      data: 'desc', // Opcional: ordena os eventos do mais recente para o mais antigo
+      data: 'desc', 
     },
   });
 }

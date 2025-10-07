@@ -224,3 +224,41 @@
 .comment-text {
     line-height: 1.6;
 }
+
+/* Adicione este código ao final do arquivo */
+
+/* --- BOTÕES DE AÇÃO DO DONO --- */
+.owner-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-bottom: 20px; /* Adiciona um espaço antes do título */
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.owner-actions .btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.edit-event-btn {
+  background-color: var(--cor_5-amarelo);
+  color: var(--cor_3-roxo_escuro);
+  border: 1px solid var(--cor_5-amarelo);
+}
+
+.edit-event-btn:hover {
+  background-color: #fdda0d;
+}
+
+.delete-event-btn {
+  background-color: #dc3545; /* Vermelho para exclusão */
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.delete-event-btn:hover {
+  background-color: #c82333;
+}
