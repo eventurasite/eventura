@@ -4,7 +4,8 @@ import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
 import EventCard from "../components/EventCard";
 import "./Agenda.css";
 
-const CATEGORIAS = [
+// EXPORTAÇÃO DA LISTA DE CATEGORIAS
+export const CATEGORIAS = [
   "Música",
   "Esportes",
   "Tecnologia",
