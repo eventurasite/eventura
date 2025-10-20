@@ -1,12 +1,12 @@
 // backend/src/services/eventService.ts
-import { Evento, PrismaClient } from "@prisma/client";
+import { Evento, PrismaClient, Prisma } from "@prisma/client"; // Importar Prisma
 
 const prisma = new PrismaClient();
 
 /**
  * Criar um novo evento.
  */
-export async function createEvent(eventData: { 
+export async function createEvent(eventData: {
   titulo: string;
   descricao: string;
   data: Date;
@@ -25,7 +25,7 @@ export async function createEvent(eventData: {
       descricao,
       data,
       local,
-      preco,
+      preco, // Prisma aceita number aqui
       id_organizador,
       id_categoria,
       imagemEvento: {
@@ -45,64 +45,18 @@ export async function findAllCategories() {
   return prisma.categoria.findMany();
 }
 
-/**
- * Excluir um evento, verificando a propriedade.
- */
-export async function deleteEvent(eventId: number, userId: number): Promise<void> {
-  // 1. Busca o evento para verificar o proprietário
-  const event = await prisma.evento.findUnique({
-    where: { id_evento: eventId },
-    select: { id_organizador: true }, // Seleciona apenas o ID do organizador
-  });
-
-  // 2. Verifica se o evento existe
-  if (!event) {
-    throw new Error('NOT_FOUND'); // Lança erro específico para evento não encontrado
-  }
-
-  // 3. Verifica se o usuário logado é o organizador
-  if (event.id_organizador !== userId) {
-    throw new Error('FORBIDDEN'); // Lança erro específico para acesso negado
-  }
-
-  // 4. Se tudo estiver ok, exclui o evento e suas imagens relacionadas (em uma transação)
-  //    Garante que ou tudo é deletado, ou nada é.
-  try {
-    await prisma.$transaction([
-      // Primeiro deleta as imagens (se houver alguma relação ou restrição)
-      prisma.imagemEvento.deleteMany({
-        where: { id_evento: eventId },
-      }),
-      // Depois deleta o evento principal
-      prisma.evento.delete({
-        where: { id_evento: eventId },
-      }),
-      // Adicione aqui a exclusão de outros dados relacionados se necessário (Comentarios, Curtidas, etc.)
-      // Ex: prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
-    ]);
-  } catch (dbError: any) {
-    console.error("Erro na transação de exclusão:", dbError);
-    // Lança um erro genérico se a transação falhar
-    throw new Error("Erro no banco de dados ao tentar excluir o evento.");
-  }
-}
-
-
-
-
 
 /**
  * Listar todos os eventos com suas imagens
  */
 export async function findAllEvents() {
   return prisma.evento.findMany({
-    // ADICIONADO: Ordena os resultados pela data de criação, em ordem decrescente
     orderBy: {
       data_criacao: "desc",
     },
     include: {
       imagemEvento: true,
-      categoria: true, // Mantém a inclusão da categoria
+      categoria: true,
     },
   });
 }
@@ -113,37 +67,47 @@ export async function findAllEvents() {
 export async function findLatestEvents() {
   return prisma.evento.findMany({
     orderBy: {
-      data_criacao: "desc", // Ordena pela data de criação, do mais novo para o mais antigo
+      data_criacao: "desc",
     },
-    take: 3, // Limita o resultado a 3 eventos
+    take: 3,
     include: {
-      imagemEvento: true, // Inclui as imagens associadas
+      imagemEvento: true,
     },
   });
 }
-//buscar por id
+
+/**
+ * Buscar evento por ID
+ */
 export const getEventById = async (id: number): Promise<Evento | null> => {
   try {
     const event = await prisma.evento.findUnique({
       where: { id_evento: id },
-      // ADIÇÃO: Inclui os dados relacionados que o frontend precisa
       include: {
-        imagemEvento: true, // Para mostrar as imagens
-        categoria: true,    // Para mostrar o nome da categoria
-        organizador: {      // Para mostrar o nome do organizador
+        imagemEvento: true,
+        categoria: true,
+        organizador: {
           select: {
-            id_usuario: true, // <-- CORREÇÃO AQUI: Precisamos do ID do organizador
+            id_usuario: true,
             nome: true,
           },
         },
       },
     });
-    return event;
+    // Retorna o evento completo (com tipo Decimal para preco)
+    // @ts-ignore Prisma retorna Decimal, mas para compatibilidade JS podemos converter se necessário
+    return event ? { ...event, preco: event.preco ? Number(event.preco) : 0 } : null;
+    // Ou apenas: return event; se o frontend não precisar de number
+     // return event; // <- Mantenha assim se o frontend já lida com Decimal (ou string)
   } catch (error: any) {
     throw new Error(`Erro ao buscar evento: ${error.message}`);
   }
 };
 
+
+/**
+ * Buscar eventos por organizador
+ */
 export async function findEventsByOrganizer(organizerId: number) {
   return prisma.evento.findMany({
     where: {
@@ -154,14 +118,16 @@ export async function findEventsByOrganizer(organizerId: number) {
       categoria: true,
     },
     orderBy: {
-      data: 'desc', 
+      data: 'desc',
     },
   });
 }
 
-// FUNÇÃO DE FILTRAGEM
+/**
+ * Filtrar Eventos
+ */
 export const getFilteredEvents = async (filtros: any) => {
-  const where: any = {};
+  const where: Prisma.EventoWhereInput = {}; // Usar tipo Prisma para melhor autocompletar
 
   // Categoria
   if (filtros.categoria) {
@@ -172,16 +138,19 @@ export const getFilteredEvents = async (filtros: any) => {
 
   // Mês (range de datas)
   if (filtros.mes) {
-    const year = new Date().getFullYear();
+    const year = new Date().getFullYear(); // Considerar eventos de anos futuros?
     const month = parseInt(filtros.mes);
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
+    if (!isNaN(month) && month >= 1 && month <= 12) {
+        const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0)); // Mês é 0-indexed
+        const endDate = new Date(Date.UTC(year, month, 1, 0, 0, 0)); // Início do próximo mês
 
-    where.data = {
-      gte: new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00Z`),
-      lt: new Date(`${nextYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00Z`),
-    };
+        where.data = {
+          gte: startDate,
+          lt: endDate,
+        };
+    }
   }
+
 
   // Preço (gratuito/pago)
   if (filtros.preco === "gratuito") where.preco = 0;
@@ -201,3 +170,120 @@ export const getFilteredEvents = async (filtros: any) => {
     orderBy: { data: "asc" },
   });
 };
+
+
+/**
+ * Excluir um evento, verificando a propriedade.
+ */
+export async function deleteEvent(eventId: number, userId: number): Promise<void> {
+  // 1. Busca o evento para verificar o proprietário
+  const event = await prisma.evento.findUnique({
+    where: { id_evento: eventId },
+    select: { id_organizador: true },
+  });
+
+  // 2. Verifica se o evento existe
+  if (!event) {
+    throw new Error('NOT_FOUND');
+  }
+
+  // 3. Verifica se o usuário logado é o organizador
+  if (event.id_organizador !== userId) {
+    throw new Error('FORBIDDEN');
+  }
+
+  // 4. Exclui o evento e suas imagens relacionadas (em uma transação)
+  try {
+    await prisma.$transaction([
+      prisma.imagemEvento.deleteMany({
+        where: { id_evento: eventId },
+      }),
+      // Adicione aqui a exclusão de outros dados relacionados se necessário (Comentarios, Curtidas, Denuncias, Inscricoes)
+      // prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
+      // prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
+      // prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
+      // prisma.inscricao.deleteMany({ where: { id_evento: eventId } }),
+
+      prisma.evento.delete({ // Deleta o evento principal por último
+        where: { id_evento: eventId },
+      }),
+    ]);
+  } catch (dbError: any) {
+    console.error("Erro na transação de exclusão:", dbError);
+    throw new Error("Erro no banco de dados ao tentar excluir o evento.");
+  }
+}
+
+/**
+ * Atualizar um evento existente, verificando propriedade.
+ */
+export async function updateEvent(
+  eventId: number,
+  userId: number,
+  data: { // Define o tipo de 'data' explicitamente aqui
+    titulo?: string;
+    descricao?: string;
+    data?: Date;
+    local?: string;
+    preco?: number; // Aceita number | undefined
+    id_categoria?: number;
+  }
+) {
+  // 1. Busca o evento para verificar o proprietário
+  const event = await prisma.evento.findUnique({
+    where: { id_evento: eventId },
+    select: { id_organizador: true },
+  });
+
+  // 2. Verifica se o evento existe
+  if (!event) {
+    throw new Error('NOT_FOUND');
+  }
+
+  // 3. Verifica se o usuário logado é o organizador
+  if (event.id_organizador !== userId) {
+    throw new Error('FORBIDDEN');
+  }
+
+  // 4. Validação básica
+  if (!data.titulo && !data.descricao && !data.data && !data.local && data.preco === undefined && !data.id_categoria) {
+      throw new Error('BAD_REQUEST');
+  }
+
+  // 5. Atualiza o evento no banco de dados
+  try {
+    // Cria um objeto de dados limpo apenas com os campos fornecidos
+    const dataToUpdate: Prisma.EventoUpdateInput = {};
+    if (data.titulo !== undefined) dataToUpdate.titulo = data.titulo;
+    if (data.descricao !== undefined) dataToUpdate.descricao = data.descricao;
+    if (data.data !== undefined) dataToUpdate.data = data.data;
+    if (data.local !== undefined) dataToUpdate.local = data.local;
+    if (data.preco !== undefined) dataToUpdate.preco = data.preco; // Passa 'number' diretamente
+    if (data.id_categoria !== undefined) {
+         // Precisa conectar a categoria pelo ID
+        dataToUpdate.categoria = { connect: { id_categoria: data.id_categoria } };
+    }
+
+
+    const eventoAtualizado = await prisma.evento.update({
+      where: { id_evento: eventId },
+      data: dataToUpdate, // Usa o objeto limpo
+      include: { // Mantém a inclusão de dados relacionados
+        imagemEvento: true,
+        categoria: true,
+        organizador: { select: { id_usuario: true, nome: true } },
+      },
+    });
+    // @ts-ignore Converte o Decimal retornado para number antes de enviar ao frontend, se necessário
+    return eventoAtualizado ? { ...eventoAtualizado, preco: eventoAtualizado.preco ? Number(eventoAtualizado.preco) : 0 } : null;
+     // Ou apenas: return eventoAtualizado; se o frontend lida com Decimal
+
+  } catch (dbError: any) {
+    console.error("Erro no DB ao atualizar evento:", dbError);
+    if (dbError instanceof Prisma.PrismaClientValidationError) {
+        console.error("Erro de validação do Prisma:", dbError.message);
+        throw new Error('BAD_REQUEST');
+    }
+    throw new Error("Erro no banco de dados ao tentar atualizar o evento.");
+  }
+}

@@ -17,6 +17,7 @@ import EventRegistration from "../pages/EventRegistration";
 import EventDetail from "../pages/EventDetail";
 import MyEvents from "../pages/MyEvents";
 import DenouncePage from "../pages/DenouncePage";
+import EventEdit from "../pages/EventEdit"; // <-- Importa a nova página de edição
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -25,37 +26,34 @@ export const router = createBrowserRouter([
   { path: "/resetpassword", element: <ResetPassword /> },
   { path: "/profile", element: <UserProfile /> },
   { path: "/forgotpassword", element: <ForgotPassword /> },
-  { path: "/resetpassword", element: <ResetPassword /> },
+  // { path: "/resetpassword", element: <ResetPassword /> }, // Duplicado, removido ou comente se necessário
   { path: "/sobre", element: <Sobre /> },
-  //ATENÇÃO AQUI ANTIGO CÓDIGO PARA REGISTAR O EVENTO  
-  /*{
-    path: "/event-registration",
-    element: (
-      <ProtectedRoute> {/* Protege a rota *///}
-  //      <EventRegistration />
-  //    </ProtectedRoute>
-  //  ),
-  //}, */
-  // consertando rota para mandar o id 
-  { path: "/event/:id", element: <EventDetail /> },
+  { path: "/event/:id", element: <EventDetail /> }, // Rota de detalhes
   { path: "/agenda", element: <Agenda /> },
-  { path: "/registrarevento", element: <EventRegistration /> },
+  { path: "/registrarevento", element: <EventRegistration /> }, // Rota para criar evento
   { path: "/meuseventos", element: <MyEvents /> },
-  // ROTA NOVA: Denúncia do Evento
-  // ROTA NOVA: Denúncia do Evento (Protegida)
-  { 
-    path: "/denuncia-evento/:id", 
+  {
+    path: "/denuncia-evento/:id",
     element: (
         <ProtectedRoute>
             <DenouncePage />
         </ProtectedRoute>
-    ) 
+    )
   },
-
+  // --- ROTA PARA EDIÇÃO ---
+  {
+    path: "/editar-evento/:id", // Rota para editar evento
+    element: (
+        <ProtectedRoute> {/* Garante que só usuários logados possam editar */}
+            <EventEdit />
+        </ProtectedRoute>
+    )
+  },
+  // --- ROTA ADMIN ---
   {
     path: "/admin",
     element: (
-      <ProtectedRoute allowedRoles={["administrador"]}>
+      <ProtectedRoute allowedRoles={["administrador"]}> {/* Protegida para admin */}
         <AdminDashboard />
       </ProtectedRoute>
     ),
