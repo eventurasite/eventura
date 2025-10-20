@@ -113,3 +113,46 @@ export async function findEventsByOrganizer(organizerId: number) {
     },
   });
 }
+
+// FUNÇÃO DE FILTRAGEM
+export const getFilteredEvents = async (filtros: any) => {
+  const where: any = {};
+
+  // Categoria
+  if (filtros.categoria) {
+    where.categoria = {
+      nome: { contains: filtros.categoria, mode: "insensitive" },
+    };
+  }
+
+  // Mês (range de datas)
+  if (filtros.mes) {
+    const year = new Date().getFullYear();
+    const month = parseInt(filtros.mes);
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+
+    where.data = {
+      gte: new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00Z`),
+      lt: new Date(`${nextYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00Z`),
+    };
+  }
+
+  // Preço (gratuito/pago)
+  if (filtros.preco === "gratuito") where.preco = 0;
+  else if (filtros.preco === "pago") where.preco = { gt: 0 };
+
+  // Busca por nome ou local
+  if (filtros.busca) {
+    where.OR = [
+      { titulo: { contains: filtros.busca, mode: "insensitive" } },
+      { local: { contains: filtros.busca, mode: "insensitive" } },
+    ];
+  }
+
+  return prisma.evento.findMany({
+    where,
+    include: { categoria: true, imagemEvento: true },
+    orderBy: { data: "asc" },
+  });
+};

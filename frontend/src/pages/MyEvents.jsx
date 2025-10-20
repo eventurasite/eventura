@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
-import { CATEGORIAS } from "./Agenda.jsx"; // Importa CATEGORIAS da Agenda
+import { CATEGORIAS } from "./Agenda.jsx";
 import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -15,12 +15,20 @@ const API_URL_MY_EVENTS = `${API_BASE_URL}/api/events/my-events`;
 export default function MyEvents() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // ESTADOS PARA OS FILTROS
+
+  // Estados dos selects (o que o usuário escolhe)
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedTicket, setSelectedTicket] = useState("");
 
+  // Estado para armazenar filtros aplicados
+  const [appliedFilters, setAppliedFilters] = useState({
+    category: "",
+    month: "",
+    ticket: "",
+  });
+
+  // Buscar eventos do usuário
   useEffect(() => {
     const fetchMyEvents = async () => {
       const token = localStorage.getItem("authToken");
@@ -44,37 +52,42 @@ export default function MyEvents() {
     fetchMyEvents();
   }, []);
 
-  // LÓGICA DE FILTRAGEM
-  const filteredEvents = events.filter(event => {
+  // Lógica de filtragem com base nos filtros aplicados (não nos selects diretamente)
+  const filteredEvents = events.filter((event) => {
     let match = true;
 
-    // Filtrar por Categoria
-    if (selectedCategory && event.categoria?.nome !== selectedCategory) {
+    // Categoria
+    if (appliedFilters.category && event.categoria?.nome !== appliedFilters.category) {
       match = false;
     }
 
-    // Filtrar por Mês (usando a data)
-    if (selectedMonth) {
-      const eventMonth = new Date(event.data).getMonth() + 1; // getMonth() é 0-base
-      if (eventMonth.toString() !== selectedMonth) {
+    // Mês
+    if (appliedFilters.month) {
+      const eventMonth = new Date(event.data).getMonth() + 1;
+      if (eventMonth.toString() !== appliedFilters.month) {
         match = false;
       }
     }
 
-    // Filtrar por Ingresso (Gratuito/Pago)
-    if (selectedTicket) {
+    // Ingresso
+    if (appliedFilters.ticket) {
       const isFree = parseFloat(event.preco) === 0;
-      if (selectedTicket === 'gratuito' && !isFree) {
-        match = false;
-      } else if (selectedTicket === 'pago' && isFree) {
-        match = false;
-      }
+      if (appliedFilters.ticket === "gratuito" && !isFree) match = false;
+      else if (appliedFilters.ticket === "pago" && isFree) match = false;
     }
 
     return match;
   });
 
-  const groupedEvents = groupEventsByMonth(filteredEvents); // Agrupa os eventos filtrados
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      category: selectedCategory,
+      month: selectedMonth,
+      ticket: selectedTicket,
+    });
+  };
+
+  const groupedEvents = groupEventsByMonth(filteredEvents);
   const monthsOrder = sortMonths(groupedEvents);
 
   return (
@@ -86,16 +99,15 @@ export default function MyEvents() {
             <h1>Meus Eventos</h1>
             <p>Aqui você gerencia todos os eventos que você cadastrou.</p>
           </div>
-          
-          {/* Divisor após o cabeçalho */}
+
           <hr className="agenda-divider" />
-          
-          {/* --- Filtros (Com Lógica de Estado) --- */}
+
+          {/* --- Filtros --- */}
           <div className="agenda-filters">
             <div className="filter-group">
               <label htmlFor="categoria">Categoria</label>
-              <select 
-                id="categoria" 
+              <select
+                id="categoria"
                 className="filter-select"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -108,17 +120,16 @@ export default function MyEvents() {
                 ))}
               </select>
             </div>
-            
+
             <div className="filter-group">
               <label htmlFor="mes">Mês</label>
-              <select 
-                id="mes" 
+              <select
+                id="mes"
                 className="filter-select"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
               >
                 <option value="">Selecione</option>
-                {/* Meses representados por seus números (1=Janeiro, 12=Dezembro) */}
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
                 <option value="3">Março</option>
@@ -133,11 +144,11 @@ export default function MyEvents() {
                 <option value="12">Dezembro</option>
               </select>
             </div>
-            
+
             <div className="filter-group">
               <label htmlFor="ingresso">Ingresso</label>
-              <select 
-                id="ingresso" 
+              <select
+                id="ingresso"
                 className="filter-select"
                 value={selectedTicket}
                 onChange={(e) => setSelectedTicket(e.target.value)}
@@ -147,13 +158,17 @@ export default function MyEvents() {
                 <option value="pago">Pago</option>
               </select>
             </div>
-            {/* O botão de pesquisa não precisa de onClick se o filtro for reativo */}
-            <button className="search-button" title="Pesquisar">
+
+            <button
+              className="search-button"
+              title="Pesquisar"
+              onClick={handleApplyFilters}
+            >
               <i className="bi bi-search"></i> Pesquisar
             </button>
           </div>
-          {/* Fim da seção de Filtros */}
 
+          {/* --- Listagem --- */}
           {isLoading ? (
             <p>Carregando seus eventos...</p>
           ) : filteredEvents.length === 0 ? (
@@ -162,13 +177,12 @@ export default function MyEvents() {
             <div className="agenda-list">
               {monthsOrder.map((monthYear, index) => (
                 <React.Fragment key={monthYear}>
-                    {/* Linha divisória antes de cada mês, exceto o primeiro */}
-                    {index > 0 && <hr className="agenda-divider" />} 
-                    <div className="month-group">
-                      <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
-                      <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
-                      <div className="events-grid">
-                        {groupedEvents[monthYear].map((event) => (
+                  {index > 0 && <hr className="agenda-divider" />}
+                  <div className="month-group">
+                    <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
+                    <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
+                    <div className="events-grid">
+                      {groupedEvents[monthYear].map((event) => (
                         <EventCard
                           key={event.id_evento}
                           id={event.id_evento}
@@ -179,29 +193,28 @@ export default function MyEvents() {
                           imageUrl={event.imagemEvento[0]?.url}
                         />
                       ))}
-                      </div>
                     </div>
+                  </div>
                 </React.Fragment>
               ))}
             </div>
           )}
 
-          {/* --- Botão Novo Evento (Bem Espaçado no Final) --- */}
-          <div style={{ textAlign: 'center', marginTop: '40px', marginBottom: '40px' }}>
-            <Link 
-              to="/registrarevento" 
-              className="agenda-button" 
-              style={{ 
-                borderRadius: '8px', 
-                padding: '12px 30px', 
-                fontSize: '16px'
+          {/* --- Botão Novo Evento --- */}
+          <div style={{ textAlign: "center", marginTop: "40px", marginBottom: "40px" }}>
+            <Link
+              to="/registrarevento"
+              className="agenda-button"
+              style={{
+                borderRadius: "8px",
+                padding: "12px 30px",
+                fontSize: "16px",
               }}
             >
-              <i className="bi bi-plus-circle-fill" style={{ marginRight: '8px' }}></i> Cadastrar Novo Evento
+              <i className="bi bi-plus-circle-fill" style={{ marginRight: "8px" }}></i>
+              Cadastrar Novo Evento
             </Link>
           </div>
-          {/* ------------------------------------------- */}
-
         </div>
       </div>
     </>

@@ -2,14 +2,7 @@
 import { Router } from "express";
 import multer from 'multer';
 import multerConfig from '../config/multer';
-import { 
-  getAllEvents, 
-  getLatestEvents,
-  createEventController,
-  getEvent,
-  getAllCategories,
-  getMyEvents,
-} from "../controllers/eventController";
+import * as eventController from "../controllers/eventController";
 import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -20,23 +13,25 @@ router.post(
   "/", 
   authenticateToken, 
   upload.array('imagens', 5),
-  createEventController
+  eventController.createEventController
 );
 
 // Rota para listar todas as categorias
-router.get("/categories", getAllCategories);
+router.get("/categories", eventController.getAllCategories);
 
 // Rota para os últimos eventos
-router.get("/latest", getLatestEvents);
+router.get("/latest", eventController.getLatestEvents);
 
 // NOVA ROTA: Listar eventos do próprio usuário (protegida)
-router.get("/my-events", authenticateToken, getMyEvents);
+router.get("/my-events", authenticateToken, eventController.getMyEvents);
 
-// --- ORDEM CORRIGIDA AQUI ---
+// NOVA ROTA DE FILTRO (adicione antes de /:id)
+router.get("/filter", eventController.getFilteredEvents);
+
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
-router.get("/:id", getEvent);
+router.get("/:id", eventController.getEvent);
 
 // Rota para listar todos os eventos (agora é a última)
-router.get("/", getAllEvents);
+router.get("/", eventController.getAllEvents);
 
 export default router;
