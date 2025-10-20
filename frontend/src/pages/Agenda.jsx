@@ -1,3 +1,4 @@
+// frontend/src/pages/Agenda.jsx
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
@@ -8,6 +9,7 @@ import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
 
+// Lista de categorias fixa (pode substituir por fetch se quiser dinamicamente)
 export const CATEGORIAS = [
   "Música",
   "Esportes",
@@ -23,64 +25,65 @@ export default function Agenda() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros principais (só atualizam ao clicar em Pesquisar)
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedTicket, setSelectedTicket] = useState("");
-  const [showPastEvents, setShowPastEvents] = useState(false);
-
-  // Filtros temporários (ligados aos selects/checkbox)
+  // Estados temporários para filtros
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
   const [tempTicket, setTempTicket] = useState("");
   const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
-  // Buscar eventos do backend
-  const fetchEvents = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/events`);
-      setAllEvents(response.data);
-      setEvents(
-        response.data.filter(
-          (e) => new Date(e.data) >= new Date().setHours(0, 0, 0, 0)
-        )
-      );
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Estados definitivos exibidos na UI
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState("");
+  const [showPastEvents, setShowPastEvents] = useState(false);
 
+  // Buscar todos os eventos ao carregar a página
   useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events`);
+        setAllEvents(response.data);
+      } catch (err) {
+        console.error("Erro ao carregar eventos:", err);
+        setError("Não foi possível carregar os eventos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEvents();
   }, []);
 
-  // Função para aplicar os filtros ao clicar em Pesquisar
   const applyFilters = () => {
     const now = new Date().setHours(0, 0, 0, 0);
     let filtered = allEvents;
 
+    // Filtrar eventos futuros se checkbox não marcado
     if (!tempShowPastEvents) {
       filtered = filtered.filter((e) => new Date(e.data) >= now);
     }
 
+    // Filtrar por categoria
     if (tempCategory) {
       filtered = filtered.filter((e) => e.categoria?.nome === tempCategory);
     }
 
+    // Filtrar por mês
     if (tempMonth) {
       filtered = filtered.filter(
         (e) => new Date(e.data).getMonth() + 1 === parseInt(tempMonth)
       );
     }
 
+    // Filtrar por ingresso
     if (tempTicket) {
-      filtered = filtered.filter((e) =>
-        tempTicket === "gratuito" ? e.preco === 0 : e.preco > 0
-      );
+      filtered = filtered.filter((e) => {
+        const precoNum = Number(e.preco);
+        return tempTicket === "gratuito" ? precoNum === 0 : precoNum > 0;
+      });
     }
 
+    // Atualiza os filtros na UI e a lista de eventos exibida
     setSelectedCategory(tempCategory);
     setSelectedMonth(tempMonth);
     setSelectedTicket(tempTicket);
@@ -99,12 +102,13 @@ export default function Agenda() {
       <Header />
       <div className="agenda-page-wrapper">
         <div className="agenda-content-wrapper">
+          {/* Cabeçalho */}
           <div className="agenda-header">
             <h1>Agenda</h1>
             <p>Confira todos os eventos!</p>
           </div>
 
-          {/* Filtros */}
+          {/* Filtros + Botão Pesquisar */}
           <div className="agenda-filters">
             <div className="filter-group">
               <label htmlFor="categoria">Categoria</label>
@@ -161,30 +165,29 @@ export default function Agenda() {
               </select>
             </div>
 
-            <button
-              className="search-button"
-              title="Pesquisar"
-              onClick={applyFilters}
-            >
-              <i className="bi bi-search"></i> Pesquisar
-            </button>
+            {/* Botão Pesquisar na mesma linha */}
+            <div className="filter-group" style={{ alignSelf: "flex-end" }}>
+              <button className="search-button" onClick={applyFilters}>
+                <i className="bi bi-search"></i> Pesquisar
+              </button>
+            </div>
           </div>
 
           {/* Checkbox em linha separada */}
-          <div className="checkbox-container">
+          <div className="agenda-filters" style={{ marginTop: "10px" }}>
             <label>
               <input
                 type="checkbox"
                 checked={tempShowPastEvents}
                 onChange={(e) => setTempShowPastEvents(e.target.checked)}
-              />
+              />{" "}
               Mostrar eventos passados
             </label>
           </div>
 
-          {/* Lista de eventos */}
+          {/* Listagem */}
           {events.length === 0 ? (
-            <p>Não há eventos que correspondam aos filtros.</p>
+            <p>Não há eventos cadastrados que correspondam aos filtros.</p>
           ) : (
             <div className="agenda-list">
               {monthsOrder.map((monthYear, index) => (
