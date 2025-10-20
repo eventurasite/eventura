@@ -16,6 +16,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import EventRegistration from "../pages/EventRegistration";
 import EventDetail from "../pages/EventDetail";
 import MyEvents from "../pages/MyEvents";
+import DenouncePage from "../pages/DenouncePage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -40,7 +41,17 @@ export const router = createBrowserRouter([
   { path: "/agenda", element: <Agenda /> },
   { path: "/registrarevento", element: <EventRegistration /> },
   { path: "/meuseventos", element: <MyEvents /> },
-  
+  // ROTA NOVA: Denúncia do Evento
+  // ROTA NOVA: Denúncia do Evento (Protegida)
+  { 
+    path: "/denuncia-evento/:id", 
+    element: (
+        <ProtectedRoute>
+            <DenouncePage />
+        </ProtectedRoute>
+    ) 
+  },
+
   {
     path: "/admin",
     element: (

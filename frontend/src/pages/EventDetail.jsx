@@ -1,10 +1,10 @@
 // src/pages/EventDetail.jsx
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom"; // Adicionado useNavigate
 import Header from "./../components/Header";
-import "./../pages/UserProfile.css"; // Reutiliza o estilo do container
+import "./../pages/UserProfile.css"; 
 import "./EventDetail.css";
-import Button from "../components/Button"; // Importa o botão
+import Button from "../components/Button";
 
 // URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
@@ -20,12 +20,13 @@ const CommentBox = ({ author, text }) => (
   </div>
 );
 
-// 2. Componente de Interação (com hover, contagem e lógica de clique)
-const InteractionButton = ({ type, label, count = 0, isActive, onClick }) => {
+// 2. Componente de Interação
+const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   let baseIconClass;
   let hoverIconClass;
+  let element;
 
   if (type === 'heart') {
     baseIconClass = "bi bi-heart";
@@ -41,32 +42,42 @@ const InteractionButton = ({ type, label, count = 0, isActive, onClick }) => {
     hoverIconClass = "bi bi-exclamation-triangle-fill";
   }
   
-  // Se estiver ativo, usa sempre o ícone preenchido, ignorando o hover
   const iconClass = isActive || isHovered ? hoverIconClass : baseIconClass;
   const activeClass = isActive ? "is-active-purple" : "";
 
-  return (
+  element = (
     <div 
-      className={`interaction-item ${activeClass}`}
+      className={`interaction-item ${activeClass} ${type === 'report' ? 'report-button' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-        <i className={iconClass}></i>
-        {count > 0 && <span className="interaction-count">{count}</span>}
-        <span className="interaction-label">{label}</span>
+      <i className={iconClass}></i>
+      {count > 0 && <span className="interaction-count">{count}</span>}
+      <span className="interaction-label">{label}</span>
     </div>
   );
+
+  // Se for o botão de Denunciar, o envolve em um Link de navegação
+  if (type === 'report') {
+    return (
+        <Link to={`/denuncia-evento/${eventId}`} style={{ textDecoration: 'none' }}>
+            {element}
+        </Link>
+    );
+  }
+
+  return element;
 };
 
 
 const EventDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate(); // Adicionado useNavigate
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
-  // --- NOVOS ESTADOS PARA CURTIDA E INTERESSE ---
   const [isLiked, setIsLiked] = useState(false);
   const [isInterested, setIsInterested] = useState(false);
 
@@ -165,19 +176,23 @@ const EventDetail = () => {
       <Header />
       <div className="user-profile-container">
         <div className="profile-wrapper">
+          
+          {/* Novo Wrapper para alinhar título e botões */}
+          <div className="event-header-actions-wrapper"> 
+            <h1 className="event-title">{event.titulo}</h1>
 
-          {isOwner && (
-            <div className="owner-actions">
-              <Button className="edit-event-btn">
-                <i className="bi bi-pencil-fill"></i> Editar
-              </Button>
-              <Button className="delete-event-btn">
-                <i className="bi bi-trash-fill"></i> Excluir
-              </Button>
-            </div>
-          )}
-
-          <h1 className="event-title">{event.titulo}</h1>
+            {isOwner && (
+              <div className="owner-actions">
+                <Button className="edit-event-btn">
+                  <i className="bi bi-pencil-fill"></i> Editar
+                </Button>
+                <Button className="delete-event-btn">
+                  <i className="bi bi-trash-fill"></i> Excluir
+                </Button>
+              </div>
+            )}
+          </div>
+          {/* FIM DO NOVO WRAPPER */}
 
           <section className="event-images">
             <div className="main-image">
@@ -208,7 +223,7 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* --- Botões de Interação (Com Lógica de Clique e Rolagem) --- */}
+          {/* --- Botões de Interação (Com Link de Denúncia) --- */}
           <section className="event-section action-buttons">
               <div className="interactions-container">
                   <InteractionButton 
@@ -229,17 +244,19 @@ const EventDetail = () => {
                     type="comment" 
                     label="Comentários" 
                     count={staticCounts.comentarios} 
-                    onClick={handleCommentClick} // Rola para a seção de comentários
+                    onClick={handleCommentClick} 
                   /> 
                   <InteractionButton 
                     type="report" 
                     label="Denunciar" 
+                    eventId={event.id_evento} // Passa o ID para a navegação
+                    onClick={() => navigate(`/denuncia-evento/${event.id_evento}`)} // Adiciona a navegação explícita
                   /> 
               </div>
           </section>
 
           {/* --- Área de Adicionar Comentário --- */}
-          <section className="add-comment-section" id="comments-section"> {/* Adicionado o ID para rolagem */}
+          <section className="add-comment-section" id="comments-section"> 
             <h2>Adicionar Comentário</h2>
             <div className="comment-input-wrapper">
                 <textarea 
