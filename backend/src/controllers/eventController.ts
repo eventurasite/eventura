@@ -1,13 +1,6 @@
 // backend/src/controllers/eventController.ts
 import { Request, Response } from "express";
-import { 
-  findAllEvents, 
-  findLatestEvents, 
-  getEventById,
-  createEvent,
-  findAllCategories, 
-  findEventsByOrganizer, 
-} from "../services/eventService";
+import * as eventService from "../services/eventService";
 
 /**
  * Criar um novo evento
@@ -26,7 +19,7 @@ export async function createEventController(req: Request, res: Response): Promis
 
     const imagens = files.map(file => ({ url: `/uploads/${file.filename}` }));
 
-    const evento = await createEvent({
+    const evento = await eventService.createEvent({
       titulo,
       descricao,
       data: new Date(data),
@@ -49,7 +42,7 @@ export async function createEventController(req: Request, res: Response): Promis
  */
 export async function getAllCategories(req: Request, res: Response): Promise<void> {
   try {
-    const categorias = await findAllCategories();
+    const categorias = await eventService.findAllCategories();
     res.status(200).json(categorias);
   } catch (error: any) {
     console.error(error);
@@ -62,22 +55,20 @@ export async function getAllCategories(req: Request, res: Response): Promise<voi
  */
 export async function getAllEvents(req: Request, res: Response): Promise<void> {
   try {
-    const eventos = await findAllEvents();
+    const eventos = await eventService.findAllEvents();
     res.status(200).json(eventos);
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Erro ao listar eventos" });
   }
 }
+
 /**
  * Listar os 3 últimos eventos
  */
-export async function getLatestEvents(
-  req: Request,
-  res: Response
-): Promise<void> {
+export async function getLatestEvents(req: Request, res: Response): Promise<void> {
   try {
-    const eventos = await findLatestEvents();
+    const eventos = await eventService.findLatestEvents();
     res.status(200).json(eventos);
   } catch (error: any) {
     console.error(error);
@@ -85,7 +76,9 @@ export async function getLatestEvents(
   }
 }
 
-// recebe id e busca
+/**
+ * Buscar evento por ID
+ */
 export const getEvent = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
@@ -96,7 +89,7 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const event = await getEventById(eventId);
+    const event = await eventService.getEventById(eventId);
 
     if (!event) {
       res.status(404).json({ message: "Evento não encontrado" });
@@ -109,15 +102,39 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/**
+ * Listar eventos do organizador autenticado
+ */
 export async function getMyEvents(req: Request, res: Response): Promise<void> {
   try {
     // @ts-ignore - O req.user é adicionado pelo middleware de autenticação
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
-    const eventos = await findEventsByOrganizer(userId);
+    const eventos = await eventService.findEventsByOrganizer(userId);
     res.status(200).json(eventos);
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Erro ao listar seus eventos" });
   }
 }
+
+/**
+ * FILTRAR EVENTOS
+ */
+export const getFilteredEvents = async (req: Request, res: Response) => {
+  try {
+    const { categoria, mes, preco, busca } = req.query;
+
+    const eventos = await eventService.getFilteredEvents({
+      categoria: categoria as string,
+      mes: mes as string,
+      preco: preco as string,
+      busca: busca as string,
+    });
+
+    res.json(eventos);
+  } catch (error) {
+    console.error("Erro ao filtrar eventos:", error);
+    res.status(500).json({ message: "Erro ao filtrar eventos." });
+  }
+};

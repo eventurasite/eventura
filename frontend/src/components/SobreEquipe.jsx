@@ -10,7 +10,7 @@ export default function SobreEquipe() {
       <div className="equipe-grid">
         <div className="equipe-card">
           <img
-            src="public/assets/imagens/lorena.jpeg"
+            src="/assets/imagens/lorena.jpeg"
             alt="Lorena"
             className="foto"
           />
@@ -19,7 +19,7 @@ export default function SobreEquipe() {
         </div>
         <div className="equipe-card">
           <img
-            src="public/assets/imagens/yasmin.jpeg"
+            src="/assets/imagens/yasmin.jpeg"
             alt="Yasmin"
             className="foto"
           />
@@ -28,7 +28,7 @@ export default function SobreEquipe() {
         </div>
         <div className="equipe-card">
           <img
-            src="public/assets/imagens/patrick.jpeg"
+            src="/assets/imagens/patrick.jpeg"
             alt="Patrick"
             className="foto"
           />
@@ -37,7 +37,7 @@ export default function SobreEquipe() {
         </div>
         <div className="equipe-card">
           <img
-            src="public/assets/imagens/victor.jpeg"
+            src="/assets/imagens/victor.jpeg"
             alt="Victor"
             className="foto"
           />
@@ -46,7 +46,7 @@ export default function SobreEquipe() {
         </div>
         <div className="equipe-card">
           <img
-            src="public/assets/imagens/mauro.jpeg"
+            src="/assets/imagens/mauro.jpeg"
             alt="Mauro"
             className="foto"
           />
