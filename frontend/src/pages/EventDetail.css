@@ -262,3 +262,7 @@
 .delete-event-btn:hover {
   background-color: #c82333;
 }
+
+.interaction-item.is-active-purple {
+    color: var(--primary-color, var(--fallback-primary));
+}

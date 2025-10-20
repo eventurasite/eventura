@@ -9,11 +9,89 @@ import Button from "../components/Button"; // Importa o botão
 // URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
 
+// 1. Componente de Comentário (com avatar)
+const CommentBox = ({ author, text }) => (
+  <div className="comment-box">
+    <div className="comment-avatar"></div> 
+    <div className="comment-content">
+      <p className="comment-author">{author}</p>
+      <p className="comment-text">{text}</p>
+    </div>
+  </div>
+);
+
+// 2. Componente de Interação (com hover, contagem e lógica de clique)
+const InteractionButton = ({ type, label, count = 0, isActive, onClick }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  let baseIconClass;
+  let hoverIconClass;
+
+  if (type === 'heart') {
+    baseIconClass = "bi bi-heart";
+    hoverIconClass = "bi bi-heart-fill";
+  } else if (type === 'like') {
+    baseIconClass = "bi bi-hand-thumbs-up";
+    hoverIconClass = "bi bi-hand-thumbs-up-fill";
+  } else if (type === 'comment') {
+    baseIconClass = "bi bi-chat-dots";
+    hoverIconClass = "bi bi-chat-dots-fill";
+  } else if (type === 'report') {
+    baseIconClass = "bi bi-exclamation-triangle";
+    hoverIconClass = "bi bi-exclamation-triangle-fill";
+  }
+  
+  // Se estiver ativo, usa sempre o ícone preenchido, ignorando o hover
+  const iconClass = isActive || isHovered ? hoverIconClass : baseIconClass;
+  const activeClass = isActive ? "is-active-purple" : "";
+
+  return (
+    <div 
+      className={`interaction-item ${activeClass}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
+    >
+        <i className={iconClass}></i>
+        {count > 0 && <span className="interaction-count">{count}</span>}
+        <span className="interaction-label">{label}</span>
+    </div>
+  );
+};
+
+
 const EventDetail = () => {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+
+  // --- NOVOS ESTADOS PARA CURTIDA E INTERESSE ---
+  const [isLiked, setIsLiked] = useState(false);
+  const [isInterested, setIsInterested] = useState(false);
+
+  // --- Contagens Estáticas para Demonstração ---
+  const staticCounts = {
+      curtidas: 15,
+      interesses: 20,
+      comentarios: 2,
+  };
+  
+  // Função para lidar com a rolagem até a seção de comentários
+  const handleCommentClick = () => {
+    document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  // Função para lidar com o toggle de Curtida
+  const handleLikeToggle = () => {
+      setIsLiked(prev => !prev);
+  };
+
+  // Função para lidar com o toggle de Interesse
+  const handleInterestToggle = () => {
+      setIsInterested(prev => !prev);
+  };
+
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -25,10 +103,9 @@ const EventDetail = () => {
         const data = await response.json();
         setEvent(data);
 
-        // --- LÓGICA DE VERIFICAÇÃO CORRIGIDA ---
+        // --- LÓGICA DE VERIFICAÇÃO ---
         const loggedInUserId = localStorage.getItem('userId');
 
-        // Compara o ID do usuário logado com o ID do organizador que agora vem da API
         if (loggedInUserId && data.organizador?.id_usuario == loggedInUserId) {
           setIsOwner(true);
         }
@@ -129,6 +206,63 @@ const EventDetail = () => {
               <p><strong>Categoria:</strong> {event.categoria?.nome || "Não informada"}</p>
               <p><strong>Organizador:</strong> {event.organizador?.nome || "Não informado"}</p>
             </div>
+          </section>
+
+          {/* --- Botões de Interação (Com Lógica de Clique e Rolagem) --- */}
+          <section className="event-section action-buttons">
+              <div className="interactions-container">
+                  <InteractionButton 
+                    type="heart" 
+                    label="Curtidas" 
+                    count={staticCounts.curtidas} 
+                    isActive={isLiked}
+                    onClick={handleLikeToggle}
+                  />
+                  <InteractionButton 
+                    type="like" 
+                    label="Interesses" 
+                    count={staticCounts.interesses} 
+                    isActive={isInterested}
+                    onClick={handleInterestToggle}
+                  />
+                  <InteractionButton 
+                    type="comment" 
+                    label="Comentários" 
+                    count={staticCounts.comentarios} 
+                    onClick={handleCommentClick} // Rola para a seção de comentários
+                  /> 
+                  <InteractionButton 
+                    type="report" 
+                    label="Denunciar" 
+                  /> 
+              </div>
+          </section>
+
+          {/* --- Área de Adicionar Comentário --- */}
+          <section className="add-comment-section" id="comments-section"> {/* Adicionado o ID para rolagem */}
+            <h2>Adicionar Comentário</h2>
+            <div className="comment-input-wrapper">
+                <textarea 
+                  placeholder="Escreva seu comentário aqui..." 
+                  className="comment-input"
+                ></textarea>
+                <button className="submit-comment-btn">Comentar</button>
+            </div>
+          </section>
+
+          {/* --- Listagem de Comentários Mockados --- */}
+          <section className="event-section comments-section">
+              <h2>Comentários:</h2>
+              
+              <CommentBox 
+                author="Ana Maria" 
+                text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam odio magna, laoreet eu urna tincidunt..."
+              />
+
+              <CommentBox 
+                author="João Silva" 
+                text="Ótima dica! Ansioso por este evento na cidade."
+              />
           </section>
         </div>
       </div>
