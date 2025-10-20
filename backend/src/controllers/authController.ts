@@ -9,9 +9,8 @@ import {
 } from "../services/authService";
 import * as authService from "../services/authService";
 
-
 /**
- * Criar usuário
+ * Criar usuário (registro local)
  */
 export async function register(req: Request, res: Response): Promise<void> {
   try {
@@ -24,23 +23,23 @@ export async function register(req: Request, res: Response): Promise<void> {
     console.error(error);
 
     if (error.message.includes("senha")) {
-      res.status(400).json({ message: error.message }); // mensagem de senha fraca
+      res.status(400).json({ message: error.message });
     } else if (error.message.includes("E-mail já cadastrado via Google")) {
       res.status(409).json({ provider: "google", message: error.message });
     } else if (error.message.includes("E-mail já cadastrado")) {
-      res.status(409).json({ message: error.message }); // 409 Conflict
+      res.status(409).json({ message: error.message });
     } else if (error.message.includes("Email não informado")) {
       res.status(400).json({ message: error.message });
     } else if (error.message.includes("Senha não informada")) {
       res.status(400).json({ message: error.message });
-    }else {
+    } else {
       res.status(500).json({ message: "Erro ao registrar usuário" });
     }
   }
 }
 
 /**
- * Login
+ * Login local (email e senha)
  */
 export async function login(req: Request, res: Response): Promise<void> {
   try {
@@ -57,7 +56,6 @@ export async function login(req: Request, res: Response): Promise<void> {
     console.error(error);
 
     if (error.code === "GOOGLE_LOGIN") {
-      // 👉 resposta especial para o frontend redirecionar
       res.status(400).json({ provider: "google", message: error.message });
     } else if (error.message.includes("Usuário não encontrado")) {
       res.status(404).json({ message: error.message });
@@ -152,6 +150,9 @@ export async function getAllUsers(req: Request, res: Response): Promise<void> {
   }
 }
 
+/**
+ * Esqueci minha senha
+ */
 export async function forgotPasswordController(req: Request, res: Response) {
   const { email } = req.body;
   try {
@@ -162,6 +163,9 @@ export async function forgotPasswordController(req: Request, res: Response) {
   }
 }
 
+/**
+ * Redefinir senha
+ */
 export async function resetPasswordController(req: Request, res: Response) {
   const { token, password } = req.body;
 
@@ -191,7 +195,7 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 
     res.status(200).json(usuario);
   } catch (error: any) {
-    console.error(error);
+    console.error("Erro em getMe:", error);
     res.status(500).json({ message: "Erro ao buscar dados do usuário" });
   }
 }

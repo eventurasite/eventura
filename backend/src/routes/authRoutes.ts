@@ -19,7 +19,32 @@ const router = Router();
 const upload = multer(multerConfig);
 
 // Rotas Google OAuth
-// ... (mantenha as rotas do Google)
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    prompt: "select_account", // <-- força o popup de escolha de conta
+  })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    session: false,
+  }),
+  (req, res) => {
+    const { token } = req.user as any;
+
+    if (!token) {
+      console.error("Token ausente em req.user:", req.user);
+      return res.status(500).json({ message: "Erro ao gerar token" });
+    }
+
+    res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+  }
+);
 
 router.post("/password/forgot", forgotPasswordController);
 router.post("/password/reset", resetPasswordController);
