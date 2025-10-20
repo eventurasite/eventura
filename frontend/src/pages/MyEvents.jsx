@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
+import { CATEGORIAS } from "./Agenda.jsx"; // Importa CATEGORIAS da Agenda
 import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -14,6 +15,11 @@ const API_URL_MY_EVENTS = `${API_BASE_URL}/api/events/my-events`;
 export default function MyEvents() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ESTADOS PARA OS FILTROS
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState("");
 
   useEffect(() => {
     const fetchMyEvents = async () => {
@@ -38,7 +44,37 @@ export default function MyEvents() {
     fetchMyEvents();
   }, []);
 
-  const groupedEvents = groupEventsByMonth(events);
+  // LÓGICA DE FILTRAGEM
+  const filteredEvents = events.filter(event => {
+    let match = true;
+
+    // Filtrar por Categoria
+    if (selectedCategory && event.categoria?.nome !== selectedCategory) {
+      match = false;
+    }
+
+    // Filtrar por Mês (usando a data)
+    if (selectedMonth) {
+      const eventMonth = new Date(event.data).getMonth() + 1; // getMonth() é 0-base
+      if (eventMonth.toString() !== selectedMonth) {
+        match = false;
+      }
+    }
+
+    // Filtrar por Ingresso (Gratuito/Pago)
+    if (selectedTicket) {
+      const isFree = parseFloat(event.preco) === 0;
+      if (selectedTicket === 'gratuito' && !isFree) {
+        match = false;
+      } else if (selectedTicket === 'pago' && isFree) {
+        match = false;
+      }
+    }
+
+    return match;
+  });
+
+  const groupedEvents = groupEventsByMonth(filteredEvents); // Agrupa os eventos filtrados
   const monthsOrder = sortMonths(groupedEvents);
 
   return (
@@ -54,16 +90,79 @@ export default function MyEvents() {
           {/* Divisor após o cabeçalho */}
           <hr className="agenda-divider" />
           
-          {/* A seção de filtros foi removida daqui */}
+          {/* --- Filtros (Com Lógica de Estado) --- */}
+          <div className="agenda-filters">
+            <div className="filter-group">
+              <label htmlFor="categoria">Categoria</label>
+              <select 
+                id="categoria" 
+                className="filter-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {CATEGORIAS.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label htmlFor="mes">Mês</label>
+              <select 
+                id="mes" 
+                className="filter-select"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                {/* Meses representados por seus números (1=Janeiro, 12=Dezembro) */}
+                <option value="1">Janeiro</option>
+                <option value="2">Fevereiro</option>
+                <option value="3">Março</option>
+                <option value="4">Abril</option>
+                <option value="5">Maio</option>
+                <option value="6">Junho</option>
+                <option value="7">Julho</option>
+                <option value="8">Agosto</option>
+                <option value="9">Setembro</option>
+                <option value="10">Outubro</option>
+                <option value="11">Novembro</option>
+                <option value="12">Dezembro</option>
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label htmlFor="ingresso">Ingresso</label>
+              <select 
+                id="ingresso" 
+                className="filter-select"
+                value={selectedTicket}
+                onChange={(e) => setSelectedTicket(e.target.value)}
+              >
+                <option value="">Selecione</option>
+                <option value="gratuito">Gratuito</option>
+                <option value="pago">Pago</option>
+              </select>
+            </div>
+            {/* O botão de pesquisa não precisa de onClick se o filtro for reativo */}
+            <button className="search-button" title="Pesquisar">
+              <i className="bi bi-search"></i> Pesquisar
+            </button>
+          </div>
+          {/* Fim da seção de Filtros */}
 
           {isLoading ? (
             <p>Carregando seus eventos...</p>
-          ) : events.length === 0 ? (
-            <p>Você não possui eventos cadastrados.</p>
+          ) : filteredEvents.length === 0 ? (
+            <p>Não há eventos cadastrados que correspondam aos filtros.</p>
           ) : (
             <div className="agenda-list">
               {monthsOrder.map((monthYear, index) => (
                 <React.Fragment key={monthYear}>
+                    {/* Linha divisória antes de cada mês, exceto o primeiro */}
                     {index > 0 && <hr className="agenda-divider" />} 
                     <div className="month-group">
                       <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
