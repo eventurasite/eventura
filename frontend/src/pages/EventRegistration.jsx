@@ -10,7 +10,7 @@ import axios from "axios";
 
 import "./EventRegistration.css";
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = "http://localhost:5000";
 
 export default function EventRegistration() {
   const navigate = useNavigate();
@@ -30,7 +30,9 @@ export default function EventRegistration() {
     // Busca as categorias da API quando o componente é montado
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/events/categories`
+        );
         setCategorias(response.data);
       } catch (error) {
         console.error("Erro ao buscar categorias:", error);
@@ -49,7 +51,7 @@ export default function EventRegistration() {
     const files = Array.from(e.target.files);
     setImagens(files);
 
-    const previews = files.map(file => URL.createObjectURL(file));
+    const previews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews(previews);
 
     if (files.length > 5) {
@@ -59,39 +61,40 @@ export default function EventRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
 
     if (!token) {
-        toast.error("Você precisa estar logado para criar um evento.");
-        return;
+      toast.error("Você precisa estar logado para criar um evento.");
+      return;
     }
 
     const eventData = new FormData();
-    eventData.append('titulo', formData.titulo);
-    eventData.append('descricao', formData.descricao);
-    eventData.append('data', formData.data);
-    eventData.append('local', formData.local);
-    eventData.append('preco', formData.preco);
-    eventData.append('id_categoria', formData.id_categoria);
-    
-    imagens.forEach(imagem => {
-        eventData.append('imagens', imagem);
+    eventData.append("titulo", formData.titulo);
+    eventData.append("descricao", formData.descricao);
+    eventData.append("data", formData.data);
+    eventData.append("local", formData.local);
+    eventData.append("preco", formData.preco);
+    eventData.append("id_categoria", formData.id_categoria);
+
+    imagens.forEach((imagem) => {
+      eventData.append("imagens", imagem);
     });
 
     try {
-        await axios.post(`${API_BASE_URL}/api/events`, eventData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+      await axios.post(`${API_BASE_URL}/api/events`, eventData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        toast.success("Evento cadastrado com sucesso!");
-        setTimeout(() => navigate('/'), 2000); // Redireciona para a home
-
+      toast.success("Evento cadastrado com sucesso!");
+      setTimeout(() => navigate("/"), 2000); // Redireciona para a home
     } catch (error) {
-        console.error("Erro ao cadastrar evento:", error);
-        toast.error(error.response?.data?.message || "Erro ao cadastrar o evento.");
+      console.error("Erro ao cadastrar evento:", error);
+      toast.error(
+        error.response?.data?.message || "Erro ao cadastrar o evento."
+      );
     }
   };
 
@@ -119,7 +122,7 @@ export default function EventRegistration() {
                   required
                   isEditable={true}
                 />
-                
+
                 <TextField
                   id="data"
                   label="Data e Hora *"
@@ -141,7 +144,9 @@ export default function EventRegistration() {
                     required
                     className="custom-select"
                   >
-                    <option value="" disabled>Selecione uma categoria</option>
+                    <option value="" disabled>
+                      Selecione uma categoria
+                    </option>
                     {categorias.map((cat) => (
                       <option key={cat.id_categoria} value={cat.id_categoria}>
                         {cat.nome}
@@ -162,7 +167,7 @@ export default function EventRegistration() {
                   required
                   isEditable={true}
                 />
-                
+
                 <TextField
                   id="preco"
                   label="Preço do Ingresso (R$)"
@@ -189,11 +194,11 @@ export default function EventRegistration() {
                   {imagePreviews.length > 0 && (
                     <div className="image-preview-container">
                       {imagePreviews.map((src, index) => (
-                        <img 
-                            key={index} 
-                            src={src} 
-                            alt={`Preview ${index + 1}`} 
-                            className="image-preview"
+                        <img
+                          key={index}
+                          src={src}
+                          alt={`Preview ${index + 1}`}
+                          className="image-preview"
                         />
                       ))}
                     </div>
@@ -212,9 +217,11 @@ export default function EventRegistration() {
                 required
               />
             </div>
-            
+
             <div className="form-actions">
-                <Button type="submit" className="full">Cadastrar Evento</Button>
+              <Button type="submit" className="full">
+                Cadastrar Evento
+              </Button>
             </div>
           </form>
         </div>
