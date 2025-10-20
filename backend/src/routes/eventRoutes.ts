@@ -31,9 +31,13 @@ router.get("/filter", eventController.getFilteredEvents);
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
 router.get("/:id", eventController.getEvent);
 
+// NOVA ROTA: Atualizar um evento (requer autenticação)
+router.put("/:id", authenticateToken, upload.array('imagens', 5), eventController.updateEventController);
+
+//Rota para excluir um evento (requer autenticação)
 router.delete("/:id", authenticateToken, eventController.deleteEventController);
 
-// Rota para listar todos os eventos (agora é a última)
+// Rota para listar todos os eventos
 router.get("/", eventController.getAllEvents);
 
 export default router;

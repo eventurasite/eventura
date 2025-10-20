@@ -8,7 +8,6 @@ import Button from "../components/Button"; // Importa o componente Button
 import axios from "axios"; // Importar axios
 import { toast } from "react-toastify"; // Importar toast
 
-
 // URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
 
@@ -61,7 +60,8 @@ const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId 
 
 
 const EventDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Pega o ID da URL
+  const eventId = id; // Renomeia para clareza no onClick do botão Editar
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,7 @@ const EventDetail = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/events/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`); // Usa eventId
         if (!response.ok) {
           throw new Error("Evento não encontrado");
         }
@@ -103,7 +103,7 @@ const EventDetail = () => {
     };
 
     fetchEvent();
-  }, [id]); // Dependência: id do evento
+  }, [eventId]); // Dependência: eventId
 
   // Formata a data
   const formatDate = (isoDate) => {
@@ -126,7 +126,7 @@ const EventDetail = () => {
     // Ação a ser executada se o usuário confirmar no toast
     const confirmAction = async () => {
       try {
-        await axios.delete(`${API_BASE_URL}/api/events/${id}`, {
+        await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, { // Usa eventId
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Evento excluído com sucesso!");
@@ -198,10 +198,11 @@ const EventDetail = () => {
             {/* Botões de Editar e Excluir (visíveis apenas para o dono) */}
             {isOwner && (
               <div className="owner-actions">
-                <Button className="edit-event-btn">
+                {/* Botão Editar agora navega para a página de edição */}
+                <Button className="edit-event-btn" onClick={() => navigate(`/editar-evento/${eventId}`)}>
                   <i className="bi bi-pencil-fill"></i> Editar
                 </Button>
-                {/* Botão Excluir agora chama handleDelete */}
+                {/* Botão Excluir chama handleDelete */}
                 <Button className="delete-event-btn" onClick={handleDelete}>
                   <i className="bi bi-trash-fill"></i> Excluir
                 </Button>
@@ -247,7 +248,7 @@ const EventDetail = () => {
                   <InteractionButton type="heart" label="Curtidas" count={staticCounts.curtidas} isActive={isLiked} onClick={handleLikeToggle} />
                   <InteractionButton type="like" label="Interesses" count={staticCounts.interesses} isActive={isInterested} onClick={handleInterestToggle} />
                   <InteractionButton type="comment" label="Comentários" count={staticCounts.comentarios} onClick={handleCommentClick} />
-                  <InteractionButton type="report" label="Denunciar" eventId={event.id_evento} />
+                  <InteractionButton type="report" label="Denunciar" eventId={eventId} /> {/* Usa eventId */}
               </div>
           </section>
 
@@ -263,6 +264,7 @@ const EventDetail = () => {
           {/* Seção Listagem de Comentários */}
           <section className="event-section comments-section">
               <h2>Comentários:</h2>
+              {/* Comentários Mockados */}
               <CommentBox author="Ana Maria" text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..." />
               <CommentBox author="João Silva" text="Ótima dica! Ansioso por este evento na cidade." />
           </section>
@@ -276,7 +278,7 @@ const EventDetail = () => {
 export default EventDetail;
 
 
-// --- Definição do ConfirmationToast
+// --- Definição do ConfirmationToast (COMENTE OU REMOVA SE JÁ ESTIVER IMPORTANDO DE UserProfile.jsx) ---
 
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
   <div className="toast-confirmation-body">

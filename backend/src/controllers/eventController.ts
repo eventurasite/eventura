@@ -1,6 +1,8 @@
 // backend/src/controllers/eventController.ts
 import { Request, Response } from "express";
 import * as eventService from "../services/eventService";
+// Importar tipos necessários
+import { Evento, Prisma } from "@prisma/client";
 
 /**
  * Criar um novo evento
@@ -24,7 +26,7 @@ export async function createEventController(req: Request, res: Response): Promis
       descricao,
       data: new Date(data),
       local,
-      preco: parseFloat(preco),
+      preco: parseFloat(preco), // Service aceita number
       id_categoria: parseInt(id_categoria, 10),
       id_organizador,
       imagens,
@@ -81,21 +83,15 @@ export async function getLatestEvents(req: Request, res: Response): Promise<void
  */
 export const getEvent = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-
   try {
     const eventId = Number(id);
     if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID inválido" });
-      return;
+      res.status(400).json({ message: "ID inválido" }); return;
     }
-
     const event = await eventService.getEventById(eventId);
-
     if (!event) {
-      res.status(404).json({ message: "Evento não encontrado" });
-      return;
+      res.status(404).json({ message: "Evento não encontrado" }); return;
     }
-
     res.status(200).json(event);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -103,46 +99,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Excluir um evento
- */
-export async function deleteEventController(req: Request, res: Response): Promise<void> {
-  try {
-    const eventId = parseInt(req.params.id, 10);
-    // @ts-ignore - req.user é adicionado pelo middleware
-    const userId = req.user.id;
-
-    if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID do evento inválido." });
-      return;
-    }
-
-    await eventService.deleteEvent(eventId, userId);
-
-    res.status(200).json({ message: "Evento excluído com sucesso." });
-    // Alternativamente, pode usar status 204 (No Content) sem corpo de resposta:
-    // res.status(204).send();
-
-  } catch (error: any) {
-    console.error("Erro ao excluir evento:", error);
-    if (error.message === 'NOT_FOUND') {
-      res.status(404).json({ message: "Evento não encontrado." });
-    } else if (error.message === 'FORBIDDEN') {
-      res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
-    } else {
-      res.status(500).json({ message: "Erro interno ao excluir o evento." });
-    }
-  }
-}
-
-
-/**
  * Listar eventos do organizador autenticado
  */
 export async function getMyEvents(req: Request, res: Response): Promise<void> {
   try {
-    // @ts-ignore - O req.user é adicionado pelo middleware de autenticação
+    // @ts-ignore
     const userId = req.user.id;
-
     const eventos = await eventService.findEventsByOrganizer(userId);
     res.status(200).json(eventos);
   } catch (error: any) {
@@ -157,17 +119,93 @@ export async function getMyEvents(req: Request, res: Response): Promise<void> {
 export const getFilteredEvents = async (req: Request, res: Response) => {
   try {
     const { categoria, mes, preco, busca } = req.query;
-
     const eventos = await eventService.getFilteredEvents({
       categoria: categoria as string,
       mes: mes as string,
       preco: preco as string,
       busca: busca as string,
     });
-
     res.json(eventos);
   } catch (error) {
     console.error("Erro ao filtrar eventos:", error);
     res.status(500).json({ message: "Erro ao filtrar eventos." });
   }
 };
+
+/**
+ * Excluir um evento
+ */
+export async function deleteEventController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id;
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+    await eventService.deleteEvent(eventId, userId);
+    res.status(200).json({ message: "Evento excluído com sucesso." });
+  } catch (error: any) {
+    console.error("Erro ao excluir evento:", error);
+    if (error.message === 'NOT_FOUND') res.status(404).json({ message: "Evento não encontrado." });
+    else if (error.message === 'FORBIDDEN') res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
+    else res.status(500).json({ message: "Erro interno ao excluir o evento." });
+  }
+}
+
+/**
+ * Atualizar um evento existente
+ */
+export async function updateEventController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id;
+
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+
+    const { titulo, descricao, data, local, preco, id_categoria } = req.body;
+
+    // --- CORREÇÃO APLICADA ---
+    // Define o tipo para o objeto que será passado para o service
+    // Este tipo corresponde ao esperado pela função updateEvent no service
+    const eventDataForService: {
+        titulo?: string;
+        descricao?: string;
+        data?: Date;
+        local?: string;
+        preco?: number; // Service espera number | undefined
+        id_categoria?: number;
+    } = {};
+
+    // Preenche o objeto apenas com os campos definidos que vieram do body
+    if (titulo !== undefined) eventDataForService.titulo = titulo;
+    if (descricao !== undefined) eventDataForService.descricao = descricao;
+    if (data !== undefined) eventDataForService.data = new Date(data);
+    if (local !== undefined) eventDataForService.local = local;
+    if (preco !== undefined) eventDataForService.preco = parseFloat(preco);
+    if (id_categoria !== undefined) eventDataForService.id_categoria = parseInt(id_categoria, 10);
+    // --- FIM DA CORREÇÃO ---
+
+
+    // Verifica se há algo para atualizar
+    if (Object.keys(eventDataForService).length === 0) {
+        res.status(400).json({ message: "Nenhum dado válido fornecido para atualização." });
+        return;
+    }
+
+    // Chama o service com o objeto tipado corretamente
+    const eventoAtualizado = await eventService.updateEvent(eventId, userId, eventDataForService);
+
+    res.status(200).json({ message: "Evento atualizado com sucesso!", evento: eventoAtualizado });
+
+  } catch (error: any) {
+    console.error("Erro ao atualizar evento:", error);
+    if (error.message === 'NOT_FOUND') res.status(404).json({ message: "Evento não encontrado." });
+    else if (error.message === 'FORBIDDEN') res.status(403).json({ message: "Você não tem permissão para editar este evento." });
+    else if (error.message === 'BAD_REQUEST') res.status(400).json({ message: "Dados inválidos fornecidos." });
+    else res.status(500).json({ message: "Erro interno ao atualizar o evento." });
+  }
+}
