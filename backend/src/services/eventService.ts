@@ -45,6 +45,51 @@ export async function findAllCategories() {
   return prisma.categoria.findMany();
 }
 
+/**
+ * Excluir um evento, verificando a propriedade.
+ */
+export async function deleteEvent(eventId: number, userId: number): Promise<void> {
+  // 1. Busca o evento para verificar o proprietário
+  const event = await prisma.evento.findUnique({
+    where: { id_evento: eventId },
+    select: { id_organizador: true }, // Seleciona apenas o ID do organizador
+  });
+
+  // 2. Verifica se o evento existe
+  if (!event) {
+    throw new Error('NOT_FOUND'); // Lança erro específico para evento não encontrado
+  }
+
+  // 3. Verifica se o usuário logado é o organizador
+  if (event.id_organizador !== userId) {
+    throw new Error('FORBIDDEN'); // Lança erro específico para acesso negado
+  }
+
+  // 4. Se tudo estiver ok, exclui o evento e suas imagens relacionadas (em uma transação)
+  //    Garante que ou tudo é deletado, ou nada é.
+  try {
+    await prisma.$transaction([
+      // Primeiro deleta as imagens (se houver alguma relação ou restrição)
+      prisma.imagemEvento.deleteMany({
+        where: { id_evento: eventId },
+      }),
+      // Depois deleta o evento principal
+      prisma.evento.delete({
+        where: { id_evento: eventId },
+      }),
+      // Adicione aqui a exclusão de outros dados relacionados se necessário (Comentarios, Curtidas, etc.)
+      // Ex: prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
+    ]);
+  } catch (dbError: any) {
+    console.error("Erro na transação de exclusão:", dbError);
+    // Lança um erro genérico se a transação falhar
+    throw new Error("Erro no banco de dados ao tentar excluir o evento.");
+  }
+}
+
+
+
+
 
 /**
  * Listar todos os eventos com suas imagens

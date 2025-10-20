@@ -31,6 +31,8 @@ router.get("/filter", eventController.getFilteredEvents);
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
 router.get("/:id", eventController.getEvent);
 
+router.delete("/:id", authenticateToken, eventController.deleteEventController);
+
 // Rota para listar todos os eventos (agora é a última)
 router.get("/", eventController.getAllEvents);
 

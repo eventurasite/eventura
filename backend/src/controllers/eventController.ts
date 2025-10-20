@@ -103,6 +103,39 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
+ * Excluir um evento
+ */
+export async function deleteEventController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore - req.user é adicionado pelo middleware
+    const userId = req.user.id;
+
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." });
+      return;
+    }
+
+    await eventService.deleteEvent(eventId, userId);
+
+    res.status(200).json({ message: "Evento excluído com sucesso." });
+    // Alternativamente, pode usar status 204 (No Content) sem corpo de resposta:
+    // res.status(204).send();
+
+  } catch (error: any) {
+    console.error("Erro ao excluir evento:", error);
+    if (error.message === 'NOT_FOUND') {
+      res.status(404).json({ message: "Evento não encontrado." });
+    } else if (error.message === 'FORBIDDEN') {
+      res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
+    } else {
+      res.status(500).json({ message: "Erro interno ao excluir o evento." });
+    }
+  }
+}
+
+
+/**
  * Listar eventos do organizador autenticado
  */
 export async function getMyEvents(req: Request, res: Response): Promise<void> {
