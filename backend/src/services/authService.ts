@@ -2,10 +2,14 @@ import { PrismaClient, TipoUsuario } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { generateToken, verifyToken } from "../utils/jwt";
 import { sendResetEmail } from "./mailService";
+import {
+  validateEmail,
+  validateSenha,
+  validatePasswordStrength,
+} from "../utils/validation";
 
 const prisma = new PrismaClient();
 
-import { validateEmail, validateSenha,validatePasswordStrength } from "../utils/validation";
 /**
  * Criar usuário local
  */
@@ -70,17 +74,19 @@ export async function loginUser({
   validateEmail(usuario.email);
   validateSenha(usuario.senha);
 
-const isPasswordValid = await bcrypt.compare(senha, usuario.senha!); 
-if (!isPasswordValid) {
-  throw new Error("Senha incorreta");
-}
-
+  const isPasswordValid = await bcrypt.compare(senha, usuario.senha!);
+  if (!isPasswordValid) {
+    throw new Error("Senha incorreta");
+  }
 
   const token = generateToken({ id: usuario.id_usuario, email: usuario.email });
 
   return { ...usuario, token };
 }
 
+/**
+ * Esqueci minha senha
+ */
 export async function forgotPassword(email: string) {
   validateEmail(email);
 
@@ -93,14 +99,15 @@ export async function forgotPassword(email: string) {
   const token = generateToken({ id: user.id_usuario });
   const resetLink = `${process.env.APP_URL}/resetpassword?token=${token}`;
 
-  // agora dispara o e-mail
   await sendResetEmail(user.email, resetLink);
 
   return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
 }
 
+/**
+ * Redefinir senha
+ */
 export async function resetPassword(token: string, password: string) {
-  // validações
   validateSenha(password);
   validatePasswordStrength(password);
 
@@ -159,10 +166,12 @@ export async function editUser(id: number, data: any) {
   // 4. Preenche o objeto apenas com os dados permitidos que vieram na requisição.
   if (data.nome) updatableData.nome = data.nome;
   if (data.email) updatableData.email = data.email;
-  // Permite salvar telefone como string vazia para "limpar" o campo
-  if (typeof data.telefone !== 'undefined') updatableData.telefone = data.telefone;
-  if (typeof data.descricao !== 'undefined') updatableData.descricao = data.descricao;
-  if (data.url_foto_perfil) updatableData.url_foto_perfil = data.url_foto_perfil;
+  if (typeof data.telefone !== "undefined")
+    updatableData.telefone = data.telefone;
+  if (typeof data.descricao !== "undefined")
+    updatableData.descricao = data.descricao;
+  if (data.url_foto_perfil)
+    updatableData.url_foto_perfil = data.url_foto_perfil;
 
   // 5. Envia ao Prisma apenas os dados seguros para a atualização.
   return prisma.usuario.update({
@@ -179,15 +188,34 @@ export async function removeUser(id: number) {
 }
 
 /**
- * Buscar usuário por ID
+ * Buscar usuário por ID (sem expor senha)
  */
 export async function findUserById(id: number) {
-  return prisma.usuario.findUnique({ where: { id_usuario: id } });
+  return prisma.usuario.findUnique({
+    where: { id_usuario: id },
+    select: {
+      id_usuario: true,
+      nome: true,
+      email: true,
+      tipo: true,
+      url_foto_perfil: true,
+      descricao: true,
+    },
+  });
 }
 
 /**
- * Listar todos os usuários
+ * Listar todos os usuários (sem expor senhas)
  */
 export async function findAllUsers() {
-  return prisma.usuario.findMany();
+  return prisma.usuario.findMany({
+    select: {
+      id_usuario: true,
+      nome: true,
+      email: true,
+      tipo: true,
+      url_foto_perfil: true,
+      descricao: true,
+    },
+  });
 }
