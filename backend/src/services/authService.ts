@@ -10,6 +10,16 @@ import {
 
 const prisma = new PrismaClient();
 
+const userSelectData = {
+  id_usuario: true,
+  nome: true,
+  email: true,
+  tipo: true,
+  url_foto_perfil: true,
+  descricao: true,
+  telefone: true,
+};
+
 /**
  * Criar usuário local
  */
@@ -175,11 +185,11 @@ export async function editUser(id: number, data: any) {
 
   // 5. Envia ao Prisma apenas os dados seguros para a atualização.
   return prisma.usuario.update({
-    where: { id_usuario: id },
-    data: updatableData,
-  });
+  where: { id_usuario: id },
+  data: updatableData,
+  select: userSelectData,
+});
 }
-
 /**
  * Excluir usuário
  */
@@ -193,14 +203,7 @@ export async function removeUser(id: number) {
 export async function findUserById(id: number) {
   return prisma.usuario.findUnique({
     where: { id_usuario: id },
-    select: {
-      id_usuario: true,
-      nome: true,
-      email: true,
-      tipo: true,
-      url_foto_perfil: true,
-      descricao: true,
-    },
+    select: userSelectData, // <-- USA O OBJETO REUTILIZÁVEL
   });
 }
 

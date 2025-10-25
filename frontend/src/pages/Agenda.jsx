@@ -118,7 +118,7 @@ export default function Agenda() {
                 value={tempCategory}
                 onChange={(e) => setTempCategory(e.target.value)}
               >
-                <option value="">Selecione</option>
+                <option value="">Todas</option>
                 {CATEGORIAS.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -135,7 +135,7 @@ export default function Agenda() {
                 value={tempMonth}
                 onChange={(e) => setTempMonth(e.target.value)}
               >
-                <option value="">Selecione</option>
+                <option value="">Todos</option>
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
                 <option value="3">Março</option>
@@ -159,7 +159,7 @@ export default function Agenda() {
                 value={tempTicket}
                 onChange={(e) => setTempTicket(e.target.value)}
               >
-                <option value="">Selecione</option>
+                <option value="">Todos</option>
                 <option value="gratuito">Gratuito</option>
                 <option value="pago">Pago</option>
               </select>

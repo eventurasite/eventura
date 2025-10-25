@@ -109,15 +109,20 @@ export default function UserProfile() {
     }
   
     try {
-      await axios.put(`${API_BASE_URL}/api/auth/${user.id_usuario}`, updatedUser, {
+    // 1. Captura a resposta do backend
+      const response = await axios.put(`${API_BASE_URL}/api/auth/${user.id_usuario}`, updatedUser, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setUser(updatedUser);
-      if (updatedUser.url_foto_perfil) {
-        const fullUrl = `${API_BASE_URL}${updatedUser.url_foto_perfil}`;
+      // 2. Extrai o usuário ATUALIZADO da resposta
+      const userFromApi = response.data.usuario; 
+
+      setUser(userFromApi); // <-- CORREÇÃO: Usa os dados que vieram da API
+
+      if (userFromApi.url_foto_perfil) { // 3. Usa a variável userFromApi aqui
+        const fullUrl = `${API_BASE_URL}${userFromApi.url_foto_perfil}`;
         setPreview(fullUrl);
-        localStorage.setItem('userPhotoUrl', updatedUser.url_foto_perfil);
+        localStorage.setItem('userPhotoUrl', userFromApi.url_foto_perfil);
       } else {
         setPreview(null);
         localStorage.setItem('userPhotoUrl', '');
