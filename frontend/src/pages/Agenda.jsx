@@ -37,26 +37,14 @@ export default function Agenda() {
   const [selectedTicket, setSelectedTicket] = useState("");
   const [showPastEvents, setShowPastEvents] = useState(false);
 
-  // Buscar todos os eventos ao carregar a página
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/events`);
-        setAllEvents(response.data);
-      } catch (err) {
-        console.error("Erro ao carregar eventos:", err);
-        setError("Não foi possível carregar os eventos.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-
-  const applyFilters = () => {
+  // --- ALTERAÇÃO 1: Modificamos a função applyFilters para aceitar dados ---
+  // Ela usará os 'dadosRecebidos' se eles forem passados (no carregamento da página),
+  // ou usará o estado 'allEvents' se for chamada pelo botão (sem argumentos).
+  const applyFilters = (dadosRecebidos) => {
+    const eventosParaFiltrar = dadosRecebidos || allEvents;
+    
     const now = new Date().setHours(0, 0, 0, 0);
-    let filtered = allEvents;
+    let filtered = eventosParaFiltrar;
 
     // Filtrar eventos futuros se checkbox não marcado
     if (!tempShowPastEvents) {
@@ -90,6 +78,29 @@ export default function Agenda() {
     setShowPastEvents(tempShowPastEvents);
     setEvents(filtered);
   };
+
+  // --- ALTERAÇÃO 2: Chamamos applyFilters() dentro do useEffect ---
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events`);
+        setAllEvents(response.data);
+        
+        // ADICIONADO: Aplica o filtro inicial (para mostrar eventos futuros)
+        // assim que os dados são carregados.
+        applyFilters(response.data); 
+
+      } catch (err) {
+        console.error("Erro ao carregar eventos:", err);
+        setError("Não foi possível carregar os eventos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []); // A dependência [] está correta, só executa uma vez.
+
 
   if (loading) return <p>Carregando eventos...</p>;
   if (error) return <p>Erro: {error}</p>;
@@ -167,7 +178,8 @@ export default function Agenda() {
 
             {/* Botão Pesquisar na mesma linha */}
             <div className="filter-group" style={{ alignSelf: "flex-end" }}>
-              <button className="search-button" onClick={applyFilters}>
+              {/* --- ALTERAÇÃO 3: Garantir que o botão chame applyFilters sem argumentos --- */}
+              <button className="search-button" onClick={() => applyFilters()}>
                 <i className="bi bi-search"></i> Pesquisar
               </button>
             </div>
@@ -186,6 +198,9 @@ export default function Agenda() {
           </div>
 
           {/* Listagem */}
+          {/* Agora, 'events.length' será > 0 se a API retornar eventos
+            e o filtro inicial (de eventos futuros) encontrar algo.
+          */}
           {events.length === 0 ? (
             <p>Não há eventos cadastrados que correspondam aos filtros.</p>
           ) : (
