@@ -109,10 +109,11 @@ export async function forgotPassword(email: string) {
   const token = generateToken({ id: user.id_usuario });
   const resetLink = `${process.env.APP_URL}/resetpassword?token=${token}`;
 
-  await sendResetEmail(user.email, resetLink);
+  await sendResetEmail(user.email, user.nome, resetLink);
 
   return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
 }
+
 
 /**
  * Redefinir senha
