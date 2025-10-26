@@ -1,4 +1,4 @@
-// frontend/src/pages/MyEvents.jsx
+// frontend/src/pages/MyInterests.jsx
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import EventCard from "../components/EventCard";
@@ -6,56 +6,57 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
-import { CATEGORIAS } from "./Agenda.jsx"; // Importa CATEGORIAS da Agenda
+import { CATEGORIAS } from "./Agenda.jsx"; 
 import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
-const API_URL_MY_EVENTS = `${API_BASE_URL}/api/events/my-events`;
+// ROTA DE INTERESSES (requer implementação no backend)
+const API_URL_MY_INTERESTS = `${API_BASE_URL}/api/events/my-interests`; 
 
-export default function MyEvents() {
-  const [events, setEvents] = useState([]); // Eventos brutos da API
+export default function MyInterests() {
+  const [events, setEvents] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
-
-  // Estados temporários para os selects (o que o usuário escolhe)
+  
+  // Estados temporários para os selects
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
   const [tempTicket, setTempTicket] = useState("");
-  const [tempShowPastEvents, setTempShowPastEvents] = useState(false); // NOVO: Checkbox
+  const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
   // Estado para armazenar filtros aplicados (para re-filtrar no cliente)
   const [appliedFilters, setAppliedFilters] = useState({
     category: "",
     month: "",
     ticket: "",
-    showPastEvents: false, // NOVO: Estado aplicado do checkbox
+    showPastEvents: false,
   });
-  
-  // Buscar eventos do usuário
+
+  // Buscar eventos de interesse do usuário
   useEffect(() => {
-    const fetchMyEvents = async () => {
+    const fetchMyInterests = async () => {
       const token = localStorage.getItem("authToken");
       if (!token) return setIsLoading(false);
 
       try {
-        const response = await axios.get(API_URL_MY_EVENTS, {
+        const response = await axios.get(API_URL_MY_INTERESTS, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(response.data);
         // Aplica os filtros iniciais (todos os eventos)
-        handleApplyFilters(response.data); 
+        handleApplyFilters(response.data);
       } catch (error) {
-        console.error("Erro ao buscar Meus Eventos:", error);
+        console.error("Erro ao buscar Meus Interesses:", error);
         toast.error(
           error.response?.data?.message ||
-            "Não foi possível carregar seus eventos."
+            "Não foi possível carregar seus eventos de interesse."
         );
       } finally {
         setIsLoading(false);
       }
     };
-    fetchMyEvents();
+    fetchMyInterests();
   }, []);
-  
+
   // LÓGICA DE FILTRAGEM UNIFICADA (Idêntica à Agenda.jsx)
   const applyFilters = (eventsToFilter = events) => {
     const now = new Date().setHours(0, 0, 0, 0);
@@ -95,19 +96,14 @@ export default function MyEvents() {
     });
     return filtered;
   };
-
+  
   const handleApplyFilters = (initialEvents = events) => {
     const finalFiltered = applyFilters(initialEvents);
-    // Usamos o estado 'filteredEventsState' para armazenar os eventos filtrados
     setFilteredEventsState(finalFiltered); 
   };
   
-  // Novo estado para a lista de eventos filtrados que será exibida
   const [filteredEventsState, setFilteredEventsState] = useState([]);
   
-  // Efeito para re-aplicar o filtro quando os estados temporários mudam (opcional, mas bom para reatividade)
-  // Re-aplica apenas quando a lista de eventos iniciais muda, ou quando o botão é clicado
-
   const eventsToDisplay = filteredEventsState; 
   const groupedEvents = groupEventsByMonth(eventsToDisplay);
   const monthsOrder = sortMonths(groupedEvents);
@@ -118,12 +114,13 @@ export default function MyEvents() {
       <div className="agenda-page-wrapper">
         <div className="agenda-content-wrapper">
           <div className="agenda-header">
-            <h1>Meus Eventos</h1>
-            <p>Aqui você gerencia todos os eventos que você cadastrou.</p>
+            <h1>Meus Interesses</h1>
+            <p>Gerencie todos os eventos nos quais você demonstrou interesse.</p>
           </div>
-
+          
+          {/* Divisor após o cabeçalho */}
           <hr className="agenda-divider" />
-
+          
           {/* --- Filtros --- */}
           <div className="agenda-filters">
             <div className="filter-group">
@@ -185,7 +182,7 @@ export default function MyEvents() {
               <button
                 className="search-button"
                 title="Pesquisar"
-                onClick={() => handleApplyFilters()} // Aplica os filtros ao clicar
+                onClick={() => handleApplyFilters()}
               >
                 <i className="bi bi-search"></i> Pesquisar
               </button>
@@ -203,22 +200,22 @@ export default function MyEvents() {
               Mostrar eventos passados
             </label>
           </div>
+          {/* Fim da seção de Filtros */}
 
-          {/* --- Listagem --- */}
           {isLoading ? (
-            <p>Carregando seus eventos...</p>
+            <p>Carregando seus eventos de interesse...</p>
           ) : eventsToDisplay.length === 0 ? (
-            <p>Não há eventos cadastrados que correspondam aos filtros.</p>
+            <p>Você não marcou nenhum evento como de interesse.</p>
           ) : (
             <div className="agenda-list">
               {monthsOrder.map((monthYear, index) => (
                 <React.Fragment key={monthYear}>
-                  {index > 0 && <hr className="agenda-divider" />}
-                  <div className="month-group">
-                    <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
-                    <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
-                    <div className="events-grid">
-                      {groupedEvents[monthYear].map((event) => (
+                    {index > 0 && <hr className="agenda-divider" />} 
+                    <div className="month-group">
+                      <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
+                      <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
+                      <div className="events-grid">
+                        {groupedEvents[monthYear].map((event) => (
                         <EventCard
                           key={event.id_evento}
                           id={event.id_evento}
@@ -229,28 +226,12 @@ export default function MyEvents() {
                           imageUrl={event.imagemEvento[0]?.url}
                         />
                       ))}
+                      </div>
                     </div>
-                  </div>
                 </React.Fragment>
               ))}
             </div>
           )}
-
-          {/* --- Botão Novo Evento --- */}
-          <div style={{ textAlign: "center", marginTop: "40px", marginBottom: "40px" }}>
-            <Link
-              to="/registrarevento"
-              className="agenda-button"
-              style={{
-                borderRadius: "8px",
-                padding: "12px 30px",
-                fontSize: "16px",
-              }}
-            >
-              <i className="bi bi-plus-circle-fill" style={{ marginRight: "8px" }}></i>
-              Cadastrar Novo Evento
-            </Link>
-          </div>
         </div>
       </div>
     </>
