@@ -18,6 +18,8 @@ import EventDetail from "../pages/EventDetail";
 import MyEvents from "../pages/MyEvents";
 import DenouncePage from "../pages/DenouncePage";
 import EventEdit from "../pages/EventEdit"; // <-- Importa a nova página de edição
+import MyInterests from "../pages/MyInterests"; 
+import axios from "axios";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -48,6 +50,15 @@ export const router = createBrowserRouter([
             <EventEdit />
         </ProtectedRoute>
     )
+  },
+  // ROTA: Meus Interesses
+  { 
+    path: "/meus-interesses", 
+    element: (
+        <ProtectedRoute>
+            <MyInterests />
+        </ProtectedRoute>
+    ) 
   },
   // --- ROTA ADMIN ---
   {
