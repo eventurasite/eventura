@@ -2,7 +2,6 @@
 
 /*
   REAJUSTE 1: Contêiner de fundo (Substitui o .login-wrap para o background)
-  Agora não dependerá do Login.css para o fundo.
 */
 .agenda-page-wrapper {
   min-height: calc(100vh - 100px); /* Subtrai a altura do cabeçalho */
@@ -129,15 +128,16 @@
     margin-bottom: 20px;
 }
 
-/* Grid de Eventos: 3 Colunas Fixas */
+/* Grid de Eventos: SOLUÇÃO FLEXBOX com CALC (3 Colunas Exatas) */
 .events-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 30px;
+    display: flex; /* CHAVE: Usa Flexbox */
+    flex-wrap: wrap; /* Permite a quebra de linha */
+    gap: 20px; /* Espaçamento entre cards */
     width: 100%; 
+    justify-content: flex-start; /* Garante alinhamento à esquerda */
 }
 
-/* Estilos de Card de Evento (mantidos) */
+/* Estilos de Card de Evento (Largura Calculada) */
 .agenda-event-card {
     background-color: #f9f9f9;
     border-radius: 12px;
@@ -146,6 +146,10 @@
     padding-bottom: 15px;
     text-align: left; 
     transition: transform 0.3s ease;
+    
+    /* LARGURA CALCULADA: 100% - (2 * 20px de gap) / 3 colunas. */
+    width: calc((100% - 40px) / 3); 
+    flex-shrink: 0; /* Impede que o card encolha e quebre o layout */
 }
 
 .agenda-event-card:hover {
@@ -156,13 +160,14 @@
 .agenda-image-container {
     width: 100%;
     height: 160px;
-    overflow: hidden;
+    overflow: hidden; /* CORTA A IMAGEM */
     margin-bottom: 10px;
 }
 
 .agenda-image-container img {
     width: 100%;
     height: 100%;
+    /* Garante que a imagem preencha e corte, sem estourar o container */
     object-fit: cover;
 }
 
@@ -199,15 +204,22 @@
 /* Responsividade */
 @media (max-width: 940px) {
     .events-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        /* Garante quebra para 2 colunas e ajuste para preencher o espaço */
+        justify-content: space-around; 
+    }
+    .agenda-event-card {
+        /* LARGURA CALCULADA PARA 2 COLUNAS */
+        width: calc(50% - 10px); 
+        max-width: 380px; 
     }
 }
 
 @media (max-width: 600px) {
     .events-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
+        justify-content: flex-start;
+    }
+    .agenda-event-card {
+        width: 100%; /* Uma coluna em telas muito pequenas */
     }
     .agenda-filters {
         flex-direction: column;

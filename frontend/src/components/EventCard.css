@@ -5,7 +5,7 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  width: 50px; /* CORRIGIDO: Permite que o pai controle a largura (será o calc()) */
   transition: transform 0.2s;
 }
 
@@ -13,10 +13,17 @@
   transform: scale(1.02);
 }
 
-.event-card-image {
-  height: 180px;
-  background-size: cover;
-  background-position: center;
+.event-card-image-wrapper {
+    /* NOVO: Usar um wrapper para controlar a altura da imagem */
+    height: 150px; 
+    width: 280px;
+    overflow: hidden; 
+}
+
+.event-card-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Garante que a imagem preencha e corte */
 }
 
 .event-card-content {
@@ -26,6 +33,10 @@
 .event-card-title {
   margin-bottom: 8px;
   font-size: 1.2rem;
+}
+
+.event-card-info {
+  max-width: 200px;
 }
 
 .event-card-button {
@@ -44,7 +55,7 @@
 }
 
 .event-card-link {
-  text-decoration: none; /* ADICIONE: Remove o sublinhado */
-  color: inherit;        /* ADICIONE: Faz o texto herdar a cor do elemento pai */
+  text-decoration: none;
+  color: inherit;
   display: block;
 }
