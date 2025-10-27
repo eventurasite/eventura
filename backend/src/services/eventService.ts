@@ -401,3 +401,95 @@ export async function toggleLike(eventId: number, userId: number) {
     userHasLiked: !likeExists, // O novo estado é o oposto do que existia
   };
 }
+
+/**
+ * Buscar o total de interesses (inscrições) de um evento
+ */
+export async function getTotalInterests(eventId: number) {
+  return prisma.inscricao.count({
+    where: { id_evento: eventId },
+  });
+}
+
+/**
+ * Verificar se um usuário específico demonstrou interesse (inscrição) em um evento
+ */
+export async function getUserInterestStatus(eventId: number, userId: number) {
+  const interest = await prisma.inscricao.findUnique({
+    where: {
+      // Chave composta definida no schema.prisma
+      id_evento_id_usuario: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+  return { userHasInterested: !!interest }; // Retorna true se a 'inscricao' existir
+}
+
+/**
+ * Adicionar ou remover um interesse (inscrição) - (toggle)
+ */
+export async function toggleInterest(eventId: number, userId: number) {
+  const interestExists = await prisma.inscricao.findUnique({
+    where: {
+      id_evento_id_usuario: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+
+  if (interestExists) {
+    // Se já demonstrou interesse, remove
+    await prisma.inscricao.delete({
+      where: { id_inscricao: interestExists.id_inscricao },
+    });
+  } else {
+    // Se não, cria a inscrição
+    await prisma.inscricao.create({
+      data: {
+        id_evento: eventId,
+        id_usuario: userId,
+      },
+    });
+  }
+
+  // Retorna o novo estado
+  const totalInterests = await getTotalInterests(eventId);
+  return {
+    totalInterests,
+    userHasInterested: !interestExists, // O novo estado é o oposto
+  };
+}
+
+/**
+ * [NOVO] Buscar todos os eventos que um usuário demonstrou interesse
+ * (Para a página 'Meus Interesses')
+ */
+export async function findEventsByUserInterest(userId: number) {
+  // 1. Encontra todas as inscrições (interesses) do usuário
+  const inscricoes = await prisma.inscricao.findMany({
+    where: { id_usuario: userId },
+    select: { id_evento: true }, // Só precisamos dos IDs dos eventos
+  });
+
+  // 2. Extrai os IDs dos eventos
+  const eventIds = inscricoes.map((inscricao) => inscricao.id_evento);
+
+  // 3. Busca todos os eventos que correspondem a esses IDs
+  return prisma.evento.findMany({
+    where: {
+      id_evento: {
+        in: eventIds,
+      },
+    },
+    include: {
+      imagemEvento: true,
+      categoria: true,
+    },
+    orderBy: {
+      data: 'desc', // Ordena pelos mais recentes
+    },
+  });
+}

@@ -10,8 +10,9 @@ import { toast } from "react-toastify";
 
 const API_BASE_URL = "http://localhost:5000";
 
-// Componente CommentBox (igual ao passo anterior)
+// Componente CommentBox (igual)
 const CommentBox = ({ author, text, photoUrl }) => (
+  // ... (código mantido)
   <div className="comment-box">
     <div className="comment-avatar">
       {photoUrl ? (
@@ -29,6 +30,7 @@ const CommentBox = ({ author, text, photoUrl }) => (
 
 // Componente de Interação (MANTIDO IGUAL)
 const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId }) => {
+  // ... (lógica interna mantida)
   const [isHovered, setIsHovered] = useState(false);
   let baseIconClass, hoverIconClass, element;
 
@@ -72,27 +74,25 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
-  // Estados de comentários (do passo anterior)
+  // Estados de comentários
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  // NOVO: Estados de Curtidas (substituindo o mock)
+  // Estados de Curtidas
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
-  // Estados de interesses (AINDA MOCKADO)
+  // NOVO: Estados de Interesses (substituindo o mock)
   const [isInterested, setIsInterested] = useState(false);
-  const staticCounts = { interesses: 20 }; // Contagem de curtidas removida
+  const [interestCount, setInterestCount] = useState(0); // Substitui staticCounts.interesses
 
-  // NOVO: Handle de Interesse (ainda mockado)
-  const handleInterestToggle = () => { setIsInterested(prev => !prev); };
-  
-  // Handle de Comentário (do passo anterior)
+  // Handle de Comentário
   const handleCommentClick = () => { document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }); };
 
   // --- Funções de busca de dados ---
   const fetchComments = async () => {
+    // ... (lógica mantida)
     try {
       const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/comments`);
       setComments(response.data);
@@ -101,19 +101,15 @@ const EventDetail = () => {
     }
   };
 
-  // NOVO: Função para buscar dados de curtidas (Total e status do usuário)
   const fetchLikeData = async () => {
+    // ... (lógica mantida)
     const token = localStorage.getItem('authToken');
-    
-    // 1. Busca o total de curtidas (público)
     try {
       const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/likes`);
       setLikeCount(response.data.totalLikes);
     } catch (error) {
       console.error("Erro ao buscar total de curtidas:", error);
     }
-
-    // 2. Se estiver logado, busca se o usuário curtiu
     if (token) {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/my-like`, {
@@ -122,6 +118,31 @@ const EventDetail = () => {
         setIsLiked(response.data.userHasLiked);
       } catch (error) {
         console.error("Erro ao buscar status da curtida:", error);
+      }
+    }
+  };
+
+  // NOVO: Função para buscar dados de Interesses (Total e status do usuário)
+  const fetchInterestData = async () => {
+    const token = localStorage.getItem('authToken');
+    
+    // 1. Busca o total de interesses (público)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/interests`);
+      setInterestCount(response.data.totalInterests);
+    } catch (error) {
+      console.error("Erro ao buscar total de interesses:", error);
+    }
+
+    // 2. Se estiver logado, busca se o usuário tem interesse
+    if (token) {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/my-interest`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsInterested(response.data.userHasInterested);
+      } catch (error) {
+        console.error("Erro ao buscar status de interesse:", error);
       }
     }
   };
@@ -144,7 +165,8 @@ const EventDetail = () => {
         
         // Chama as buscas de dados secundários
         fetchComments();
-        fetchLikeData(); // NOVO
+        fetchLikeData();
+        fetchInterestData(); // NOVO
 
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
@@ -159,6 +181,7 @@ const EventDetail = () => {
   
   // Formata a data (igual)
   const formatDate = (isoDate) => {
+    // ... (lógica mantida)
     if (!isoDate) return "Data indefinida";
     return new Date(isoDate).toLocaleString("pt-BR", {
       day: "2-digit", month: "long", year: "numeric",
@@ -168,7 +191,7 @@ const EventDetail = () => {
 
   // Função de exclusão (igual)
   const handleDelete = async () => {
-    // ... (lógica de exclusão mantida) ...
+    // ... (lógica de exclusão mantida)
     const token = localStorage.getItem('authToken');
     if (!token) {
       toast.error("Você precisa estar logado para excluir um evento.");
@@ -202,7 +225,7 @@ const EventDetail = () => {
 
   // Função de Comentário (igual)
   const handleSubmitComment = async () => {
-    // ... (lógica de comentário mantida) ...
+    // ... (lógica de comentário mantida)
     const token = localStorage.getItem('authToken');
     if (!token) {
       toast.error("Você precisa estar logado para comentar.");
@@ -230,45 +253,74 @@ const EventDetail = () => {
     }
   };
 
-  // NOVO: Função para adicionar/remover curtida
+  // Função de Curtida (igual)
   const handleLikeToggle = async () => {
+    // ... (lógica de curtida mantida)
     const token = localStorage.getItem('authToken');
     if (!token) {
       toast.error("Você precisa estar logado para curtir um evento.");
       return;
     }
-    
-    // Otimização: Atualiza a UI imediatamente (Optimistic Update)
-    // Se der erro, reverte
     const originalLikeState = isLiked;
     const originalLikeCount = likeCount;
-    
     setIsLiked(prev => !prev);
     setLikeCount(prev => originalLikeState ? prev - 1 : prev + 1);
-
     try {
-      // Envia a requisição para o backend
       const response = await axios.post(
         `${API_BASE_URL}/api/events/${eventId}/like`,
-        {}, // Corpo vazio
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      // Sincroniza o estado com a resposta final do servidor (garantia)
       setIsLiked(response.data.userHasLiked);
       setLikeCount(response.data.totalLikes);
-
     } catch (error) {
       console.error("Erro ao curtir evento:", error);
       toast.error(error.response?.data?.message || "Não foi possível registrar sua curtida.");
-      // Reverte a mudança em caso de erro
       setIsLiked(originalLikeState);
       setLikeCount(originalLikeCount);
     }
   };
 
+  // NOVO: Função para adicionar/remover Interesse (lógica idêntica ao handleLikeToggle)
+  const handleInterestToggle = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error("Você precisa estar logado para marcar interesse.");
+      return;
+    }
+    
+    // Atualização otimista
+    const originalInterestState = isInterested;
+    const originalInterestCount = interestCount;
+    
+    setIsInterested(prev => !prev);
+    setInterestCount(prev => originalInterestState ? prev - 1 : prev + 1);
+
+    try {
+      // Envia a requisição para a nova rota
+      const response = await axios.post(
+        `${API_BASE_URL}/api/events/${eventId}/interest`, // Rota de interesse
+        {}, // Corpo vazio
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Sincroniza o estado com a resposta final
+      setIsInterested(response.data.userHasInterested);
+      setInterestCount(response.data.totalInterests);
+
+    } catch (error) {
+      console.error("Erro ao marcar interesse:", error);
+      toast.error(error.response?.data?.message || "Não foi possível registrar seu interesse.");
+      // Reverte a mudança em caso de erro
+      setIsInterested(originalInterestState);
+      setInterestCount(originalInterestCount);
+    }
+  };
+
+
   // Estados de carregamento e erro (iguais)
   if (loading) {
+    // ... (código mantido)
     return (
       <>
         <Header />
@@ -279,7 +331,7 @@ const EventDetail = () => {
     );
   }
   if (!event) {
-    // ... (erro mantido) ...
+    // ... (código mantido)
     return (
       <>
         <Header />
@@ -354,22 +406,22 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção de Botões de Interação (NOVO: Curtidas dinâmicas) */}
+          {/* Seção de Botões de Interação (NOVO: Interesses dinâmicos) */}
           <section className="event-section action-buttons">
               <div className="interactions-container">
-                  {/* NOVO: likeCount e isLiked agora vêm do estado dinâmico */}
+                  {/* Curtidas (do passo anterior) */}
                   <InteractionButton type="heart" label="Curtidas" count={likeCount} isActive={isLiked} onClick={handleLikeToggle} />
                   
-                  {/* Interesses ainda mockados */}
-                  <InteractionButton type="like" label="Interesses" count={staticCounts.interesses} isActive={isInterested} onClick={handleInterestToggle} />
+                  {/* NOVO: interestCount e isInterested agora vêm do estado dinâmico */}
+                  <InteractionButton type="like" label="Interesses" count={interestCount} isActive={isInterested} onClick={handleInterestToggle} />
                   
-                  {/* Comentários dinâmicos (do passo anterior) */}
+                  {/* Comentários (do primeiro passo) */}
                   <InteractionButton type="comment" label="Comentários" count={comments.length} onClick={handleCommentClick} />
                   <InteractionButton type="report" label="Denunciar" eventId={eventId} />
               </div>
           </section>
 
-          {/* Seção Adicionar Comentário (igual ao passo anterior) */}
+          {/* Seção Adicionar Comentário (igual) */}
           <section className="add-comment-section" id="comments-section">
             {/* ... (código mantido) ... */}
             <h2>Adicionar Comentário</h2>
@@ -391,7 +443,7 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção Listagem de Comentários (igual ao passo anterior) */}
+          {/* Seção Listagem de Comentários (igual) */}
           <section className="event-section comments-section">
             {/* ... (código mantido) ... */}
             <h2>Comentários:</h2>
@@ -419,7 +471,7 @@ export default EventDetail;
 
 // ConfirmationToast (igual)
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
-  // ... (código mantido) ...
+  // ... (código mantido)
   <div className="toast-confirmation-body">
     <p>{message}</p>
     <div className="toast-confirmation-buttons">

@@ -301,3 +301,64 @@ export async function toggleLikeController(req: Request, res: Response): Promise
     res.status(500).json({ message: "Erro ao processar curtida." });
   }
 }
+
+/**
+ * Buscar total de interesses (Público)
+ */
+export async function getTotalInterestsController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    const totalInterests = await eventService.getTotalInterests(eventId);
+    res.status(200).json({ totalInterests });
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao buscar total de interesses." });
+  }
+}
+
+/**
+ * Verificar se o usuário logado tem interesse (Protegido)
+ */
+export async function getUserInterestStatusController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const status = await eventService.getUserInterestStatus(eventId, userId);
+    res.status(200).json(status);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao verificar interesse." });
+  }
+}
+
+/**
+ * Adicionar/Remover interesse (Protegido)
+ */
+export async function toggleInterestController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const novoStatus = await eventService.toggleInterest(eventId, userId);
+    res.status(200).json(novoStatus);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao processar interesse." });
+  }
+}
+
+/**
+ * [NOVO] Listar eventos de interesse do usuário autenticado
+ * (Para a página 'Meus Interesses')
+ */
+export async function getMyInterestsController(req: Request, res: Response): Promise<void> {
+  try {
+    // @ts-ignore
+    const userId = req.user.id;
+    const eventos = await eventService.findEventsByUserInterest(userId);
+    res.status(200).json(eventos);
+  } catch (error: any) {
+    console.error("Erro ao listar eventos de interesse:", error);
+    res.status(500).json({ message: "Erro ao listar seus eventos de interesse" });
+  }
+}
