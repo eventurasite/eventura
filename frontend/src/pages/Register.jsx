@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
+
 import AuthLayout from "../components/AuthLayout";
 import BackLink from "../components/BackLink";
 import Button from "../components/Button";
 import TextField from "../components/TextField";
 import PasswordField from "../components/PasswordField";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import TermsModal from "../components/TermsModel";
 
 import "../components/TextField.css";
 import "./Login.css";
@@ -19,6 +20,7 @@ export default function Register() {
   const [pwd, setPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [agree, setAgree] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
   const navigate = useNavigate();
 
   // Captura token do Google se vier na query string
@@ -44,8 +46,8 @@ export default function Register() {
       return;
     }
 
-    if(!email){
-      return toast.error("O campo de email é obrigatório.");
+    if (!email) {
+      return toast.error("O campo de e-mail é obrigatório.");
     }
 
     try {
@@ -141,7 +143,14 @@ export default function Register() {
             onChange={(e) => setAgree(e.target.checked)}
             style={{ marginRight: 6 }}
           />
-          Eu concordo com os <a href="#">Termos de Uso</a>
+          Eu concordo com os{" "}
+          <button
+            type="button"
+            className="terms-link"
+            onClick={() => setIsTermsOpen(true)}
+          >
+            Termos de Uso
+          </button>
         </label>
 
         <Button type="submit" className="full">
@@ -175,6 +184,9 @@ export default function Register() {
           <Link to="/login">Fazer Login</Link>
         </div>
       </form>
+
+      {/* Modal de Termos */}
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
     </AuthLayout>
   );
 }

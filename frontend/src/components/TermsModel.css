@@ -1,0 +1,66 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  width: 90%;
+  max-width: 640px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content h2 {
+  color: var(--cor_3-roxo_escuro);
+  font-family: "Rubik One", sans-serif;
+}
+
+.update-date {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.modal-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  line-height: 1.5;
+}
+
+.modal-scroll h3 {
+  margin-top: 16px;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.btn-close {
+  background-color: var(--cor_3-roxo_escuro);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.btn-close:hover {
+  background-color: var(--cor_5-amarelo);
+  color: var(--cor_3-roxo_escuro);
+}
