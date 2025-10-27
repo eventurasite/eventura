@@ -209,3 +209,49 @@ export async function updateEventController(req: Request, res: Response): Promis
     else res.status(500).json({ message: "Erro interno ao atualizar o evento." });
   }
 }
+
+/**
+ * Buscar comentários de um evento
+ */
+export async function getCommentsController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+
+    const comentarios = await eventService.getCommentsByEventId(eventId);
+    res.status(200).json(comentarios);
+
+  } catch (error: any) {
+    console.error("Erro ao buscar comentários:", error);
+    res.status(500).json({ message: "Erro interno ao buscar comentários." });
+  }
+}
+
+/**
+ * Criar um novo comentário
+ */
+export async function createCommentController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token (authMiddleware)
+    const { texto } = req.body;
+
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+
+    const novoComentario = await eventService.createComment(eventId, userId, texto);
+    res.status(201).json(novoComentario);
+
+  } catch (error: any) {
+    console.error("Erro ao criar comentário:", error);
+    if (error.message.includes("texto do comentário")) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Erro interno ao criar o comentário." });
+    }
+  }
+}

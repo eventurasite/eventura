@@ -287,3 +287,56 @@ export async function updateEvent(
     throw new Error("Erro no banco de dados ao tentar atualizar o evento.");
   }
 }
+
+/**
+ * Buscar todos os comentários de um evento
+ */
+export async function getCommentsByEventId(eventId: number) {
+  return prisma.comentario.findMany({
+    where: { id_evento: eventId },
+    include: {
+      // Incluímos o 'usuario' para sabermos quem comentou
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          url_foto_perfil: true, // Se quisermos exibir a foto no futuro
+        },
+      },
+    },
+    orderBy: {
+      data_criacao: 'asc', // Do mais antigo para o mais novo
+    },
+  });
+}
+
+/**
+ * Criar um novo comentário
+ */
+export async function createComment(
+  eventId: number,
+  userId: number,
+  texto: string
+) {
+  if (!texto || texto.trim() === "") {
+    throw new Error("O texto do comentário não pode estar vazio.");
+  }
+
+  return prisma.comentario.create({
+    data: {
+      id_evento: eventId,
+      id_usuario: userId,
+      texto: texto,
+    },
+    include: {
+      // Retorna o comentário criado com os dados do usuário
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          url_foto_perfil: true,
+        },
+      },
+    },
+  });
+}

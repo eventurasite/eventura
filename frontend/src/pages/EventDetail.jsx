@@ -1,20 +1,26 @@
 // src/pages/EventDetail.jsx
-import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom"; // Adicionado useNavigate
+import React, { useState, useEffect } from "react"; // NOVO: importado useState e useEffect
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "./../components/Header";
-import "./../pages/UserProfile.css"; // Reutiliza o estilo do container (e o fundo)
+import "./../pages/UserProfile.css";
 import "./EventDetail.css";
-import Button from "../components/Button"; // Importa o componente Button
-import axios from "axios"; // Importar axios
-import { toast } from "react-toastify"; // Importar toast
+import Button from "../components/Button";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-// URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
 
-// Componente de Comentário (com avatar) - MANTIDO IGUAL
-const CommentBox = ({ author, text }) => (
+// NOVO: Componente CommentBox atualizado para receber dados reais
+const CommentBox = ({ author, text, photoUrl }) => (
   <div className="comment-box">
-    <div className="comment-avatar"></div>
+    <div className="comment-avatar">
+      {/* Exibe a foto do usuário se ela existir, senão um placeholder */}
+      {photoUrl ? (
+        <img src={`${API_BASE_URL}${photoUrl}`} alt={author} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}} />
+      ) : (
+        <i className="bi bi-person-fill" style={{fontSize: '24px', color: '#666'}}></i>
+      )}
+    </div>
     <div className="comment-content">
       <p className="comment-author">{author}</p>
       <p className="comment-text">{text}</p>
@@ -22,8 +28,9 @@ const CommentBox = ({ author, text }) => (
   </div>
 );
 
-// Componente de Interação - MANTIDO IGUAL
+// Componente de Interação (MANTIDO IGUAL)
 const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId }) => {
+  // ... (lógica interna do botão de interação mantida) ...
   const [isHovered, setIsHovered] = useState(false);
   let baseIconClass, hoverIconClass, element;
 
@@ -58,54 +65,71 @@ const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId 
   return element;
 };
 
-
 const EventDetail = () => {
-  const { id } = useParams(); // Pega o ID da URL
-  const eventId = id; // Renomeia para clareza no onClick do botão Editar
+  const { id } = useParams();
+  const eventId = id;
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
-  // Estados de interação (mantidos)
+  // NOVO: Estados para comentários
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // Estados de interação (curtidas e interesses ainda mockados)
   const [isLiked, setIsLiked] = useState(false);
   const [isInterested, setIsInterested] = useState(false);
-  const staticCounts = { curtidas: 15, interesses: 20, comentarios: 2 }; // Contagens mockadas
+  const staticCounts = { curtidas: 15, interesses: 20 }; // Contagem de comentários foi removida daqui
 
-  // Funções de interação (mantidas)
-  const handleCommentClick = () => { document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }); };
   const handleLikeToggle = () => { setIsLiked(prev => !prev); };
   const handleInterestToggle = () => { setIsInterested(prev => !prev); };
+  const handleCommentClick = () => { document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }); };
 
-  // Busca os dados do evento
+  // NOVO: Função para buscar os comentários da API
+  const fetchComments = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/comments`);
+      setComments(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar comentários:", error);
+      toast.error("Não foi possível carregar os comentários.");
+    }
+  };
+
+  // Busca os dados do evento E os comentários
   useEffect(() => {
     const fetchEvent = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`); // Usa eventId
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
         if (!response.ok) {
           throw new Error("Evento não encontrado");
         }
         const data = await response.json();
         setEvent(data);
 
-        // Verifica se o usuário logado é o dono do evento
         const loggedInUserId = localStorage.getItem('userId');
         if (loggedInUserId && data.organizador?.id_usuario == loggedInUserId) {
           setIsOwner(true);
         }
+        
+        // NOVO: Chama a busca de comentários
+        fetchComments();
 
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
-        setEvent(null); // Define evento como null em caso de erro
+        setEvent(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId]); // Dependência: eventId
+  }, [eventId]);
 
-  // Formata a data
+  // Formata a data (igual)
   const formatDate = (isoDate) => {
     if (!isoDate) return "Data indefinida";
     return new Date(isoDate).toLocaleString("pt-BR", {
@@ -114,23 +138,21 @@ const EventDetail = () => {
     });
   };
 
-
-  // --- FUNÇÃO PARA LIDAR COM A EXCLUSÃO ---
+  // Função de exclusão (igual)
   const handleDelete = async () => {
+    // ... (lógica de exclusão mantida) ...
     const token = localStorage.getItem('authToken');
     if (!token) {
       toast.error("Você precisa estar logado para excluir um evento.");
       return;
     }
 
-    // Ação a ser executada se o usuário confirmar no toast
     const confirmAction = async () => {
       try {
-        await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, { // Usa eventId
+        await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Evento excluído com sucesso!");
-        // Redireciona para a agenda após um pequeno delay
         setTimeout(() => navigate('/agenda'), 1500);
       } catch (error) {
         console.error("Erro ao excluir evento:", error);
@@ -138,24 +160,54 @@ const EventDetail = () => {
       }
     };
 
-    // Exibe o toast de confirmação
     toast.warn(
       <ConfirmationToast
         message="Tem certeza de que deseja excluir este evento? Esta ação não pode ser desfeita."
-        onConfirm={confirmAction} // Passa a função de exclusão como callback
+        onConfirm={confirmAction}
       />, {
         position: "top-center",
-        autoClose: false, // Não fecha automaticamente
-        closeOnClick: false, // Não fecha ao clicar fora
+        autoClose: false,
+        closeOnClick: false,
         draggable: false,
-        theme: "colored" // Usa tema colorido para destaque
+        theme: "colored"
       }
     );
   };
-  // --- FIM DA FUNÇÃO DE EXCLUSÃO ---
 
+  // NOVO: Função para enviar um novo comentário
+  const handleSubmitComment = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error("Você precisa estar logado para comentar.");
+      return;
+    }
+    if (newComment.trim() === "") {
+      toast.warn("O comentário não pode estar vazio.");
+      return;
+    }
 
-  // Estados de carregamento e erro
+    setIsSubmittingComment(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/events/${eventId}/comments`,
+        { texto: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Adiciona o novo comentário (retornado pela API) à lista local
+      setComments(prevComments => [...prevComments, response.data]);
+      setNewComment(""); // Limpa o campo de texto
+      toast.success("Comentário adicionado!");
+
+    } catch (error) {
+      console.error("Erro ao enviar comentário:", error);
+      toast.error(error.response?.data?.message || "Não foi possível enviar o comentário.");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  // Estados de carregamento e erro (iguais)
   if (loading) {
     return (
       <>
@@ -180,7 +232,7 @@ const EventDetail = () => {
     );
   }
 
-  // Separa imagens
+  // Separa imagens (igual)
   const mainImage = event.imagemEvento?.[0];
   const thumbnails = event.imagemEvento?.slice(1, 4) || [];
 
@@ -191,18 +243,14 @@ const EventDetail = () => {
       <div className="user-profile-container">
         <div className="profile-wrapper">
 
-          {/* Wrapper para Título e Botões de Ação do Dono */}
+          {/* Wrapper para Título e Botões de Ação do Dono (igual) */}
           <div className="event-header-actions-wrapper">
             <h1 className="event-title">{event.titulo}</h1>
-
-            {/* Botões de Editar e Excluir (visíveis apenas para o dono) */}
             {isOwner && (
               <div className="owner-actions">
-                {/* Botão Editar agora navega para a página de edição */}
                 <Button className="edit-event-btn" onClick={() => navigate(`/editar-evento/${eventId}`)}>
                   <i className="bi bi-pencil-fill"></i> Editar
                 </Button>
-                {/* Botão Excluir chama handleDelete */}
                 <Button className="delete-event-btn" onClick={handleDelete}>
                   <i className="bi bi-trash-fill"></i> Excluir
                 </Button>
@@ -210,7 +258,7 @@ const EventDetail = () => {
             )}
           </div>
 
-          {/* Seção de Imagens */}
+          {/* Seção de Imagens (igual) */}
           <section className="event-images">
             <div className="main-image">
               {mainImage && <img src={`${API_BASE_URL}${mainImage.url}`} alt={event.titulo} />}
@@ -224,13 +272,13 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção Descrição */}
+          {/* Seção Descrição (igual) */}
           <section className="event-section description-section">
             <h2>Descrição do Evento</h2>
             <p>{event.descricao}</p>
           </section>
 
-          {/* Seção Informações Gerais */}
+          {/* Seção Informações Gerais (igual) */}
           <section className="event-section info-section">
             <h2>Informações Gerais</h2>
             <div className="info-grid">
@@ -242,31 +290,55 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção de Botões de Interação */}
+          {/* Seção de Botões de Interação (NOVO: contagem de comentários dinâmica) */}
           <section className="event-section action-buttons">
               <div className="interactions-container">
                   <InteractionButton type="heart" label="Curtidas" count={staticCounts.curtidas} isActive={isLiked} onClick={handleLikeToggle} />
                   <InteractionButton type="like" label="Interesses" count={staticCounts.interesses} isActive={isInterested} onClick={handleInterestToggle} />
-                  <InteractionButton type="comment" label="Comentários" count={staticCounts.comentarios} onClick={handleCommentClick} />
-                  <InteractionButton type="report" label="Denunciar" eventId={eventId} /> {/* Usa eventId */}
+                  {/* NOVO: Usa comments.length para a contagem */}
+                  <InteractionButton type="comment" label="Comentários" count={comments.length} onClick={handleCommentClick} />
+                  <InteractionButton type="report" label="Denunciar" eventId={eventId} />
               </div>
           </section>
 
-          {/* Seção Adicionar Comentário */}
+          {/* Seção Adicionar Comentário (NOVO: funcional) */}
           <section className="add-comment-section" id="comments-section">
             <h2>Adicionar Comentário</h2>
             <div className="comment-input-wrapper">
-                <textarea placeholder="Escreva seu comentário aqui..." className="comment-input"></textarea>
-                <button className="submit-comment-btn">Comentar</button>
+                <textarea 
+                  placeholder="Escreva seu comentário aqui..." 
+                  className="comment-input"
+                  value={newComment} // NOVO: Controlado pelo estado
+                  onChange={(e) => setNewComment(e.target.value)} // NOVO: Atualiza o estado
+                  disabled={isSubmittingComment} // NOVO: Desativa enquanto envia
+                />
+                <button 
+                  className="submit-comment-btn" 
+                  onClick={handleSubmitComment} // NOVO: Chama a função de envio
+                  disabled={isSubmittingComment} // NOVO: Desativa enquanto envia
+                >
+                  {isSubmittingComment ? "Enviando..." : "Comentar"}
+                </button>
             </div>
           </section>
 
-          {/* Seção Listagem de Comentários */}
+          {/* Seção Listagem de Comentários (NOVO: dados reais) */}
           <section className="event-section comments-section">
               <h2>Comentários:</h2>
-              {/* Comentários Mockados */}
-              <CommentBox author="Ana Maria" text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..." />
-              <CommentBox author="João Silva" text="Ótima dica! Ansioso por este evento na cidade." />
+              {/* NOVO: Verifica se há comentários */}
+              {comments.length === 0 ? (
+                <p>Ainda não há comentários. Seja o primeiro a comentar!</p>
+              ) : (
+                // NOVO: Faz um loop (map) nos comentários do estado
+                comments.map((comment) => (
+                  <CommentBox 
+                    key={comment.id_comentario}
+                    author={comment.usuario.nome} 
+                    text={comment.texto}
+                    photoUrl={comment.usuario.url_foto_perfil}
+                  />
+                ))
+              )}
           </section>
 
         </div>
@@ -277,9 +349,7 @@ const EventDetail = () => {
 
 export default EventDetail;
 
-
-// --- Definição do ConfirmationToast (COMENTE OU REMOVA SE JÁ ESTIVER IMPORTANDO DE UserProfile.jsx) ---
-
+// Definição do ConfirmationToast (igual)
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
   <div className="toast-confirmation-body">
     <p>{message}</p>

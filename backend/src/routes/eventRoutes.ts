@@ -28,6 +28,10 @@ router.get("/my-events", authenticateToken, eventController.getMyEvents);
 // NOVA ROTA DE FILTRO (adicione antes de /:id)
 router.get("/filter", eventController.getFilteredEvents);
 
+// NOVAS ROTAS DE COMENTÁRIOS
+router.get("/:id/comments", eventController.getCommentsController);
+router.post("/:id/comments", authenticateToken, eventController.createCommentController);
+
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
 router.get("/:id", eventController.getEvent);
 
