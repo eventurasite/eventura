@@ -340,3 +340,64 @@ export async function createComment(
     },
   });
 }
+
+/**
+ * Buscar o total de curtidas de um evento
+ */
+export async function getTotalLikes(eventId: number) {
+  return prisma.curtida.count({
+    where: { id_evento: eventId },
+  });
+}
+
+/**
+ * Verificar se um usuário específico curtiu um evento
+ */
+export async function getUserLikeStatus(eventId: number, userId: number) {
+  const like = await prisma.curtida.findUnique({
+    where: {
+      // Esta chave composta (id_usuario + id_evento) foi definida no schema.prisma
+      id_usuario_id_evento: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+  return { userHasLiked: !!like }; // Retorna true se o 'like' existir, false se não
+}
+
+/**
+ * Adicionar ou remover uma curtida (toggle)
+ */
+export async function toggleLike(eventId: number, userId: number) {
+  const likeExists = await prisma.curtida.findUnique({
+    where: {
+      id_usuario_id_evento: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+
+  if (likeExists) {
+    // Se já curtiu, remove a curtida
+    await prisma.curtida.delete({
+      where: { id_curtida: likeExists.id_curtida },
+    });
+  } else {
+    // Se não curtiu, cria a curtida
+    await prisma.curtida.create({
+      data: {
+        id_evento: eventId,
+        id_usuario: userId,
+      },
+    });
+  }
+
+  // Retorna o novo estado
+  const totalLikes = await getTotalLikes(eventId);
+  return {
+    totalLikes,
+    userHasLiked: !likeExists, // O novo estado é o oposto do que existia
+  };
+}

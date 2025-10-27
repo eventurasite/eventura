@@ -255,3 +255,49 @@ export async function createCommentController(req: Request, res: Response): Prom
     }
   }
 }
+
+/**
+ * Buscar total de curtidas (Público)
+ */
+export async function getTotalLikesController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    const totalLikes = await eventService.getTotalLikes(eventId);
+    res.status(200).json({ totalLikes });
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao buscar total de curtidas." });
+  }
+}
+
+/**
+ * Verificar se o usuário logado curtiu (Protegido)
+ */
+export async function getUserLikeStatusController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const status = await eventService.getUserLikeStatus(eventId, userId);
+    res.status(200).json(status);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao verificar curtida." });
+  }
+}
+
+/**
+ * Adicionar/Remover curtida (Protegido)
+ */
+export async function toggleLikeController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const novoStatus = await eventService.toggleLike(eventId, userId);
+    res.status(200).json(novoStatus);
+  } catch (error: any)
+ {
+    res.status(500).json({ message: "Erro ao processar curtida." });
+  }
+}

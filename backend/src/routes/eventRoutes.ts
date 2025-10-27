@@ -32,6 +32,11 @@ router.get("/filter", eventController.getFilteredEvents);
 router.get("/:id/comments", eventController.getCommentsController);
 router.post("/:id/comments", authenticateToken, eventController.createCommentController);
 
+//ROTAS DE CURTIDAS
+router.get("/:id/likes", eventController.getTotalLikesController); // Pública
+router.get("/:id/my-like", authenticateToken, eventController.getUserLikeStatusController); // Protegida
+router.post("/:id/like", authenticateToken, eventController.toggleLikeController); // Protegida
+
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
 router.get("/:id", eventController.getEvent);
 
