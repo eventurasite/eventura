@@ -1,20 +1,26 @@
 // src/pages/EventDetail.jsx
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom"; // Adicionado useNavigate
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "./../components/Header";
-import "./../pages/UserProfile.css"; // Reutiliza o estilo do container (e o fundo)
+import "./../pages/UserProfile.css";
 import "./EventDetail.css";
-import Button from "../components/Button"; // Importa o componente Button
-import axios from "axios"; // Importar axios
-import { toast } from "react-toastify"; // Importar toast
+import Button from "../components/Button";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-// URL base da nossa API
 const API_BASE_URL = "http://localhost:5000";
 
-// Componente de Comentário (com avatar) - MANTIDO IGUAL
-const CommentBox = ({ author, text }) => (
+// Componente CommentBox (igual)
+const CommentBox = ({ author, text, photoUrl }) => (
+  // ... (código mantido)
   <div className="comment-box">
-    <div className="comment-avatar"></div>
+    <div className="comment-avatar">
+      {photoUrl ? (
+        <img src={`${API_BASE_URL}${photoUrl}`} alt={author} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}} />
+      ) : (
+        <i className="bi bi-person-fill" style={{fontSize: '24px', color: '#666'}}></i>
+      )}
+    </div>
     <div className="comment-content">
       <p className="comment-author">{author}</p>
       <p className="comment-text">{text}</p>
@@ -22,8 +28,9 @@ const CommentBox = ({ author, text }) => (
   </div>
 );
 
-// Componente de Interação - MANTIDO IGUAL
+// Componente de Interação (MANTIDO IGUAL)
 const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId }) => {
+  // ... (lógica interna mantida)
   const [isHovered, setIsHovered] = useState(false);
   let baseIconClass, hoverIconClass, element;
 
@@ -60,53 +67,121 @@ const InteractionButton = ({ type, label, count = 0, isActive, onClick, eventId 
 
 
 const EventDetail = () => {
-  const { id } = useParams(); // Pega o ID da URL
-  const eventId = id; // Renomeia para clareza no onClick do botão Editar
+  const { id } = useParams();
+  const eventId = id;
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
 
-  // Estados de interação (mantidos)
+  // Estados de comentários
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // Estados de Curtidas
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
+  // NOVO: Estados de Interesses (substituindo o mock)
   const [isInterested, setIsInterested] = useState(false);
-  const staticCounts = { curtidas: 15, interesses: 20, comentarios: 2 }; // Contagens mockadas
+  const [interestCount, setInterestCount] = useState(0); // Substitui staticCounts.interesses
 
-  // Funções de interação (mantidas)
+  // Handle de Comentário
   const handleCommentClick = () => { document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' }); };
-  const handleLikeToggle = () => { setIsLiked(prev => !prev); };
-  const handleInterestToggle = () => { setIsInterested(prev => !prev); };
 
-  // Busca os dados do evento
+  // --- Funções de busca de dados ---
+  const fetchComments = async () => {
+    // ... (lógica mantida)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/comments`);
+      setComments(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar comentários:", error);
+    }
+  };
+
+  const fetchLikeData = async () => {
+    // ... (lógica mantida)
+    const token = localStorage.getItem('authToken');
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/likes`);
+      setLikeCount(response.data.totalLikes);
+    } catch (error) {
+      console.error("Erro ao buscar total de curtidas:", error);
+    }
+    if (token) {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/my-like`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsLiked(response.data.userHasLiked);
+      } catch (error) {
+        console.error("Erro ao buscar status da curtida:", error);
+      }
+    }
+  };
+
+  // NOVO: Função para buscar dados de Interesses (Total e status do usuário)
+  const fetchInterestData = async () => {
+    const token = localStorage.getItem('authToken');
+    
+    // 1. Busca o total de interesses (público)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/interests`);
+      setInterestCount(response.data.totalInterests);
+    } catch (error) {
+      console.error("Erro ao buscar total de interesses:", error);
+    }
+
+    // 2. Se estiver logado, busca se o usuário tem interesse
+    if (token) {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/my-interest`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsInterested(response.data.userHasInterested);
+      } catch (error) {
+        console.error("Erro ao buscar status de interesse:", error);
+      }
+    }
+  };
+
+  // Busca TODOS os dados ao carregar
   useEffect(() => {
     const fetchEvent = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`); // Usa eventId
-        if (!response.ok) {
-          throw new Error("Evento não encontrado");
-        }
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
+        if (!response.ok) throw new Error("Evento não encontrado");
+        
         const data = await response.json();
         setEvent(data);
 
-        // Verifica se o usuário logado é o dono do evento
         const loggedInUserId = localStorage.getItem('userId');
         if (loggedInUserId && data.organizador?.id_usuario == loggedInUserId) {
           setIsOwner(true);
         }
+        
+        // Chama as buscas de dados secundários
+        fetchComments();
+        fetchLikeData();
+        fetchInterestData(); // NOVO
 
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
-        setEvent(null); // Define evento como null em caso de erro
+        setEvent(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId]); // Dependência: eventId
-
-  // Formata a data
+  }, [eventId]);
+  
+  // Formata a data (igual)
   const formatDate = (isoDate) => {
+    // ... (lógica mantida)
     if (!isoDate) return "Data indefinida";
     return new Date(isoDate).toLocaleString("pt-BR", {
       day: "2-digit", month: "long", year: "numeric",
@@ -114,49 +189,138 @@ const EventDetail = () => {
     });
   };
 
-
-  // --- FUNÇÃO PARA LIDAR COM A EXCLUSÃO ---
+  // Função de exclusão (igual)
   const handleDelete = async () => {
+    // ... (lógica de exclusão mantida)
     const token = localStorage.getItem('authToken');
     if (!token) {
       toast.error("Você precisa estar logado para excluir um evento.");
       return;
     }
-
-    // Ação a ser executada se o usuário confirmar no toast
     const confirmAction = async () => {
       try {
-        await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, { // Usa eventId
+        await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Evento excluído com sucesso!");
-        // Redireciona para a agenda após um pequeno delay
         setTimeout(() => navigate('/agenda'), 1500);
       } catch (error) {
         console.error("Erro ao excluir evento:", error);
         toast.error(error.response?.data?.message || "Não foi possível excluir o evento.");
       }
     };
-
-    // Exibe o toast de confirmação
     toast.warn(
       <ConfirmationToast
         message="Tem certeza de que deseja excluir este evento? Esta ação não pode ser desfeita."
-        onConfirm={confirmAction} // Passa a função de exclusão como callback
+        onConfirm={confirmAction}
       />, {
         position: "top-center",
-        autoClose: false, // Não fecha automaticamente
-        closeOnClick: false, // Não fecha ao clicar fora
+        autoClose: false,
+        closeOnClick: false,
         draggable: false,
-        theme: "colored" // Usa tema colorido para destaque
+        theme: "colored"
       }
     );
   };
-  // --- FIM DA FUNÇÃO DE EXCLUSÃO ---
+
+  // Função de Comentário (igual)
+  const handleSubmitComment = async () => {
+    // ... (lógica de comentário mantida)
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error("Você precisa estar logado para comentar.");
+      return;
+    }
+    if (newComment.trim() === "") {
+      toast.warn("O comentário não pode estar vazio.");
+      return;
+    }
+    setIsSubmittingComment(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/events/${eventId}/comments`,
+        { texto: newComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComments(prevComments => [...prevComments, response.data]);
+      setNewComment("");
+      toast.success("Comentário adicionado!");
+    } catch (error) {
+      console.error("Erro ao enviar comentário:", error);
+      toast.error(error.response?.data?.message || "Não foi possível enviar o comentário.");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  // Função de Curtida (igual)
+  const handleLikeToggle = async () => {
+    // ... (lógica de curtida mantida)
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error("Você precisa estar logado para curtir um evento.");
+      return;
+    }
+    const originalLikeState = isLiked;
+    const originalLikeCount = likeCount;
+    setIsLiked(prev => !prev);
+    setLikeCount(prev => originalLikeState ? prev - 1 : prev + 1);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/events/${eventId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLiked(response.data.userHasLiked);
+      setLikeCount(response.data.totalLikes);
+    } catch (error) {
+      console.error("Erro ao curtir evento:", error);
+      toast.error(error.response?.data?.message || "Não foi possível registrar sua curtida.");
+      setIsLiked(originalLikeState);
+      setLikeCount(originalLikeCount);
+    }
+  };
+
+  // NOVO: Função para adicionar/remover Interesse (lógica idêntica ao handleLikeToggle)
+  const handleInterestToggle = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast.error("Você precisa estar logado para marcar interesse.");
+      return;
+    }
+    
+    // Atualização otimista
+    const originalInterestState = isInterested;
+    const originalInterestCount = interestCount;
+    
+    setIsInterested(prev => !prev);
+    setInterestCount(prev => originalInterestState ? prev - 1 : prev + 1);
+
+    try {
+      // Envia a requisição para a nova rota
+      const response = await axios.post(
+        `${API_BASE_URL}/api/events/${eventId}/interest`, // Rota de interesse
+        {}, // Corpo vazio
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Sincroniza o estado com a resposta final
+      setIsInterested(response.data.userHasInterested);
+      setInterestCount(response.data.totalInterests);
+
+    } catch (error) {
+      console.error("Erro ao marcar interesse:", error);
+      toast.error(error.response?.data?.message || "Não foi possível registrar seu interesse.");
+      // Reverte a mudança em caso de erro
+      setIsInterested(originalInterestState);
+      setInterestCount(originalInterestCount);
+    }
+  };
 
 
-  // Estados de carregamento e erro
+  // Estados de carregamento e erro (iguais)
   if (loading) {
+    // ... (código mantido)
     return (
       <>
         <Header />
@@ -166,8 +330,8 @@ const EventDetail = () => {
       </>
     );
   }
-
   if (!event) {
+    // ... (código mantido)
     return (
       <>
         <Header />
@@ -180,7 +344,7 @@ const EventDetail = () => {
     );
   }
 
-  // Separa imagens
+  // Separa imagens (igual)
   const mainImage = event.imagemEvento?.[0];
   const thumbnails = event.imagemEvento?.slice(1, 4) || [];
 
@@ -191,18 +355,15 @@ const EventDetail = () => {
       <div className="user-profile-container">
         <div className="profile-wrapper">
 
-          {/* Wrapper para Título e Botões de Ação do Dono */}
+          {/* Wrapper Título e Ações (igual) */}
           <div className="event-header-actions-wrapper">
+            {/* ... (código mantido) ... */}
             <h1 className="event-title">{event.titulo}</h1>
-
-            {/* Botões de Editar e Excluir (visíveis apenas para o dono) */}
             {isOwner && (
               <div className="owner-actions">
-                {/* Botão Editar agora navega para a página de edição */}
                 <Button className="edit-event-btn" onClick={() => navigate(`/editar-evento/${eventId}`)}>
                   <i className="bi bi-pencil-fill"></i> Editar
                 </Button>
-                {/* Botão Excluir chama handleDelete */}
                 <Button className="delete-event-btn" onClick={handleDelete}>
                   <i className="bi bi-trash-fill"></i> Excluir
                 </Button>
@@ -210,8 +371,9 @@ const EventDetail = () => {
             )}
           </div>
 
-          {/* Seção de Imagens */}
+          {/* Seção Imagens (igual) */}
           <section className="event-images">
+            {/* ... (código mantido) ... */}
             <div className="main-image">
               {mainImage && <img src={`${API_BASE_URL}${mainImage.url}`} alt={event.titulo} />}
             </div>
@@ -224,14 +386,16 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção Descrição */}
+          {/* Seção Descrição (igual) */}
           <section className="event-section description-section">
+            {/* ... (código mantido) ... */}
             <h2>Descrição do Evento</h2>
             <p>{event.descricao}</p>
           </section>
 
-          {/* Seção Informações Gerais */}
+          {/* Seção Informações Gerais (igual) */}
           <section className="event-section info-section">
+            {/* ... (código mantido) ... */}
             <h2>Informações Gerais</h2>
             <div className="info-grid">
               <p><strong>Data e Hora:</strong> {formatDate(event.data)}</p>
@@ -242,31 +406,59 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção de Botões de Interação */}
+          {/* Seção de Botões de Interação (NOVO: Interesses dinâmicos) */}
           <section className="event-section action-buttons">
               <div className="interactions-container">
-                  <InteractionButton type="heart" label="Curtidas" count={staticCounts.curtidas} isActive={isLiked} onClick={handleLikeToggle} />
-                  <InteractionButton type="like" label="Interesses" count={staticCounts.interesses} isActive={isInterested} onClick={handleInterestToggle} />
-                  <InteractionButton type="comment" label="Comentários" count={staticCounts.comentarios} onClick={handleCommentClick} />
-                  <InteractionButton type="report" label="Denunciar" eventId={eventId} /> {/* Usa eventId */}
+                  {/* Curtidas (do passo anterior) */}
+                  <InteractionButton type="heart" label="Curtidas" count={likeCount} isActive={isLiked} onClick={handleLikeToggle} />
+                  
+                  {/* NOVO: interestCount e isInterested agora vêm do estado dinâmico */}
+                  <InteractionButton type="like" label="Interesses" count={interestCount} isActive={isInterested} onClick={handleInterestToggle} />
+                  
+                  {/* Comentários (do primeiro passo) */}
+                  <InteractionButton type="comment" label="Comentários" count={comments.length} onClick={handleCommentClick} />
+                  <InteractionButton type="report" label="Denunciar" eventId={eventId} />
               </div>
           </section>
 
-          {/* Seção Adicionar Comentário */}
+          {/* Seção Adicionar Comentário (igual) */}
           <section className="add-comment-section" id="comments-section">
+            {/* ... (código mantido) ... */}
             <h2>Adicionar Comentário</h2>
             <div className="comment-input-wrapper">
-                <textarea placeholder="Escreva seu comentário aqui..." className="comment-input"></textarea>
-                <button className="submit-comment-btn">Comentar</button>
+                <textarea 
+                  placeholder="Escreva seu comentário aqui..." 
+                  className="comment-input"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  disabled={isSubmittingComment}
+                />
+                <button 
+                  className="submit-comment-btn" 
+                  onClick={handleSubmitComment}
+                  disabled={isSubmittingComment}
+                >
+                  {isSubmittingComment ? "Enviando..." : "Comentar"}
+                </button>
             </div>
           </section>
 
-          {/* Seção Listagem de Comentários */}
+          {/* Seção Listagem de Comentários (igual) */}
           <section className="event-section comments-section">
-              <h2>Comentários:</h2>
-              {/* Comentários Mockados */}
-              <CommentBox author="Ana Maria" text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..." />
-              <CommentBox author="João Silva" text="Ótima dica! Ansioso por este evento na cidade." />
+            {/* ... (código mantido) ... */}
+            <h2>Comentários:</h2>
+              {comments.length === 0 ? (
+                <p>Ainda não há comentários. Seja o primeiro a comentar!</p>
+              ) : (
+                comments.map((comment) => (
+                  <CommentBox 
+                    key={comment.id_comentario}
+                    author={comment.usuario.nome} 
+                    text={comment.texto}
+                    photoUrl={comment.usuario.url_foto_perfil}
+                  />
+                ))
+              )}
           </section>
 
         </div>
@@ -277,10 +469,9 @@ const EventDetail = () => {
 
 export default EventDetail;
 
-
-// --- Definição do ConfirmationToast (COMENTE OU REMOVA SE JÁ ESTIVER IMPORTANDO DE UserProfile.jsx) ---
-
+// ConfirmationToast (igual)
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
+  // ... (código mantido)
   <div className="toast-confirmation-body">
     <p>{message}</p>
     <div className="toast-confirmation-buttons">

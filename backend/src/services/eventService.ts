@@ -287,3 +287,209 @@ export async function updateEvent(
     throw new Error("Erro no banco de dados ao tentar atualizar o evento.");
   }
 }
+
+/**
+ * Buscar todos os comentários de um evento
+ */
+export async function getCommentsByEventId(eventId: number) {
+  return prisma.comentario.findMany({
+    where: { id_evento: eventId },
+    include: {
+      // Incluímos o 'usuario' para sabermos quem comentou
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          url_foto_perfil: true, // Se quisermos exibir a foto no futuro
+        },
+      },
+    },
+    orderBy: {
+      data_criacao: 'asc', // Do mais antigo para o mais novo
+    },
+  });
+}
+
+/**
+ * Criar um novo comentário
+ */
+export async function createComment(
+  eventId: number,
+  userId: number,
+  texto: string
+) {
+  if (!texto || texto.trim() === "") {
+    throw new Error("O texto do comentário não pode estar vazio.");
+  }
+
+  return prisma.comentario.create({
+    data: {
+      id_evento: eventId,
+      id_usuario: userId,
+      texto: texto,
+    },
+    include: {
+      // Retorna o comentário criado com os dados do usuário
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          url_foto_perfil: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Buscar o total de curtidas de um evento
+ */
+export async function getTotalLikes(eventId: number) {
+  return prisma.curtida.count({
+    where: { id_evento: eventId },
+  });
+}
+
+/**
+ * Verificar se um usuário específico curtiu um evento
+ */
+export async function getUserLikeStatus(eventId: number, userId: number) {
+  const like = await prisma.curtida.findUnique({
+    where: {
+      // Esta chave composta (id_usuario + id_evento) foi definida no schema.prisma
+      id_usuario_id_evento: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+  return { userHasLiked: !!like }; // Retorna true se o 'like' existir, false se não
+}
+
+/**
+ * Adicionar ou remover uma curtida (toggle)
+ */
+export async function toggleLike(eventId: number, userId: number) {
+  const likeExists = await prisma.curtida.findUnique({
+    where: {
+      id_usuario_id_evento: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+
+  if (likeExists) {
+    // Se já curtiu, remove a curtida
+    await prisma.curtida.delete({
+      where: { id_curtida: likeExists.id_curtida },
+    });
+  } else {
+    // Se não curtiu, cria a curtida
+    await prisma.curtida.create({
+      data: {
+        id_evento: eventId,
+        id_usuario: userId,
+      },
+    });
+  }
+
+  // Retorna o novo estado
+  const totalLikes = await getTotalLikes(eventId);
+  return {
+    totalLikes,
+    userHasLiked: !likeExists, // O novo estado é o oposto do que existia
+  };
+}
+
+/**
+ * Buscar o total de interesses (inscrições) de um evento
+ */
+export async function getTotalInterests(eventId: number) {
+  return prisma.inscricao.count({
+    where: { id_evento: eventId },
+  });
+}
+
+/**
+ * Verificar se um usuário específico demonstrou interesse (inscrição) em um evento
+ */
+export async function getUserInterestStatus(eventId: number, userId: number) {
+  const interest = await prisma.inscricao.findUnique({
+    where: {
+      // Chave composta definida no schema.prisma
+      id_evento_id_usuario: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+  return { userHasInterested: !!interest }; // Retorna true se a 'inscricao' existir
+}
+
+/**
+ * Adicionar ou remover um interesse (inscrição) - (toggle)
+ */
+export async function toggleInterest(eventId: number, userId: number) {
+  const interestExists = await prisma.inscricao.findUnique({
+    where: {
+      id_evento_id_usuario: {
+        id_usuario: userId,
+        id_evento: eventId,
+      },
+    },
+  });
+
+  if (interestExists) {
+    // Se já demonstrou interesse, remove
+    await prisma.inscricao.delete({
+      where: { id_inscricao: interestExists.id_inscricao },
+    });
+  } else {
+    // Se não, cria a inscrição
+    await prisma.inscricao.create({
+      data: {
+        id_evento: eventId,
+        id_usuario: userId,
+      },
+    });
+  }
+
+  // Retorna o novo estado
+  const totalInterests = await getTotalInterests(eventId);
+  return {
+    totalInterests,
+    userHasInterested: !interestExists, // O novo estado é o oposto
+  };
+}
+
+/**
+ * [NOVO] Buscar todos os eventos que um usuário demonstrou interesse
+ * (Para a página 'Meus Interesses')
+ */
+export async function findEventsByUserInterest(userId: number) {
+  // 1. Encontra todas as inscrições (interesses) do usuário
+  const inscricoes = await prisma.inscricao.findMany({
+    where: { id_usuario: userId },
+    select: { id_evento: true }, // Só precisamos dos IDs dos eventos
+  });
+
+  // 2. Extrai os IDs dos eventos
+  const eventIds = inscricoes.map((inscricao) => inscricao.id_evento);
+
+  // 3. Busca todos os eventos que correspondem a esses IDs
+  return prisma.evento.findMany({
+    where: {
+      id_evento: {
+        in: eventIds,
+      },
+    },
+    include: {
+      imagemEvento: true,
+      categoria: true,
+    },
+    orderBy: {
+      data: 'desc', // Ordena pelos mais recentes
+    },
+  });
+}

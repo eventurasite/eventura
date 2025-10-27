@@ -209,3 +209,156 @@ export async function updateEventController(req: Request, res: Response): Promis
     else res.status(500).json({ message: "Erro interno ao atualizar o evento." });
   }
 }
+
+/**
+ * Buscar comentários de um evento
+ */
+export async function getCommentsController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+
+    const comentarios = await eventService.getCommentsByEventId(eventId);
+    res.status(200).json(comentarios);
+
+  } catch (error: any) {
+    console.error("Erro ao buscar comentários:", error);
+    res.status(500).json({ message: "Erro interno ao buscar comentários." });
+  }
+}
+
+/**
+ * Criar um novo comentário
+ */
+export async function createCommentController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token (authMiddleware)
+    const { texto } = req.body;
+
+    if (isNaN(eventId)) {
+      res.status(400).json({ message: "ID do evento inválido." }); return;
+    }
+
+    const novoComentario = await eventService.createComment(eventId, userId, texto);
+    res.status(201).json(novoComentario);
+
+  } catch (error: any) {
+    console.error("Erro ao criar comentário:", error);
+    if (error.message.includes("texto do comentário")) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Erro interno ao criar o comentário." });
+    }
+  }
+}
+
+/**
+ * Buscar total de curtidas (Público)
+ */
+export async function getTotalLikesController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    const totalLikes = await eventService.getTotalLikes(eventId);
+    res.status(200).json({ totalLikes });
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao buscar total de curtidas." });
+  }
+}
+
+/**
+ * Verificar se o usuário logado curtiu (Protegido)
+ */
+export async function getUserLikeStatusController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const status = await eventService.getUserLikeStatus(eventId, userId);
+    res.status(200).json(status);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao verificar curtida." });
+  }
+}
+
+/**
+ * Adicionar/Remover curtida (Protegido)
+ */
+export async function toggleLikeController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const novoStatus = await eventService.toggleLike(eventId, userId);
+    res.status(200).json(novoStatus);
+  } catch (error: any)
+ {
+    res.status(500).json({ message: "Erro ao processar curtida." });
+  }
+}
+
+/**
+ * Buscar total de interesses (Público)
+ */
+export async function getTotalInterestsController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    const totalInterests = await eventService.getTotalInterests(eventId);
+    res.status(200).json({ totalInterests });
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao buscar total de interesses." });
+  }
+}
+
+/**
+ * Verificar se o usuário logado tem interesse (Protegido)
+ */
+export async function getUserInterestStatusController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const status = await eventService.getUserInterestStatus(eventId, userId);
+    res.status(200).json(status);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao verificar interesse." });
+  }
+}
+
+/**
+ * Adicionar/Remover interesse (Protegido)
+ */
+export async function toggleInterestController(req: Request, res: Response): Promise<void> {
+  try {
+    const eventId = parseInt(req.params.id, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    const novoStatus = await eventService.toggleInterest(eventId, userId);
+    res.status(200).json(novoStatus);
+  } catch (error: any) {
+    res.status(500).json({ message: "Erro ao processar interesse." });
+  }
+}
+
+/**
+ * [NOVO] Listar eventos de interesse do usuário autenticado
+ * (Para a página 'Meus Interesses')
+ */
+export async function getMyInterestsController(req: Request, res: Response): Promise<void> {
+  try {
+    // @ts-ignore
+    const userId = req.user.id;
+    const eventos = await eventService.findEventsByUserInterest(userId);
+    res.status(200).json(eventos);
+  } catch (error: any) {
+    console.error("Erro ao listar eventos de interesse:", error);
+    res.status(500).json({ message: "Erro ao listar seus eventos de interesse" });
+  }
+}
