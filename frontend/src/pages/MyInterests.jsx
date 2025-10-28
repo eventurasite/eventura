@@ -6,24 +6,25 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
-import { CATEGORIAS } from "./Agenda.jsx"; 
+// REMOVIDA A IMPORTAÇÃO da constante CATEGORIAS
 import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
-// ROTA DE INTERESSES (requer implementação no backend)
 const API_URL_MY_INTERESTS = `${API_BASE_URL}/api/events/my-interests`; 
 
 export default function MyInterests() {
   const [events, setEvents] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
   
+  // --- ALTERAÇÃO 1: Novo estado para categorias dinâmicas ---
+  const [categorias, setCategorias] = useState([]);
+
   // Estados temporários para os selects
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
   const [tempTicket, setTempTicket] = useState("");
   const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
-  // Estado para armazenar filtros aplicados (para re-filtrar no cliente)
   const [appliedFilters, setAppliedFilters] = useState({
     category: "",
     month: "",
@@ -42,7 +43,6 @@ export default function MyInterests() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(response.data);
-        // Aplica os filtros iniciais (todos os eventos)
         handleApplyFilters(response.data);
       } catch (error) {
         console.error("Erro ao buscar Meus Interesses:", error);
@@ -57,37 +57,43 @@ export default function MyInterests() {
     fetchMyInterests();
   }, []);
 
-  // LÓGICA DE FILTRAGEM UNIFICADA (Idêntica à Agenda.jsx)
+  // --- ALTERAÇÃO 2: Novo useEffect para buscar as categorias ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        setCategorias(response.data);
+      } catch (err) {
+        console.error("Erro ao buscar categorias:", err);
+        toast.error("Não foi possível carregar as categorias.");
+      }
+    };
+    fetchCategories();
+  }, []); // Executa apenas uma vez
+
+  // LÓGICA DE FILTRAGEM UNIFICADA (Não muda)
   const applyFilters = (eventsToFilter = events) => {
+    // ... (lógica de filtro não muda) ...
     const now = new Date().setHours(0, 0, 0, 0);
     let filtered = eventsToFilter;
 
-    // 1. Filtrar eventos futuros se checkbox não marcado
     if (!tempShowPastEvents) {
       filtered = filtered.filter((e) => new Date(e.data) >= now);
     }
-
-    // 2. Filtrar por categoria
     if (tempCategory) {
       filtered = filtered.filter((e) => e.categoria?.nome === tempCategory);
     }
-
-    // 3. Filtrar por mês
     if (tempMonth) {
       filtered = filtered.filter(
         (e) => new Date(e.data).getMonth() + 1 === parseInt(tempMonth)
       );
     }
-
-    // 4. Filtrar por ingresso
     if (tempTicket) {
       filtered = filtered.filter((e) => {
         const precoNum = Number(e.preco);
         return tempTicket === "gratuito" ? precoNum === 0 : precoNum > 0;
       });
     }
-
-    // Atualiza os filtros aplicados e a lista exibida (necessário para re-render)
     setAppliedFilters({
       category: tempCategory,
       month: tempMonth,
@@ -118,7 +124,6 @@ export default function MyInterests() {
             <p>Gerencie todos os eventos nos quais você demonstrou interesse.</p>
           </div>
           
-          {/* Divisor após o cabeçalho */}
           <hr className="agenda-divider" />
           
           {/* --- Filtros --- */}
@@ -132,14 +137,16 @@ export default function MyInterests() {
                 onChange={(e) => setTempCategory(e.target.value)}
               >
                 <option value="">Todas</option>
-                {CATEGORIAS.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {/* --- ALTERAÇÃO 3: Mapeia o estado dinâmico --- */}
+                {categorias.map((cat) => (
+                  <option key={cat.id_categoria} value={cat.nome}>
+                    {cat.nome}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* ... (Restante dos filtros não muda) ... */}
             <div className="filter-group">
               <label htmlFor="mes">Mês</label>
               <select
@@ -189,7 +196,7 @@ export default function MyInterests() {
             </div>
           </div>
 
-          {/* Checkbox (Idêntico à Agenda.jsx) */}
+          {/* ... (Restante do JSX não muda) ... */}
           <div className="agenda-filters" style={{ marginTop: "10px" }}>
             <label>
               <input
@@ -200,8 +207,7 @@ export default function MyInterests() {
               Mostrar eventos passados
             </label>
           </div>
-          {/* Fim da seção de Filtros */}
-
+          
           {isLoading ? (
             <p>Carregando seus eventos de interesse...</p>
           ) : eventsToDisplay.length === 0 ? (
