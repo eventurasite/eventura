@@ -6,6 +6,34 @@ import './EventCarousel.css';
 
 const API_BASE_URL = "http://localhost:5000";
 
+// --- INÍCIO DA CORREÇÃO ---
+/**
+ * Verifica se uma URL é externa (absoluta)
+ * @param {string} url
+ * @returns {boolean}
+ */
+const isExternalUrl = (url) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+};
+
+/**
+ * Monta a URL correta para a imagem
+ * @param {string | undefined} url
+ * @returns {string}
+ */
+const resolveImageUrl = (url) => {
+  if (isExternalUrl(url)) {
+    return url; // URL já é absoluta (ex: Cloudinary)
+  }
+  if (url) {
+    return `${API_BASE_URL}${url}`; // URL relativa (ex: /uploads/)
+  }
+  return "/assets/imagens/default-event.jpg"; // Fallback
+};
+// --- FIM DA CORREÇÃO ---
+
+
 const EventCarousel = () => {
   const [events, setEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,9 +76,10 @@ const EventCarousel = () => {
           {visibleEvents.map(event => (
             <div key={event.id_evento} className="event-card">
               <div className="image-container">
-                <img 
-                  src={`${API_BASE_URL}${event.imagemEvento[0]?.url}`} 
-                  alt={event.titulo} 
+                <img
+                  // --- CORREÇÃO APLICADA AQUI ---
+                  src={resolveImageUrl(event.imagemEvento[0]?.url)}
+                  alt={event.titulo}
                 />
               </div>
               <h4>{event.titulo}</h4>

@@ -10,6 +10,34 @@ import { toast } from "react-toastify";
 
 const API_BASE_URL = "http://localhost:5000";
 
+// --- INÍCIO DA CORREÇÃO ---
+/**
+ * Verifica se uma URL é externa (absoluta)
+ * @param {string} url
+ * @returns {boolean}
+ */
+const isExternalUrl = (url) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+};
+
+/**
+ * Monta a URL correta para a imagem
+ * @param {string | undefined} url
+ * @returns {string}
+ */
+const resolveImageUrl = (url) => {
+  if (isExternalUrl(url)) {
+    return url; // URL já é absoluta (ex: Cloudinary)
+  }
+  if (url) {
+    return `${API_BASE_URL}${url}`; // URL relativa (ex: /uploads/)
+  }
+  return "/assets/imagens/default-event.jpg"; // Fallback
+};
+// --- FIM DA CORREÇÃO ---
+
+
 // Componente CommentBox (igual)
 const CommentBox = ({ author, text, photoUrl }) => (
   // ... (código mantido)
@@ -371,16 +399,17 @@ const EventDetail = () => {
             )}
           </div>
 
-          {/* Seção Imagens (igual) */}
+          {/* Seção Imagens (MODIFICADA) */}
           <section className="event-images">
-            {/* ... (código mantido) ... */}
             <div className="main-image">
-              {mainImage && <img src={`${API_BASE_URL}${mainImage.url}`} alt={event.titulo} />}
+              {/* --- CORREÇÃO APLICADA AQUI --- */}
+              <img src={resolveImageUrl(mainImage?.url)} alt={event.titulo} />
             </div>
             <div className="thumbnail-gallery">
               {thumbnails.map((img) => (
                 <div key={img.id_imagem} className="thumbnail">
-                  <img src={`${API_BASE_URL}${img.url}`} alt="Miniatura do evento" />
+                  {/* --- CORREÇÃO APLICADA AQUI --- */}
+                  <img src={resolveImageUrl(img.url)} alt="Miniatura do evento" />
                 </div>
               ))}
             </div>

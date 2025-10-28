@@ -5,6 +5,15 @@ import "./EventCard.css";
 
 const API_BASE_URL = "http://localhost:5000";
 
+/**
+ * Verifica se uma URL é externa (absoluta)
+ * @param {string} url 
+ * @returns {boolean}
+ */
+const isExternalUrl = (url) => {
+  return url.startsWith('http://') || url.startsWith('https://');
+};
+
 const EventCard = ({ id, title, date, location, category, imageUrl }) => {
   const formatDate = (isoDate) => {
     if (!isoDate) return "Data não definida";
@@ -15,8 +24,14 @@ const EventCard = ({ id, title, date, location, category, imageUrl }) => {
     });
   };
 
-  // SOLUÇÃO DEFINITIVA: Monta a URL completa, apontando para o backend
-  const fullImageUrl = imageUrl ? `${API_BASE_URL}${imageUrl}` : "/assets/imagens/default-event.jpg";
+  // --- ALTERAÇÃO PRINCIPAL AQUI ---
+  // Agora verificamos se a URL já é absoluta.
+  // Se for, usamos como está. Se não for, adicionamos a API_BASE_URL.
+  const fullImageUrl = imageUrl
+    ? isExternalUrl(imageUrl)
+      ? imageUrl // A URL já é completa (ex: Cloudinary), usa-a diretamente
+      : `${API_BASE_URL}${imageUrl}` // A URL é relativa (ex: /uploads/..), adiciona o prefixo
+    : "/assets/imagens/default-event.jpg"; // Fallback se não houver imagem
 
   return (
     <div className="event-card-container">

@@ -9,21 +9,16 @@ import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
 
-// Lista de categorias fixa (pode substituir por fetch se quiser dinamicamente)
-export const CATEGORIAS = [
-  "Música",
-  "Esportes",
-  "Tecnologia",
-  "Arte e Cultura",
-  "Gastronomia",
-  "Comédia",
-];
+// REMOVEMOS a constante estática 'CATEGORIAS' daqui
 
 export default function Agenda() {
   const [allEvents, setAllEvents] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // --- ALTERAÇÃO 1: Novo estado para categorias dinâmicas ---
+  const [categorias, setCategorias] = useState([]);
 
   // Estados temporários para filtros
   const [tempCategory, setTempCategory] = useState("");
@@ -37,10 +32,8 @@ export default function Agenda() {
   const [selectedTicket, setSelectedTicket] = useState("");
   const [showPastEvents, setShowPastEvents] = useState(false);
 
-  // --- ALTERAÇÃO 1: Modificamos a função applyFilters para aceitar dados ---
-  // Ela usará os 'dadosRecebidos' se eles forem passados (no carregamento da página),
-  // ou usará o estado 'allEvents' se for chamada pelo botão (sem argumentos).
   const applyFilters = (dadosRecebidos) => {
+    // ... (A lógica interna desta função não muda) ...
     const eventosParaFiltrar = dadosRecebidos || allEvents;
     
     const now = new Date().setHours(0, 0, 0, 0);
@@ -71,7 +64,6 @@ export default function Agenda() {
       });
     }
 
-    // Atualiza os filtros na UI e a lista de eventos exibida
     setSelectedCategory(tempCategory);
     setSelectedMonth(tempMonth);
     setSelectedTicket(tempTicket);
@@ -79,17 +71,13 @@ export default function Agenda() {
     setEvents(filtered);
   };
 
-  // --- ALTERAÇÃO 2: Chamamos applyFilters() dentro do useEffect ---
+  // useEffect principal (busca eventos)
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/events`);
         setAllEvents(response.data);
-        
-        // ADICIONADO: Aplica o filtro inicial (para mostrar eventos futuros)
-        // assim que os dados são carregados.
         applyFilters(response.data); 
-
       } catch (err) {
         console.error("Erro ao carregar eventos:", err);
         setError("Não foi possível carregar os eventos.");
@@ -99,8 +87,22 @@ export default function Agenda() {
     };
 
     fetchEvents();
-  }, []); // A dependência [] está correta, só executa uma vez.
+  }, []);
 
+  // --- ALTERAÇÃO 2: Novo useEffect para buscar as categorias ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        setCategorias(response.data); // Armazena a lista vinda do banco
+      } catch (err) {
+        console.error("Erro ao buscar categorias:", err);
+        toast.error("Não foi possível carregar as categorias.");
+      }
+    };
+
+    fetchCategories();
+  }, []); // Executa apenas uma vez quando o componente é montado
 
   if (loading) return <p>Carregando eventos...</p>;
   if (error) return <p>Erro: {error}</p>;
@@ -113,13 +115,11 @@ export default function Agenda() {
       <Header />
       <div className="agenda-page-wrapper">
         <div className="agenda-content-wrapper">
-          {/* Cabeçalho */}
           <div className="agenda-header">
             <h1>Agenda</h1>
             <p>Confira todos os eventos!</p>
           </div>
 
-          {/* Filtros + Botão Pesquisar */}
           <div className="agenda-filters">
             <div className="filter-group">
               <label htmlFor="categoria">Categoria</label>
@@ -130,14 +130,16 @@ export default function Agenda() {
                 onChange={(e) => setTempCategory(e.target.value)}
               >
                 <option value="">Todas</option>
-                {CATEGORIAS.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {/* --- ALTERAÇÃO 3: Mapeia o estado dinâmico --- */}
+                {categorias.map((cat) => (
+                  <option key={cat.id_categoria} value={cat.nome}>
+                    {cat.nome}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* ... (Restante dos filtros de Mês e Ingresso não mudam) ... */}
             <div className="filter-group">
               <label htmlFor="mes">Mês</label>
               <select
@@ -176,16 +178,14 @@ export default function Agenda() {
               </select>
             </div>
 
-            {/* Botão Pesquisar na mesma linha */}
             <div className="filter-group" style={{ alignSelf: "flex-end" }}>
-              {/* --- ALTERAÇÃO 3: Garantir que o botão chame applyFilters sem argumentos --- */}
               <button className="search-button" onClick={() => applyFilters()}>
                 <i className="bi bi-search"></i> Pesquisar
               </button>
             </div>
           </div>
 
-          {/* Checkbox em linha separada */}
+          {/* ... (Restante do JSX não muda) ... */}
           <div className="agenda-filters" style={{ marginTop: "10px" }}>
             <label>
               <input
@@ -197,10 +197,6 @@ export default function Agenda() {
             </label>
           </div>
 
-          {/* Listagem */}
-          {/* Agora, 'events.length' será > 0 se a API retornar eventos
-            e o filtro inicial (de eventos futuros) encontrar algo.
-          */}
           {events.length === 0 ? (
             <p>Não há eventos cadastrados que correspondam aos filtros.</p>
           ) : (

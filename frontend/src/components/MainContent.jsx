@@ -6,6 +6,36 @@ import './MainContent.css';
 
 const API_BASE_URL = "http://localhost:5000";
 
+// --- INÍCIO DA CORREÇÃO ---
+/**
+ * Verifica se uma URL é externa (absoluta)
+ * @param {string} url
+ * @returns {boolean}
+ */
+const isExternalUrl = (url) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://');
+};
+
+/**
+ * Monta a URL correta para a imagem
+ * @param {string | undefined} url
+ * @returns {string}
+ */
+const resolveImageUrl = (url) => {
+  if (isExternalUrl(url)) {
+    return url; // URL já é absoluta (ex: Cloudinary)
+  }
+  if (url) {
+    return `${API_BASE_URL}${url}`; // URL relativa (ex: /uploads/)
+  }
+  // Retorna um fallback ou imagem transparente se não houver URL
+  // (para não quebrar o layout se o evento não tiver imagem)
+  return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; 
+};
+// --- FIM DA CORREÇÃO ---
+
+
 function MainContent() {
   const [latestEvents, setLatestEvents] = useState([]);
   const navigate = useNavigate();
@@ -44,22 +74,25 @@ function MainContent() {
           {latestEvents.length > 0 && (
             <>
               <div className="image-container large-image">
-                <img 
-                  src={`${API_BASE_URL}${firstEvent?.imagemEvento[0]?.url}`} 
-                  alt={firstEvent?.titulo || 'Evento'} 
+                <img
+                  // --- CORREÇÃO APLICADA AQUI ---
+                  src={resolveImageUrl(firstEvent?.imagemEvento[0]?.url)}
+                  alt={firstEvent?.titulo || 'Evento'}
                 />
               </div>
               <div className="main-right-column">
                 <div className="image-container small-image">
-                  <img 
-                    src={`${API_BASE_URL}${secondEvent?.imagemEvento[0]?.url}`} 
-                    alt={secondEvent?.titulo || 'Evento'} 
+                  <img
+                    // --- CORREÇÃO APLICADA AQUI ---
+                    src={resolveImageUrl(secondEvent?.imagemEvento[0]?.url)}
+                    alt={secondEvent?.titulo || 'Evento'}
                   />
                 </div>
                 <div className="image-container smallest-image">
-                  <img 
-                    src={`${API_BASE_URL}${thirdEvent?.imagemEvento[0]?.url}`} 
-                    alt={thirdEvent?.titulo || 'Evento'} 
+                  <img
+                    // --- CORREÇÃO APLICADA AQUI ---
+                    src={resolveImageUrl(thirdEvent?.imagemEvento[0]?.url)}
+                    alt={thirdEvent?.titulo || 'Evento'}
                   />
                 </div>
               </div>
