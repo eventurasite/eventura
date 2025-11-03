@@ -36,7 +36,7 @@ model Usuario {
   curtidas        Curtida[]
   comentarios     Comentario[]
   denuncias       Denuncia[]
-  inscricoes      Inscricao[]
+  interesses      Interesse[]
 }
 
 model Categoria {
@@ -67,8 +67,8 @@ model Evento {
   curtidas     Curtida[]
   comentarios  Comentario[]
   denuncias    Denuncia[]
-  inscricoes   Inscricao[]
   imagemEvento ImagemEvento[]
+  interesses   Interesse[]
 }
 
 model Curtida {
@@ -116,8 +116,16 @@ model Denuncia {
 }
 
 // Agenda
-model Inscricao {
-  id_inscricao        Int      @id @default(autoincrement())
+model ImagemEvento {
+  id_imagem Int    @id @default(autoincrement())
+  url       String
+
+  id_evento Int
+  evento    Evento @relation(fields: [id_evento], references: [id_evento])
+}
+
+model Interesse {
+  id_interesse        Int      @id @default(autoincrement())
   data_criacao        DateTime @default(now())
   notificacoes_ativas Boolean  @default(true)
 
@@ -128,12 +136,4 @@ model Inscricao {
   evento    Evento @relation(fields: [id_evento], references: [id_evento])
 
   @@unique([id_evento, id_usuario])
-}
-
-model ImagemEvento {
-  id_imagem Int    @id @default(autoincrement())
-  url       String
-
-  id_evento Int
-  evento    Evento @relation(fields: [id_evento], references: [id_evento])
 }

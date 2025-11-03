@@ -340,25 +340,41 @@ export async function toggleInterestController(req: Request, res: Response): Pro
     // @ts-ignore
     const userId = req.user.id; // Vem do token
 
-    const novoStatus = await eventService.toggleInterest(eventId, userId);
+    const novoStatus = await eventService.toggleInteresse(eventId, userId);
     res.status(200).json(novoStatus);
   } catch (error: any) {
     res.status(500).json({ message: "Erro ao processar interesse." });
   }
 }
 
-/**
- * [NOVO] Listar eventos de interesse do usuário autenticado
- * (Para a página 'Meus Interesses')
- */
-export async function getMyInterestsController(req: Request, res: Response): Promise<void> {
+// 🔹 POST /api/events/:id/interest → Alternar interesse
+export async function toggleInteresseEvento(req: any, res: Response) {
   try {
-    // @ts-ignore
-    const userId = req.user.id;
-    const eventos = await eventService.findEventsByUserInterest(userId);
+    const id_evento = Number(req.params.id);
+    // @ts-ignore - o middleware popula req.user com os dados do token
+    const id_usuario = req.user.id;
+
+    if (!id_evento || isNaN(id_evento)) {
+      return res.status(400).json({ message: "ID de evento inválido." });
+    }
+
+    const resultado = await eventService.toggleInteresse(id_evento, id_usuario);
+    res.status(200).json(resultado);
+  } catch (error) {
+    console.error("Erro ao alternar interesse:", error);
+    res.status(500).json({ message: "Erro ao registrar interesse." });
+  }
+}
+
+// 🔹 GET /api/events/my-interests → Buscar eventos que o usuário marcou interesse
+export async function getMeusInteresses(req: any, res: Response) {
+  try {
+    // @ts-ignore - o middleware popula req.user com os dados do token
+    const id_usuario = req.user.id;
+    const eventos = await eventService.buscarEventosPorInteresse(id_usuario);
     res.status(200).json(eventos);
-  } catch (error: any) {
-    console.error("Erro ao listar eventos de interesse:", error);
-    res.status(500).json({ message: "Erro ao listar seus eventos de interesse" });
+  } catch (error) {
+    console.error("Erro ao buscar meus interesses:", error);
+    res.status(500).json({ message: "Erro ao buscar eventos de interesse." });
   }
 }

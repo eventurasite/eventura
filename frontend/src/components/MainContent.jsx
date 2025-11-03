@@ -58,8 +58,8 @@ function MainContent() {
     <main className="main-container">
       <div className="main-container-fixed">
         <div className="main-left">
-          <h1>Cada Evento Uma Nova Aventura!</h1>
-          <p>Encontre e Divulgue os seus eventos na cidade de Uberaba!</p>
+          <h1>Cada evento,<br/>uma nova ventura!</h1>
+          <p>Encontre e divulgue eventos na cidade de Uberaba!</p>
           <div className="main-buttons">
             <button className="main-button divulgar" onClick={() => navigate('/registrarevento')}>
               Divulgar

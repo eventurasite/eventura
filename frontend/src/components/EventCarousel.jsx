@@ -69,8 +69,7 @@ const EventCarousel = () => {
     <div className="carousel-section">
       <div className="carousel-container-fixed">
         <div className="carousel-header">
-          <h1>Confira os Próximos Eventos!</h1>
-          <p>Confira abaixo os principais eventos em Uberaba:</p>
+          <h1>Confira os Próximos Eventos:</h1>
         </div>
         <div className="carousel-content">
           {visibleEvents.map(event => (

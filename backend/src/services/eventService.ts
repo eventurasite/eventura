@@ -406,7 +406,7 @@ export async function toggleLike(eventId: number, userId: number) {
  * Buscar o total de interesses (inscrições) de um evento
  */
 export async function getTotalInterests(eventId: number) {
-  return prisma.inscricao.count({
+  return prisma.interesse.count({
     where: { id_evento: eventId },
   });
 }
@@ -415,23 +415,22 @@ export async function getTotalInterests(eventId: number) {
  * Verificar se um usuário específico demonstrou interesse (inscrição) em um evento
  */
 export async function getUserInterestStatus(eventId: number, userId: number) {
-  const interest = await prisma.inscricao.findUnique({
+  const interest = await prisma.interesse.findUnique({
     where: {
-      // Chave composta definida no schema.prisma
       id_evento_id_usuario: {
         id_usuario: userId,
         id_evento: eventId,
       },
     },
   });
-  return { userHasInterested: !!interest }; // Retorna true se a 'inscricao' existir
+  return { userHasInterested: !!interest };
 }
 
 /**
  * Adicionar ou remover um interesse (inscrição) - (toggle)
  */
-export async function toggleInterest(eventId: number, userId: number) {
-  const interestExists = await prisma.inscricao.findUnique({
+export async function toggleInteresse(eventId: number, userId: number) {
+  const interestExists = await prisma.interesse.findUnique({
     where: {
       id_evento_id_usuario: {
         id_usuario: userId,
@@ -441,13 +440,11 @@ export async function toggleInterest(eventId: number, userId: number) {
   });
 
   if (interestExists) {
-    // Se já demonstrou interesse, remove
-    await prisma.inscricao.delete({
-      where: { id_inscricao: interestExists.id_inscricao },
+    await prisma.interesse.delete({
+      where: { id_interesse: interestExists.id_interesse },
     });
   } else {
-    // Se não, cria a inscrição
-    await prisma.inscricao.create({
+    await prisma.interesse.create({
       data: {
         id_evento: eventId,
         id_usuario: userId,
@@ -455,41 +452,27 @@ export async function toggleInterest(eventId: number, userId: number) {
     });
   }
 
-  // Retorna o novo estado
   const totalInterests = await getTotalInterests(eventId);
   return {
     totalInterests,
-    userHasInterested: !interestExists, // O novo estado é o oposto
+    userHasInterested: !interestExists,
   };
 }
 
-/**
- * [NOVO] Buscar todos os eventos que um usuário demonstrou interesse
- * (Para a página 'Meus Interesses')
- */
-export async function findEventsByUserInterest(userId: number) {
-  // 1. Encontra todas as inscrições (interesses) do usuário
-  const inscricoes = await prisma.inscricao.findMany({
-    where: { id_usuario: userId },
-    select: { id_evento: true }, // Só precisamos dos IDs dos eventos
-  });
-
-  // 2. Extrai os IDs dos eventos
-  const eventIds = inscricoes.map((inscricao) => inscricao.id_evento);
-
-  // 3. Busca todos os eventos que correspondem a esses IDs
-  return prisma.evento.findMany({
-    where: {
-      id_evento: {
-        in: eventIds,
+// Buscar eventos que o usuário marcou interesse
+export async function buscarEventosPorInteresse(id_usuario: number) {
+  const interesses = await prisma.interesse.findMany({
+    where: { id_usuario },
+    include: {
+      evento: {
+        include: {
+          categoria: true,
+          organizador: true,
+          imagemEvento: true,
+        },
       },
     },
-    include: {
-      imagemEvento: true,
-      categoria: true,
-    },
-    orderBy: {
-      data: 'desc', // Ordena pelos mais recentes
-    },
   });
+
+  return interesses.map((i) => i.evento);
 }

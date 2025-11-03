@@ -1,4 +1,3 @@
-// frontend/src/pages/MyInterests.jsx
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import EventCard from "../components/EventCard";
@@ -6,20 +5,18 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
-// REMOVIDA A IMPORTAÇÃO da constante CATEGORIAS
 import "./Agenda.css";
 
 const API_BASE_URL = "http://localhost:5000";
-const API_URL_MY_INTERESTS = `${API_BASE_URL}/api/events/my-interests`; 
+const API_URL_MY_INTERESTS = `${API_BASE_URL}/api/events/my-interests`;
 
 export default function MyInterests() {
-  const [events, setEvents] = useState([]); 
+  const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // --- ALTERAÇÃO 1: Novo estado para categorias dinâmicas ---
   const [categorias, setCategorias] = useState([]);
+  const [filteredEventsState, setFilteredEventsState] = useState([]);
 
-  // Estados temporários para os selects
+  // Estados temporários dos filtros
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
   const [tempTicket, setTempTicket] = useState("");
@@ -32,20 +29,29 @@ export default function MyInterests() {
     showPastEvents: false,
   });
 
-  // Buscar eventos de interesse do usuário
+  // 🔹 Carregar categorias e eventos de interesse simultaneamente
   useEffect(() => {
-    const fetchMyInterests = async () => {
+    const fetchAll = async () => {
       const token = localStorage.getItem("authToken");
-      if (!token) return setIsLoading(false);
+      if (!token) {
+        setEvents([]);
+        setIsLoading(false);
+        return;
+      }
 
       try {
-        const response = await axios.get(API_URL_MY_INTERESTS, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setEvents(response.data);
-        handleApplyFilters(response.data);
+        const [catsResponse, interestsResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/events/categories`),
+          axios.get(API_URL_MY_INTERESTS, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setCategorias(catsResponse.data);
+        setEvents(interestsResponse.data);
+        handleApplyFilters(interestsResponse.data);
       } catch (error) {
-        console.error("Erro ao buscar Meus Interesses:", error);
+        console.error("Erro ao carregar Meus Interesses:", error);
         toast.error(
           error.response?.data?.message ||
             "Não foi possível carregar seus eventos de interesse."
@@ -54,26 +60,30 @@ export default function MyInterests() {
         setIsLoading(false);
       }
     };
-    fetchMyInterests();
+
+    fetchAll();
   }, []);
 
-  // --- ALTERAÇÃO 2: Novo useEffect para buscar as categorias ---
+  // 🔹 Atualiza automaticamente quando o usuário volta para a aba
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
-        setCategorias(response.data);
-      } catch (err) {
-        console.error("Erro ao buscar categorias:", err);
-        toast.error("Não foi possível carregar as categorias.");
-      }
-    };
-    fetchCategories();
-  }, []); // Executa apenas uma vez
+    const handleFocus = () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) return;
 
-  // LÓGICA DE FILTRAGEM UNIFICADA (Não muda)
+      axios
+        .get(API_URL_MY_INTERESTS, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setEvents(res.data))
+        .catch(() => {});
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
+  // 🔹 Lógica de filtros
   const applyFilters = (eventsToFilter = events) => {
-    // ... (lógica de filtro não muda) ...
     const now = new Date().setHours(0, 0, 0, 0);
     let filtered = eventsToFilter;
 
@@ -94,23 +104,23 @@ export default function MyInterests() {
         return tempTicket === "gratuito" ? precoNum === 0 : precoNum > 0;
       });
     }
+
     setAppliedFilters({
       category: tempCategory,
       month: tempMonth,
       ticket: tempTicket,
       showPastEvents: tempShowPastEvents,
     });
+
     return filtered;
   };
-  
+
   const handleApplyFilters = (initialEvents = events) => {
     const finalFiltered = applyFilters(initialEvents);
-    setFilteredEventsState(finalFiltered); 
+    setFilteredEventsState(finalFiltered);
   };
-  
-  const [filteredEventsState, setFilteredEventsState] = useState([]);
-  
-  const eventsToDisplay = filteredEventsState; 
+
+  const eventsToDisplay = filteredEventsState;
   const groupedEvents = groupEventsByMonth(eventsToDisplay);
   const monthsOrder = sortMonths(groupedEvents);
 
@@ -123,9 +133,9 @@ export default function MyInterests() {
             <h1>Meus Interesses</h1>
             <p>Gerencie todos os eventos nos quais você demonstrou interesse.</p>
           </div>
-          
+
           <hr className="agenda-divider" />
-          
+
           {/* --- Filtros --- */}
           <div className="agenda-filters">
             <div className="filter-group">
@@ -137,7 +147,6 @@ export default function MyInterests() {
                 onChange={(e) => setTempCategory(e.target.value)}
               >
                 <option value="">Todas</option>
-                {/* --- ALTERAÇÃO 3: Mapeia o estado dinâmico --- */}
                 {categorias.map((cat) => (
                   <option key={cat.id_categoria} value={cat.nome}>
                     {cat.nome}
@@ -146,7 +155,6 @@ export default function MyInterests() {
               </select>
             </div>
 
-            {/* ... (Restante dos filtros não muda) ... */}
             <div className="filter-group">
               <label htmlFor="mes">Mês</label>
               <select
@@ -196,7 +204,6 @@ export default function MyInterests() {
             </div>
           </div>
 
-          {/* ... (Restante do JSX não muda) ... */}
           <div className="agenda-filters" style={{ marginTop: "10px" }}>
             <label>
               <input
@@ -207,7 +214,8 @@ export default function MyInterests() {
               Mostrar eventos passados
             </label>
           </div>
-          
+
+          {/* --- Listagem --- */}
           {isLoading ? (
             <p>Carregando seus eventos de interesse...</p>
           ) : eventsToDisplay.length === 0 ? (
@@ -216,12 +224,12 @@ export default function MyInterests() {
             <div className="agenda-list">
               {monthsOrder.map((monthYear, index) => (
                 <React.Fragment key={monthYear}>
-                    {index > 0 && <hr className="agenda-divider" />} 
-                    <div className="month-group">
-                      <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
-                      <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
-                      <div className="events-grid">
-                        {groupedEvents[monthYear].map((event) => (
+                  {index > 0 && <hr className="agenda-divider" />}
+                  <div className="month-group">
+                    <h1 className="month-title">{monthYear.split(" ")[0]}</h1>
+                    <h2 className="year-subtitle">{monthYear.split(" ")[1]}</h2>
+                    <div className="events-grid">
+                      {groupedEvents[monthYear].map((event) => (
                         <EventCard
                           key={event.id_evento}
                           id={event.id_evento}
@@ -232,8 +240,8 @@ export default function MyInterests() {
                           imageUrl={event.imagemEvento[0]?.url}
                         />
                       ))}
-                      </div>
                     </div>
+                  </div>
                 </React.Fragment>
               ))}
             </div>
