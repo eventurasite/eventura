@@ -25,8 +25,8 @@ router.get("/latest", eventController.getLatestEvents);
 // NOVA ROTA: Listar eventos do próprio usuário (protegida)
 router.get("/my-events", authenticateToken, eventController.getMyEvents);
 
-// Esta rota é esperada pela página MyInterests.jsx
-router.get("/my-interests", authenticateToken, eventController.getMyInterestsController);
+router.post("/:id/interest", authenticateToken, eventController.toggleInteresseEvento);
+router.get("/my-interests", authenticateToken, eventController.getMeusInteresses);
 
 // NOVA ROTA DE FILTRO (adicione antes de /:id)
 router.get("/filter", eventController.getFilteredEvents);
