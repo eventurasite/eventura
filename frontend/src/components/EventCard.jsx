@@ -3,15 +3,15 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./EventCard.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Verifica se uma URL é externa (absoluta)
- * @param {string} url 
+ * @param {string} url
  * @returns {boolean}
  */
 const isExternalUrl = (url) => {
-  return url.startsWith('http://') || url.startsWith('https://');
+  return url.startsWith("http://") || url.startsWith("https://");
 };
 
 const EventCard = ({ id, title, date, location, category, imageUrl }) => {

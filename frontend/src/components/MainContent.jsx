@@ -1,10 +1,10 @@
 // frontend/src/components/MainContent.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import './MainContent.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./MainContent.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // --- INÍCIO DA CORREÇÃO ---
 /**
@@ -14,7 +14,7 @@ const API_BASE_URL = "http://localhost:5000";
  */
 const isExternalUrl = (url) => {
   if (!url) return false;
-  return url.startsWith('http://') || url.startsWith('https://');
+  return url.startsWith("http://") || url.startsWith("https://");
 };
 
 /**
@@ -31,10 +31,9 @@ const resolveImageUrl = (url) => {
   }
   // Retorna um fallback ou imagem transparente se não houver URL
   // (para não quebrar o layout se o evento não tiver imagem)
-  return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; 
+  return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 };
 // --- FIM DA CORREÇÃO ---
-
 
 function MainContent() {
   const [latestEvents, setLatestEvents] = useState([]);
@@ -58,13 +57,23 @@ function MainContent() {
     <main className="main-container">
       <div className="main-container-fixed">
         <div className="main-left">
-          <h1>Cada evento,<br/>uma nova ventura!</h1>
+          <h1>
+            Cada evento,
+            <br />
+            uma nova ventura!
+          </h1>
           <p>Encontre e divulgue eventos na cidade de Uberaba!</p>
           <div className="main-buttons">
-            <button className="main-button divulgar" onClick={() => navigate('/registrarevento')}>
+            <button
+              className="main-button divulgar"
+              onClick={() => navigate("/registrarevento")}
+            >
               Divulgar
             </button>
-            <button className="main-button encontre" onClick={() => navigate('/agenda')}>
+            <button
+              className="main-button encontre"
+              onClick={() => navigate("/agenda")}
+            >
               Encontre
               <i className="bi bi-search"></i>
             </button>
@@ -77,7 +86,7 @@ function MainContent() {
                 <img
                   // --- CORREÇÃO APLICADA AQUI ---
                   src={resolveImageUrl(firstEvent?.imagemEvento[0]?.url)}
-                  alt={firstEvent?.titulo || 'Evento'}
+                  alt={firstEvent?.titulo || "Evento"}
                 />
               </div>
               <div className="main-right-column">
@@ -85,14 +94,14 @@ function MainContent() {
                   <img
                     // --- CORREÇÃO APLICADA AQUI ---
                     src={resolveImageUrl(secondEvent?.imagemEvento[0]?.url)}
-                    alt={secondEvent?.titulo || 'Evento'}
+                    alt={secondEvent?.titulo || "Evento"}
                   />
                 </div>
                 <div className="image-container smallest-image">
                   <img
                     // --- CORREÇÃO APLICADA AQUI ---
                     src={resolveImageUrl(thirdEvent?.imagemEvento[0]?.url)}
-                    alt={thirdEvent?.titulo || 'Evento'}
+                    alt={thirdEvent?.titulo || "Evento"}
                   />
                 </div>
               </div>

@@ -10,6 +10,7 @@ import PasswordField from "../components/PasswordField";
 
 import "./Login.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -33,7 +34,7 @@ export default function ResetPassword() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/password/reset", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/password/reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

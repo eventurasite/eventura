@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "./Agenda.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // REMOVEMOS a constante estática 'CATEGORIAS' daqui
 
@@ -35,7 +35,7 @@ export default function Agenda() {
   const applyFilters = (dadosRecebidos) => {
     // ... (A lógica interna desta função não muda) ...
     const eventosParaFiltrar = dadosRecebidos || allEvents;
-    
+
     const now = new Date().setHours(0, 0, 0, 0);
     let filtered = eventosParaFiltrar;
 
@@ -77,7 +77,7 @@ export default function Agenda() {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/events`);
         setAllEvents(response.data);
-        applyFilters(response.data); 
+        applyFilters(response.data);
       } catch (err) {
         console.error("Erro ao carregar eventos:", err);
         setError("Não foi possível carregar os eventos.");
@@ -93,7 +93,9 @@ export default function Agenda() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/events/categories`
+        );
         setCategorias(response.data); // Armazena a lista vinda do banco
       } catch (err) {
         console.error("Erro ao buscar categorias:", err);
