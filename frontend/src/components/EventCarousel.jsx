@@ -1,10 +1,10 @@
 // frontend/src/components/EventCarousel.jsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import './EventCarousel.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import "./EventCarousel.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // --- INÍCIO DA CORREÇÃO ---
 /**
@@ -14,7 +14,7 @@ const API_BASE_URL = "http://localhost:5000";
  */
 const isExternalUrl = (url) => {
   if (!url) return false;
-  return url.startsWith('http://') || url.startsWith('https://');
+  return url.startsWith("http://") || url.startsWith("https://");
 };
 
 /**
@@ -32,7 +32,6 @@ const resolveImageUrl = (url) => {
   return "/assets/imagens/default-event.jpg"; // Fallback
 };
 // --- FIM DA CORREÇÃO ---
-
 
 const EventCarousel = () => {
   const [events, setEvents] = useState([]);
@@ -53,16 +52,16 @@ const EventCarousel = () => {
 
   const handleNext = () => {
     if (currentIndex < events.length - cardsPerPage) {
-      setCurrentIndex(prevIndex => prevIndex + 1);
+      setCurrentIndex((prevIndex) => prevIndex + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(prevIndex => prevIndex - 1);
+      setCurrentIndex((prevIndex) => prevIndex - 1);
     }
   };
-  
+
   const visibleEvents = events.slice(currentIndex, currentIndex + cardsPerPage);
 
   return (
@@ -72,7 +71,7 @@ const EventCarousel = () => {
           <h1>Confira os Próximos Eventos:</h1>
         </div>
         <div className="carousel-content">
-          {visibleEvents.map(event => (
+          {visibleEvents.map((event) => (
             <div key={event.id_evento} className="event-card">
               <div className="image-container">
                 <img
@@ -82,7 +81,10 @@ const EventCarousel = () => {
                 />
               </div>
               <h4>{event.titulo}</h4>
-              <Link to={`/event/${event.id_evento}`} className="carousel-button">
+              <Link
+                to={`/event/${event.id_evento}`}
+                className="carousel-button"
+              >
                 Veja Mais
               </Link>
             </div>
@@ -92,7 +94,10 @@ const EventCarousel = () => {
           <button onClick={handlePrevious} disabled={currentIndex === 0}>
             <i className="bi bi-arrow-left"></i> Anterior
           </button>
-          <button onClick={handleNext} disabled={currentIndex >= events.length - cardsPerPage}>
+          <button
+            onClick={handleNext}
+            disabled={currentIndex >= events.length - cardsPerPage}
+          >
             Próximo <i className="bi bi-arrow-right"></i>
           </button>
         </div>

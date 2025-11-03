@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
 import "./Agenda.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const API_URL_MY_INTERESTS = `${API_BASE_URL}/api/events/my-interests`;
 
 export default function MyInterests() {
@@ -131,7 +131,9 @@ export default function MyInterests() {
         <div className="agenda-content-wrapper">
           <div className="agenda-header">
             <h1>Meus Interesses</h1>
-            <p>Gerencie todos os eventos nos quais você demonstrou interesse.</p>
+            <p>
+              Gerencie todos os eventos nos quais você demonstrou interesse.
+            </p>
           </div>
 
           <hr className="agenda-divider" />

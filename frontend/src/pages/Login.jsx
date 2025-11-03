@@ -11,7 +11,7 @@ import PasswordField from "../components/PasswordField";
 
 import "../components/TextField.css";
 import "./Login.css";
-
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -32,7 +32,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, senha: pwd }),
@@ -53,11 +53,10 @@ export default function Login() {
         setTimeout(() => {
           window.location.href = "/";
         }, 1500); // 1.5 segundos
-
       } else {
         if (data.provider === "google") {
           // redireciona automaticamente para o fluxo Google
-          window.location.href = "http://localhost:5000/api/auth/google";
+          window.location.href = `${API_BASE_URL}/api/auth/google`;
         } else {
           toast.error(data.message || "Erro ao fazer login");
         }
@@ -123,7 +122,7 @@ export default function Login() {
           variant="google"
           className="full"
           onClick={() => {
-            window.location.href = "http://localhost:5000/api/auth/google";
+            window.location.href = `${API_BASE_URL}/api/auth/google`;
           }}
         >
           <img

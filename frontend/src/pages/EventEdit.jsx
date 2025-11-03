@@ -11,7 +11,7 @@ import axios from "axios";
 // Reutiliza o CSS da página de registro
 import "./EventRegistration.css";
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function EventEdit() {
   const navigate = useNavigate();
@@ -32,7 +32,9 @@ export default function EventEdit() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/events/categories`
+        );
         setCategorias(response.data);
       } catch (error) {
         console.error("Erro ao buscar categorias:", error);
@@ -47,12 +49,17 @@ export default function EventEdit() {
     const fetchEventData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/events/${eventId}`
+        );
         const eventData = response.data;
 
         // Formata a data para o input datetime-local (YYYY-MM-DDTHH:mm)
         const formattedDate = eventData.data
-          ? new Date(new Date(eventData.data).getTime() - new Date().getTimezoneOffset() * 60000)
+          ? new Date(
+              new Date(eventData.data).getTime() -
+                new Date().getTimezoneOffset() * 60000
+            )
               .toISOString()
               .slice(0, 16)
           : "";
@@ -61,14 +68,19 @@ export default function EventEdit() {
           titulo: eventData.titulo || "",
           data: formattedDate,
           local: eventData.local || "",
-          preco: eventData.preco !== null && eventData.preco !== undefined ? String(eventData.preco) : "0", // Garante que seja string
+          preco:
+            eventData.preco !== null && eventData.preco !== undefined
+              ? String(eventData.preco)
+              : "0", // Garante que seja string
           id_categoria: eventData.id_categoria || "",
           descricao: eventData.descricao || "",
         });
       } catch (error) {
         console.error("Erro ao buscar dados do evento:", error);
-        toast.error("Não foi possível carregar os dados do evento para edição.");
-        navigate('/meuseventos'); // Volta se não conseguir carregar
+        toast.error(
+          "Não foi possível carregar os dados do evento para edição."
+        );
+        navigate("/meuseventos"); // Volta se não conseguir carregar
       } finally {
         setLoading(false);
       }
@@ -88,12 +100,12 @@ export default function EventEdit() {
   // --- handleSubmit MODIFICADO para usar PUT ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
 
     if (!token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        navigate('/login');
-        return;
+      toast.error("Sessão expirada. Faça login novamente.");
+      navigate("/login");
+      return;
     }
 
     setSubmitting(true);
@@ -105,22 +117,23 @@ export default function EventEdit() {
     };
 
     try {
-        await axios.put(`${API_BASE_URL}/api/events/${eventId}`, dataToSend, {
-            headers: {
-                // Como não estamos enviando arquivos por enquanto, usamos JSON
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
+      await axios.put(`${API_BASE_URL}/api/events/${eventId}`, dataToSend, {
+        headers: {
+          // Como não estamos enviando arquivos por enquanto, usamos JSON
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        toast.success("Evento atualizado com sucesso!");
-        // Redireciona de volta para a página de detalhes do evento
-        setTimeout(() => navigate(`/event/${eventId}`), 1500);
-
+      toast.success("Evento atualizado com sucesso!");
+      // Redireciona de volta para a página de detalhes do evento
+      setTimeout(() => navigate(`/event/${eventId}`), 1500);
     } catch (error) {
-        console.error("Erro ao atualizar evento:", error);
-        toast.error(error.response?.data?.message || "Erro ao atualizar o evento.");
-        setSubmitting(false);
+      console.error("Erro ao atualizar evento:", error);
+      toast.error(
+        error.response?.data?.message || "Erro ao atualizar o evento."
+      );
+      setSubmitting(false);
     }
     // Não limpa o formulário, pois o usuário será redirecionado
   };
@@ -128,12 +141,12 @@ export default function EventEdit() {
 
   if (loading) {
     return (
-        <>
-            <Header />
-            <div className="registration-container" style={{ textAlign: 'center' }}>
-                Carregando dados do evento...
-            </div>
-        </>
+      <>
+        <Header />
+        <div className="registration-container" style={{ textAlign: "center" }}>
+          Carregando dados do evento...
+        </div>
+      </>
     );
   }
 
@@ -154,22 +167,39 @@ export default function EventEdit() {
               {/* COLUNA 1 */}
               <div className="form-column">
                 <TextField
-                  id="titulo" label="Nome do Evento *" name="titulo"
-                  value={formData.titulo} onChange={handleChange} required isEditable={true}
+                  id="titulo"
+                  label="Nome do Evento *"
+                  name="titulo"
+                  value={formData.titulo}
+                  onChange={handleChange}
+                  required
+                  isEditable={true}
                 />
 
                 <TextField
-                  id="data" label="Data e Hora *" name="data" type="datetime-local"
-                  value={formData.data} onChange={handleChange} required isEditable={true}
+                  id="data"
+                  label="Data e Hora *"
+                  name="data"
+                  type="datetime-local"
+                  value={formData.data}
+                  onChange={handleChange}
+                  required
+                  isEditable={true}
                 />
 
                 <div className="tf">
                   <label htmlFor="id_categoria">Categoria *</label>
                   <select
-                    id="id_categoria" name="id_categoria"
-                    value={formData.id_categoria} onChange={handleChange} required className="custom-select"
+                    id="id_categoria"
+                    name="id_categoria"
+                    value={formData.id_categoria}
+                    onChange={handleChange}
+                    required
+                    className="custom-select"
                   >
-                    <option value="" disabled>Selecione uma categoria</option>
+                    <option value="" disabled>
+                      Selecione uma categoria
+                    </option>
                     {categorias.map((cat) => (
                       <option key={cat.id_categoria} value={cat.id_categoria}>
                         {cat.nome}
@@ -182,13 +212,24 @@ export default function EventEdit() {
               {/* COLUNA 2 */}
               <div className="form-column">
                 <TextField
-                  id="local" label="Endereço *" name="local"
-                  value={formData.local} onChange={handleChange} required isEditable={true}
+                  id="local"
+                  label="Endereço *"
+                  name="local"
+                  value={formData.local}
+                  onChange={handleChange}
+                  required
+                  isEditable={true}
                 />
 
                 <TextField
-                  id="preco" label="Preço do Ingresso (R$)" name="preco" type="number"
-                  value={formData.preco} onChange={handleChange} placeholder="0.00 para gratuito" isEditable={true}
+                  id="preco"
+                  label="Preço do Ingresso (R$)"
+                  name="preco"
+                  type="number"
+                  value={formData.preco}
+                  onChange={handleChange}
+                  placeholder="0.00 para gratuito"
+                  isEditable={true}
                 />
 
                 {/* --- Edição de imagem não implementada nesta versão --- */}
@@ -204,16 +245,19 @@ export default function EventEdit() {
             <div className="description-field">
               <label htmlFor="descricao">Descrição do Evento *</label>
               <textarea
-                id="descricao" name="descricao"
-                value={formData.descricao} onChange={handleChange} required
+                id="descricao"
+                name="descricao"
+                value={formData.descricao}
+                onChange={handleChange}
+                required
               />
             </div>
 
             {/* Botão de Submissão */}
             <div className="form-actions">
-                <Button type="submit" className="full" disabled={submitting}>
-                    {submitting ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
+              <Button type="submit" className="full" disabled={submitting}>
+                {submitting ? "Salvando..." : "Salvar Alterações"}
+              </Button>
             </div>
           </form>
         </div>

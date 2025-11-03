@@ -4,6 +4,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function App({ children }) {
   useEffect(() => {
     const handleAuthRedirect = async () => {
@@ -16,10 +18,10 @@ export default function App({ children }) {
 
         try {
           // 2. Usa o token para buscar os dados do usuário
-          const response = await axios.get("http://localhost:5000/api/auth/me", {
-            headers: { Authorization: `Bearer ${token}` }
+          const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
           });
-          
+
           const userData = response.data;
 
           // 3. Salva os outros dados essenciais
@@ -27,18 +29,20 @@ export default function App({ children }) {
           localStorage.setItem("userName", userData.nome);
           localStorage.setItem("userType", userData.tipo);
           localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
-
         } catch (error) {
-          console.error("Erro ao buscar dados do usuário após login com Google:", error);
+          console.error(
+            "Erro ao buscar dados do usuário após login com Google:",
+            error
+          );
           // Limpa em caso de erro para não manter um estado de login inconsistente
-          localStorage.clear(); 
+          localStorage.clear();
         } finally {
           // 4. Limpa o token da URL para o usuário não vê-lo
           window.history.replaceState({}, document.title, "/");
         }
       }
     };
-    
+
     handleAuthRedirect();
   }, []);
 

@@ -5,7 +5,7 @@
     "outDir": "dist",
 
     /* Compatibilidade com Node moderno */
-    "target": "ES2020",
+    "target": "es2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
 

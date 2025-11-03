@@ -13,6 +13,7 @@ import TermsModal from "../components/TermsModel";
 import "../components/TextField.css";
 import "./Login.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -51,15 +52,12 @@ export default function Register() {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        {
-          nome: name,
-          email,
-          telefone: phone,
-          senha: pwd,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
+        nome: name,
+        email,
+        telefone: phone,
+        senha: pwd,
+      });
 
       toast.success("Usuário registrado com sucesso!");
       navigate("/login"); // redireciona para login após registro
@@ -166,7 +164,7 @@ export default function Register() {
           variant="google"
           className="full"
           onClick={() => {
-            window.location.href = "http://localhost:5000/api/auth/google";
+            window.location.href = `${API_BASE_URL}/api/auth/google`;
           }}
         >
           <img

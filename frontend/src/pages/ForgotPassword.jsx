@@ -11,6 +11,7 @@ import TextField from "../components/TextField";
 import "../components/TextField.css";
 import "./Login.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
 
@@ -18,7 +19,7 @@ export default function ForgotPassword() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/password/forgot", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/password/forgot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -27,7 +28,10 @@ export default function ForgotPassword() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message || "Se o e-mail existir, enviaremos um link de redefinição.");
+        toast.success(
+          data.message ||
+            "Se o e-mail existir, enviaremos um link de redefinição."
+        );
       } else {
         toast.error(data.message || "Erro ao solicitar redefinição de senha.");
       }
@@ -50,7 +54,8 @@ export default function ForgotPassword() {
 
       <h1>REDEFINIR SUA SENHA</h1>
       <p className="muted">
-        Digite o seu endereço de e-mail no campo abaixo e enviaremos uma mensagem para ele
+        Digite o seu endereço de e-mail no campo abaixo e enviaremos uma
+        mensagem para ele
       </p>
 
       <form className="form" onSubmit={handleSubmit}>
@@ -65,7 +70,9 @@ export default function ForgotPassword() {
           isEditable={true}
         />
 
-        <Button type="submit" className="full">Enviar E-mail</Button>
+        <Button type="submit" className="full">
+          Enviar E-mail
+        </Button>
       </form>
 
       <div className="links">

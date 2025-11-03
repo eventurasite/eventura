@@ -9,11 +9,11 @@ import { groupEventsByMonth, sortMonths } from "../utils/eventUtils";
 // REMOVIDA A IMPORTAÇÃO da constante CATEGORIAS
 import "./Agenda.css";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const API_URL_MY_EVENTS = `${API_BASE_URL}/api/events/my-events`;
 
 export default function MyEvents() {
-  const [events, setEvents] = useState([]); 
+  const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // --- ALTERAÇÃO 1: Novo estado para categorias dinâmicas ---
@@ -23,7 +23,7 @@ export default function MyEvents() {
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
   const [tempTicket, setTempTicket] = useState("");
-  const [tempShowPastEvents, setTempShowPastEvents] = useState(false); 
+  const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
   const [appliedFilters, setAppliedFilters] = useState({
     category: "",
@@ -31,7 +31,7 @@ export default function MyEvents() {
     ticket: "",
     showPastEvents: false,
   });
-  
+
   // Buscar eventos do usuário
   useEffect(() => {
     const fetchMyEvents = async () => {
@@ -43,7 +43,7 @@ export default function MyEvents() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setEvents(response.data);
-        handleApplyFilters(response.data); 
+        handleApplyFilters(response.data);
       } catch (error) {
         console.error("Erro ao buscar Meus Eventos:", error);
         toast.error(
@@ -61,7 +61,9 @@ export default function MyEvents() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/events/categories`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/events/categories`
+        );
         setCategorias(response.data);
       } catch (err) {
         console.error("Erro ao buscar categorias:", err);
@@ -70,7 +72,7 @@ export default function MyEvents() {
     };
     fetchCategories();
   }, []); // Executa apenas uma vez
-  
+
   // LÓGICA DE FILTRAGEM UNIFICADA (Não muda)
   const applyFilters = (eventsToFilter = events) => {
     // ... (lógica de filtro não muda) ...
@@ -105,12 +107,12 @@ export default function MyEvents() {
 
   const handleApplyFilters = (initialEvents = events) => {
     const finalFiltered = applyFilters(initialEvents);
-    setFilteredEventsState(finalFiltered); 
+    setFilteredEventsState(finalFiltered);
   };
-  
+
   const [filteredEventsState, setFilteredEventsState] = useState([]);
-  
-  const eventsToDisplay = filteredEventsState; 
+
+  const eventsToDisplay = filteredEventsState;
   const groupedEvents = groupEventsByMonth(eventsToDisplay);
   const monthsOrder = sortMonths(groupedEvents);
 
@@ -189,7 +191,7 @@ export default function MyEvents() {
               <button
                 className="search-button"
                 title="Pesquisar"
-                onClick={() => handleApplyFilters()} 
+                onClick={() => handleApplyFilters()}
               >
                 <i className="bi bi-search"></i> Pesquisar
               </button>
@@ -239,7 +241,13 @@ export default function MyEvents() {
             </div>
           )}
 
-          <div style={{ textAlign: "center", marginTop: "40px", marginBottom: "40px" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: "40px",
+              marginBottom: "40px",
+            }}
+          >
             <Link
               to="/registrarevento"
               className="agenda-button"
@@ -249,7 +257,10 @@ export default function MyEvents() {
                 fontSize: "16px",
               }}
             >
-              <i className="bi bi-plus-circle-fill" style={{ marginRight: "8px" }}></i>
+              <i
+                className="bi bi-plus-circle-fill"
+                style={{ marginRight: "8px" }}
+              ></i>
               Cadastrar Novo Evento
             </Link>
           </div>
