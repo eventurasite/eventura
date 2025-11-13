@@ -195,15 +195,17 @@ export async function deleteEvent(eventId: number, userId: number): Promise<void
   // 4. Exclui o evento e suas imagens relacionadas (em uma transação)
   try {
     await prisma.$transaction([
+      // --- INÍCIO DA CORREÇÃO ---
+      // Deleta todos os 'filhos' primeiro
+      prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
+      prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
+      prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
+      prisma.interesse.deleteMany({ where: { id_evento: eventId } }),
+      // --- FIM DA CORREÇÃO ---
+      
       prisma.imagemEvento.deleteMany({
         where: { id_evento: eventId },
       }),
-      // Adicione aqui a exclusão de outros dados relacionados se necessário (Comentarios, Curtidas, Denuncias, Inscricoes)
-      // prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
-      // prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
-      // prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
-      // prisma.inscricao.deleteMany({ where: { id_evento: eventId } }),
-
       prisma.evento.delete({ // Deleta o evento principal por último
         where: { id_evento: eventId },
       }),
@@ -339,6 +341,33 @@ export async function createComment(
       },
     },
   });
+}
+
+/**
+ * Excluir um comentário (NOVA FUNÇÃO)
+ */
+export async function deleteComment(commentId: number, userId: number) {
+  // 1. Busca o comentário
+  const comment = await prisma.comentario.findUnique({
+    where: { id_comentario: commentId },
+  });
+
+  if (!comment) {
+    throw new Error("Comentário não encontrado.");
+  }
+
+  // 2. Verifica se o usuário logado é o dono do comentário
+  // (Poderia adicionar lógica para admin ou dono do evento aqui, mas vamos focar no dono)
+  if (comment.id_usuario !== userId) {
+    throw new Error("Você não tem permissão para excluir este comentário.");
+  }
+
+  // 3. Deleta o comentário
+  await prisma.comentario.delete({
+    where: { id_comentario: commentId },
+  });
+
+  return { message: "Comentário excluído com sucesso." };
 }
 
 /**

@@ -34,6 +34,8 @@ router.get("/filter", eventController.getFilteredEvents);
 // NOVAS ROTAS DE COMENTÁRIOS
 router.get("/:id/comments", eventController.getCommentsController);
 router.post("/:id/comments", authenticateToken, eventController.createCommentController);
+// --- ROTA DE EXCLUSÃO DE COMENTÁRIO ---
+router.delete("/comments/:commentId", authenticateToken, eventController.deleteCommentController);
 
 //ROTAS DE CURTIDAS
 router.get("/:id/likes", eventController.getTotalLikesController); // Pública
