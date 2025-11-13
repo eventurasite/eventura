@@ -37,9 +37,16 @@ const resolveImageUrl = (url) => {
 };
 // --- FIM DA CORREÇÃO ---
 
-// Componente CommentBox (igual)
-const CommentBox = ({ author, text, photoUrl }) => (
-  // ... (código mantido)
+// Componente CommentBox (MODIFICADO)
+const CommentBox = ({
+  author,
+  text,
+  photoUrl,
+  authorId,
+  commentId,
+  currentUserId,
+  onDelete,
+}) => (
   <div className="comment-box">
     <div className="comment-avatar">
       {photoUrl ? (
@@ -64,6 +71,17 @@ const CommentBox = ({ author, text, photoUrl }) => (
       <p className="comment-author">{author}</p>
       <p className="comment-text">{text}</p>
     </div>
+    {/* --- BOTÃO DE EXCLUIR COMENTÁRIO --- */}
+    {currentUserId && authorId == currentUserId && (
+      <button
+        className="comment-delete-btn"
+        onClick={() => onDelete(commentId)}
+        title="Excluir comentário"
+      >
+        <i className="bi bi-trash-fill"></i>
+      </button>
+    )}
+    {/* --- FIM DO BOTÃO --- */}
   </div>
 );
 
@@ -132,6 +150,9 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+
+  // NOVO: Pega o ID do usuário logado
+  const currentUserId = localStorage.getItem("userId");
 
   // Estados de comentários
   const [comments, setComments] = useState([]);
@@ -333,6 +354,50 @@ const EventDetail = () => {
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  // --- NOVA FUNÇÃO: Excluir Comentário ---
+  const handleDeleteComment = async (commentId) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+
+    // Confirmação
+    const confirmAction = async () => {
+      try {
+        await axios.delete(
+          `${API_BASE_URL}/api/events/comments/${commentId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // Atualiza a UI removendo o comentário do estado
+        setComments((prevComments) =>
+          prevComments.filter((c) => c.id_comentario !== commentId)
+        );
+        toast.success("Comentário excluído.");
+      } catch (error) {
+        console.error("Erro ao excluir comentário:", error);
+        toast.error(
+          error.response?.data?.message || "Não foi possível excluir o comentário."
+        );
+      }
+    };
+
+    toast.warn(
+      <ConfirmationToast
+        message="Tem certeza que deseja excluir seu comentário?"
+        onConfirm={confirmAction}
+      />,
+      {
+        position: "top-center",
+        autoClose: 5000,
+        theme: "colored",
+      }
+    );
   };
 
   // Função de Curtida (igual)
@@ -589,9 +654,8 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção Listagem de Comentários (igual) */}
+          {/* Seção Listagem de Comentários (MODIFICADA) */}
           <section className="event-section comments-section">
-            {/* ... (código mantido) ... */}
             <h2>Comentários:</h2>
             {comments.length === 0 ? (
               <p>Ainda não há comentários. Seja o primeiro a comentar!</p>
@@ -602,6 +666,11 @@ const EventDetail = () => {
                   author={comment.usuario.nome}
                   text={comment.texto}
                   photoUrl={comment.usuario.url_foto_perfil}
+                  // --- NOVAS PROPS ---
+                  commentId={comment.id_comentario}
+                  authorId={comment.usuario.id_usuario}
+                  currentUserId={currentUserId}
+                  onDelete={handleDeleteComment}
                 />
               ))
             )}

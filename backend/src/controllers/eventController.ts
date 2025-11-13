@@ -257,6 +257,36 @@ export async function createCommentController(req: Request, res: Response): Prom
 }
 
 /**
+ * Excluir um comentário (NOVO)
+ */
+export async function deleteCommentController(req: Request, res: Response): Promise<void> {
+  try {
+    const commentId = parseInt(req.params.commentId, 10);
+    // @ts-ignore
+    const userId = req.user.id; // Vem do token
+
+    if (isNaN(commentId)) {
+      res.status(400).json({ message: "ID de comentário inválido." });
+      return;
+    }
+
+    const result = await eventService.deleteComment(commentId, userId);
+    res.status(200).json(result);
+
+  } catch (error: any) {
+    console.error("Erro ao excluir comentário:", error);
+    if (error.message.includes("permissão")) {
+      res.status(403).json({ message: error.message });
+    } else if (error.message.includes("não encontrado")) {
+      res.status(404).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Erro interno ao excluir comentário." });
+    }
+  }
+}
+
+
+/**
  * Buscar total de curtidas (Público)
  */
 export async function getTotalLikesController(req: Request, res: Response): Promise<void> {
@@ -347,7 +377,7 @@ export async function toggleInterestController(req: Request, res: Response): Pro
   }
 }
 
-// 🔹 POST /api/events/:id/interest → Alternar interesse
+//POST /api/events/:id/interest → Alternar interesse
 export async function toggleInteresseEvento(req: any, res: Response) {
   try {
     const id_evento = Number(req.params.id);
@@ -366,7 +396,7 @@ export async function toggleInteresseEvento(req: any, res: Response) {
   }
 }
 
-// 🔹 GET /api/events/my-interests → Buscar eventos que o usuário marcou interesse
+//GET /api/events/my-interests → Buscar eventos que o usuário marcou interesse
 export async function getMeusInteresses(req: any, res: Response) {
   try {
     // @ts-ignore - o middleware popula req.user com os dados do token
