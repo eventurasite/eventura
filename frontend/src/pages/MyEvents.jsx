@@ -22,12 +22,14 @@ export default function MyEvents() {
   // Estados temporários para os selects
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
+  const [tempYear, setTempYear] = useState("");
   const [tempTicket, setTempTicket] = useState("");
   const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
   const [appliedFilters, setAppliedFilters] = useState({
     category: "",
     month: "",
+    year: "",
     ticket: "",
     showPastEvents: false,
   });
@@ -90,6 +92,11 @@ export default function MyEvents() {
         (e) => new Date(e.data).getMonth() + 1 === parseInt(tempMonth)
       );
     }
+    if (tempYear) {
+      filtered = filtered.filter(
+        (e) => new Date(e.data).getFullYear() === parseInt(tempYear)
+      );
+    }
     if (tempTicket) {
       filtered = filtered.filter((e) => {
         const precoNum = Number(e.preco);
@@ -99,6 +106,7 @@ export default function MyEvents() {
     setAppliedFilters({
       category: tempCategory,
       month: tempMonth,
+      year: tempYear,
       ticket: tempTicket,
       showPastEvents: tempShowPastEvents,
     });
@@ -172,6 +180,21 @@ export default function MyEvents() {
                 <option value="12">Dezembro</option>
               </select>
             </div>
+
+            <div className="filter-group">
+            <label htmlFor="ano">Ano</label>
+            <select
+              id="ano"
+              className="filter-select"
+              value={tempYear}
+              onChange={(e) => setTempYear(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
 
             <div className="filter-group">
               <label htmlFor="ingresso">Ingresso</label>
