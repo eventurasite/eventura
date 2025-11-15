@@ -23,12 +23,14 @@ export default function Agenda() {
   // Estados temporários para filtros
   const [tempCategory, setTempCategory] = useState("");
   const [tempMonth, setTempMonth] = useState("");
+  const [tempYear, setTempYear] = useState("");
   const [tempTicket, setTempTicket] = useState("");
   const [tempShowPastEvents, setTempShowPastEvents] = useState(false);
 
   // Estados definitivos exibidos na UI
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
   const [selectedTicket, setSelectedTicket] = useState("");
   const [showPastEvents, setShowPastEvents] = useState(false);
 
@@ -56,6 +58,13 @@ export default function Agenda() {
       );
     }
 
+    // Filtrar por ano
+    if (tempYear) {
+      filtered = filtered.filter(
+        (e) => new Date(e.data).getFullYear() === parseInt(tempYear)
+      );
+    }
+
     // Filtrar por ingresso
     if (tempTicket) {
       filtered = filtered.filter((e) => {
@@ -66,6 +75,7 @@ export default function Agenda() {
 
     setSelectedCategory(tempCategory);
     setSelectedMonth(tempMonth);
+    setSelectedYear(tempYear);
     setSelectedTicket(tempTicket);
     setShowPastEvents(tempShowPastEvents);
     setEvents(filtered);
@@ -163,6 +173,21 @@ export default function Agenda() {
                 <option value="10">Outubro</option>
                 <option value="11">Novembro</option>
                 <option value="12">Dezembro</option>
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label htmlFor="ano">Ano</label>
+              <select
+                id="ano"
+                className="filter-select"
+                value={tempYear}
+                onChange={(e) => setTempYear(e.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
               </select>
             </div>
 
