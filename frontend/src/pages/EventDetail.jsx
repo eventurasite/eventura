@@ -37,7 +37,7 @@ const resolveImageUrl = (url) => {
 };
 // --- FIM DA CORREÇÃO ---
 
-// Componente CommentBox (MODIFICADO)
+// Componente CommentBox (MODIFICADO para receber isAdmin)
 const CommentBox = ({
   author,
   text,
@@ -46,6 +46,7 @@ const CommentBox = ({
   commentId,
   currentUserId,
   onDelete,
+  isAdmin, // <-- NOVO PROP: Permite exclusão pelo Admin
 }) => (
   <div className="comment-box">
     <div className="comment-avatar">
@@ -72,7 +73,8 @@ const CommentBox = ({
       <p className="comment-text">{text}</p>
     </div>
     {/* --- BOTÃO DE EXCLUIR COMENTÁRIO --- */}
-    {currentUserId && authorId == currentUserId && (
+    {/* Condição: É o dono do comentário OU é o administrador */}
+    {((currentUserId && authorId == currentUserId) || isAdmin) && (
       <button
         className="comment-delete-btn"
         onClick={() => onDelete(commentId)}
@@ -150,9 +152,11 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // <-- NOVO ESTADO ADMIN
 
-  // NOVO: Pega o ID do usuário logado
+  // NOVO: Pega o ID e Tipo do usuário logado
   const currentUserId = localStorage.getItem("userId");
+  const currentUserType = localStorage.getItem("userType"); // <-- PEGA O TIPO
 
   // Estados de comentários
   const [comments, setComments] = useState([]);
@@ -174,9 +178,8 @@ const EventDetail = () => {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // --- Funções de busca de dados ---
+  // --- Funções de busca de dados (mantidas) ---
   const fetchComments = async () => {
-    // ... (lógica mantida)
     try {
       const response = await axios.get(
         `${API_BASE_URL}/api/events/${eventId}/comments`
@@ -188,7 +191,6 @@ const EventDetail = () => {
   };
 
   const fetchLikeData = async () => {
-    // ... (lógica mantida)
     const token = localStorage.getItem("authToken");
     try {
       const response = await axios.get(
@@ -213,7 +215,6 @@ const EventDetail = () => {
     }
   };
 
-  // NOVO: Função para buscar dados de Interesses (Total e status do usuário)
   const fetchInterestData = async () => {
     const token = localStorage.getItem("authToken");
 
@@ -258,11 +259,16 @@ const EventDetail = () => {
         if (loggedInUserId && data.organizador?.id_usuario == loggedInUserId) {
           setIsOwner(true);
         }
+        
+        // 1. NOVO: Define se o usuário é administrador
+        if (currentUserType === "administrador") {
+          setIsAdmin(true);
+        }
 
         // Chama as buscas de dados secundários
         fetchComments();
         fetchLikeData();
-        fetchInterestData(); // NOVO
+        fetchInterestData();
       } catch (error) {
         console.error("Erro ao buscar evento:", error);
         setEvent(null);
@@ -276,7 +282,6 @@ const EventDetail = () => {
 
   // Formata a data (igual)
   const formatDate = (isoDate) => {
-    // ... (lógica mantida)
     if (!isoDate) return "Data indefinida";
     return new Date(isoDate).toLocaleString("pt-BR", {
       day: "2-digit",
@@ -289,7 +294,6 @@ const EventDetail = () => {
 
   // Função de exclusão (igual)
   const handleDelete = async () => {
-    // ... (lógica de exclusão mantida)
     const token = localStorage.getItem("authToken");
     if (!token) {
       toast.error("Você precisa estar logado para excluir um evento.");
@@ -326,7 +330,6 @@ const EventDetail = () => {
 
   // Função de Comentário (igual)
   const handleSubmitComment = async () => {
-    // ... (lógica de comentário mantida)
     const token = localStorage.getItem("authToken");
     if (!token) {
       toast.error("Você precisa estar logado para comentar.");
@@ -356,7 +359,7 @@ const EventDetail = () => {
     }
   };
 
-  // --- NOVA FUNÇÃO: Excluir Comentário ---
+  // --- FUNÇÃO: Excluir Comentário (USADA PELO DONO E ADMIN) ---
   const handleDeleteComment = async (commentId) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -402,7 +405,6 @@ const EventDetail = () => {
 
   // Função de Curtida (igual)
   const handleLikeToggle = async () => {
-    // ... (lógica de curtida mantida)
     const token = localStorage.getItem("authToken");
     if (!token) {
       toast.error("Você precisa estar logado para curtir um evento.");
@@ -431,7 +433,7 @@ const EventDetail = () => {
     }
   };
 
-  // NOVO: Função para adicionar/remover Interesse (lógica idêntica ao handleLikeToggle)
+  // Função para adicionar/remover Interesse (lógica idêntica ao handleLikeToggle)
   const handleInterestToggle = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -489,7 +491,6 @@ const EventDetail = () => {
 
   // Estados de carregamento e erro (iguais)
   if (loading) {
-    // ... (código mantido)
     return (
       <>
         <Header />
@@ -500,7 +501,6 @@ const EventDetail = () => {
     );
   }
   if (!event) {
-    // ... (código mantido)
     return (
       <>
         <Header />
@@ -523,18 +523,25 @@ const EventDetail = () => {
       <Header />
       <div className="user-profile-container">
         <div className="profile-wrapper">
-          {/* Wrapper Título e Ações (igual) */}
+          {/* Wrapper Título e Ações */}
           <div className="event-header-actions-wrapper">
-            {/* ... (código mantido) ... */}
             <h1 className="event-title">{event.titulo}</h1>
-            {isOwner && (
+            
+            {/* Lógica: Aparece se for o dono (isOwner) OU for o administrador (isAdmin) */}
+            {(isOwner || isAdmin) && ( 
               <div className="owner-actions">
-                <Button
-                  className="edit-event-btn"
-                  onClick={() => navigate(`/editar-evento/${eventId}`)}
-                >
-                  <i className="bi bi-pencil-fill"></i> Editar
-                </Button>
+                
+                {/* O botão EDITAR só aparece para o DONO */}
+                {isOwner && (
+                  <Button
+                    className="edit-event-btn"
+                    onClick={() => navigate(`/editar-evento/${eventId}`)}
+                  >
+                    <i className="bi bi-pencil-fill"></i> Editar
+                  </Button>
+                )}
+                
+                {/* O botão EXCLUIR aparece para o DONO OU ADMIN */}
                 <Button className="delete-event-btn" onClick={handleDelete}>
                   <i className="bi bi-trash-fill"></i> Excluir
                 </Button>
@@ -545,13 +552,11 @@ const EventDetail = () => {
           {/* Seção Imagens (MODIFICADA) */}
           <section className="event-images">
             <div className="main-image">
-              {/* --- CORREÇÃO APLICADA AQUI --- */}
               <img src={resolveImageUrl(mainImage?.url)} alt={event.titulo} />
             </div>
             <div className="thumbnail-gallery">
               {thumbnails.map((img) => (
                 <div key={img.id_imagem} className="thumbnail">
-                  {/* --- CORREÇÃO APLICADA AQUI --- */}
                   <img
                     src={resolveImageUrl(img.url)}
                     alt="Miniatura do evento"
@@ -563,14 +568,12 @@ const EventDetail = () => {
 
           {/* Seção Descrição (igual) */}
           <section className="event-section description-section">
-            {/* ... (código mantido) ... */}
             <h2>Descrição do Evento</h2>
             <p>{event.descricao}</p>
           </section>
 
           {/* Seção Informações Gerais (igual) */}
           <section className="event-section info-section">
-            {/* ... (código mantido) ... */}
             <h2>Informações Gerais</h2>
             <div className="info-grid">
               <p>
@@ -596,7 +599,7 @@ const EventDetail = () => {
             </div>
           </section>
 
-          {/* Seção de Botões de Interação (NOVO: Interesses dinâmicos) */}
+          {/* Seção de Botões de Interação (Interesses dinâmicos) */}
           <section className="event-section action-buttons">
             <div className="interactions-container">
               {/* Curtidas (do passo anterior) */}
@@ -608,7 +611,7 @@ const EventDetail = () => {
                 onClick={handleLikeToggle}
               />
 
-              {/* NOVO: interestCount e isInterested agora vêm do estado dinâmico */}
+              {/* Interesses */}
               <InteractionButton
                 type="like"
                 label="Interesses"
@@ -617,7 +620,7 @@ const EventDetail = () => {
                 onClick={handleInterestToggle}
               />
 
-              {/* Comentários (do primeiro passo) */}
+              {/* Comentários */}
               <InteractionButton
                 type="comment"
                 label="Comentários"
@@ -634,7 +637,6 @@ const EventDetail = () => {
 
           {/* Seção Adicionar Comentário (igual) */}
           <section className="add-comment-section" id="comments-section">
-            {/* ... (código mantido) ... */}
             <h2>Adicionar Comentário</h2>
             <div className="comment-input-wrapper">
               <textarea
@@ -666,11 +668,12 @@ const EventDetail = () => {
                   author={comment.usuario.nome}
                   text={comment.texto}
                   photoUrl={comment.usuario.url_foto_perfil}
-                  // --- NOVAS PROPS ---
+                  // --- NOVAS PROPS PASSADAS PARA O COMPONENTE ---
                   commentId={comment.id_comentario}
                   authorId={comment.usuario.id_usuario}
                   currentUserId={currentUserId}
                   onDelete={handleDeleteComment}
+                  isAdmin={isAdmin} // <-- NOVO PROP PASSADO AQUI
                 />
               ))
             )}
@@ -685,7 +688,6 @@ export default EventDetail;
 
 // ConfirmationToast (igual)
 const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
-  // ... (código mantido)
   <div className="toast-confirmation-body">
     <p>{message}</p>
     <div className="toast-confirmation-buttons">

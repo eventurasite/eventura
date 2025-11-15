@@ -140,13 +140,17 @@ export async function deleteEventController(req: Request, res: Response): Promis
     const eventId = parseInt(req.params.id, 10);
     // @ts-ignore
     const userId = req.user.id;
+    // @ts-ignore
+    const userType = req.user.tipo; // <-- PEGA O TIPO DO USUÁRIO DO TOKEN
     if (isNaN(eventId)) {
       res.status(400).json({ message: "ID do evento inválido." }); return;
     }
-    await eventService.deleteEvent(eventId, userId);
+    // PASSA O userType PARA O SERVICE
+    await eventService.deleteEvent(eventId, userId, userType); 
     res.status(200).json({ message: "Evento excluído com sucesso." });
   } catch (error: any) {
     console.error("Erro ao excluir evento:", error);
+    // ... (restante da lógica de erro)
     if (error.message === 'NOT_FOUND') res.status(404).json({ message: "Evento não encontrado." });
     else if (error.message === 'FORBIDDEN') res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
     else res.status(500).json({ message: "Erro interno ao excluir o evento." });
@@ -264,17 +268,21 @@ export async function deleteCommentController(req: Request, res: Response): Prom
     const commentId = parseInt(req.params.commentId, 10);
     // @ts-ignore
     const userId = req.user.id; // Vem do token
+    // @ts-ignore
+    const userType = req.user.tipo; // <-- PEGA O TIPO DO USUÁRIO DO TOKEN
 
     if (isNaN(commentId)) {
       res.status(400).json({ message: "ID de comentário inválido." });
       return;
     }
 
-    const result = await eventService.deleteComment(commentId, userId);
+    // PASSA O userType PARA O SERVICE
+    const result = await eventService.deleteComment(commentId, userId, userType); 
     res.status(200).json(result);
 
   } catch (error: any) {
     console.error("Erro ao excluir comentário:", error);
+    // ... (restante da lógica de erro)
     if (error.message.includes("permissão")) {
       res.status(403).json({ message: error.message });
     } else if (error.message.includes("não encontrado")) {
