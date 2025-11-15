@@ -20,6 +20,7 @@ import DenouncePage from "../pages/DenouncePage";
 import EventEdit from "../pages/EventEdit"; // <-- Importa a nova página de edição
 import MyInterests from "../pages/MyInterests"; 
 import axios from "axios";
+import AdminDenounces from "../pages/AdminDenounces";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
@@ -68,5 +69,14 @@ export const router = createBrowserRouter([
         <AdminDashboard />
       </ProtectedRoute>
     ),
+  },
+  // ROTA: Denúncias (só admin)
+  { 
+    path: "/admin/denuncias", 
+    element: (
+        <ProtectedRoute allowedRoles={["administrador"]}>
+            <AdminDenounces /> {/* Renderiza a nova página */}
+        </ProtectedRoute>
+    ) 
   },
 ]);

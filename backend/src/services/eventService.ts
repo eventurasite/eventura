@@ -505,3 +505,64 @@ export async function buscarEventosPorInteresse(id_usuario: number) {
 
   return interesses.map((i) => i.evento);
 }
+
+/**
+ * Criar uma nova denúncia.
+ */
+export async function createDenounce(eventId: number, userId: number, motivo: string) {
+  return prisma.denuncia.create({
+    data: {
+      id_evento: eventId,
+      id_usuario: userId,
+      motivo,
+    },
+  });
+}
+
+/**
+ * Listar todas as denúncias pendentes para o Admin.
+ */
+export async function getAllPendingDenounces() {
+  return prisma.denuncia.findMany({
+    where: { status: 'pendente' },
+    include: {
+      evento: {
+        select: {
+          id_evento: true,
+          titulo: true,
+          data: true,
+          local: true,
+        },
+      },
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      data_criacao: 'asc', // Mais antigas primeiro
+    },
+  });
+}
+
+/**
+ * Atualizar o status de uma denúncia.
+ */
+export async function updateDenounceStatus(denounceId: number, status: 'revisada' | 'rejeitada') {
+  return prisma.denuncia.update({
+    where: { id_denuncia: denounceId },
+    data: { status },
+  });
+}
+
+/**
+ * Excluir uma denúncia.
+ */
+export async function deleteDenounce(denounceId: number) {
+  return prisma.denuncia.delete({
+    where: { id_denuncia: denounceId },
+  });
+}

@@ -60,7 +60,7 @@ function MainContent() {
           <h1>
             Cada evento,
             <br />
-            uma nova ventura!
+            uma nova aventura!
           </h1>
           <p>Encontre e divulgue eventos na cidade de Uberaba!</p>
           <div className="main-buttons">

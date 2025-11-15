@@ -47,6 +47,19 @@ router.get("/:id/interests", eventController.getTotalInterestsController); // P�
 router.get("/:id/my-interest", authenticateToken, eventController.getUserInterestStatusController); // Protegida
 router.post("/:id/interest", authenticateToken, eventController.toggleInterestController); // Protegida
 
+// ROTA DE CRIAÇÃO DE DENÚNCIA (Usada pelo usuário comum)
+router.post("/denounce", authenticateToken, eventController.createDenounceController);
+
+// --- ROTAS DO ADMIN PARA DENÚNCIAS (Protegidas) ---
+// Rota para listar todas as denúncias pendentes
+router.get("/admin/denounces", authenticateToken, eventController.getPendingDenouncesController);
+
+// Rota para atualizar o status da denúncia
+router.put("/admin/denounces/:id", authenticateToken, eventController.updateDenounceStatusController);
+
+// Rota para excluir uma denúncia
+router.delete("/admin/denounces/:id", authenticateToken, eventController.deleteDenounceController);
+
 // Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
 router.get("/:id", eventController.getEvent);
 

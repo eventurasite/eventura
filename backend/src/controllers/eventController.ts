@@ -408,3 +408,105 @@ export async function getMeusInteresses(req: any, res: Response) {
     res.status(500).json({ message: "Erro ao buscar eventos de interesse." });
   }
 }
+
+/**
+ * Criar uma denúncia (usuário comum)
+ */
+export async function createDenounceController(req: Request, res: Response): Promise<void> {
+  try {
+    const { id_evento, motivo } = req.body;
+    // @ts-ignore
+    const userId = req.user.id; // ID do usuário logado (token)
+
+    if (!id_evento || !motivo) {
+      res.status(400).json({ message: "ID do evento e motivo são obrigatórios." });
+      return;
+    }
+
+    const denounce = await eventService.createDenounce(Number(id_evento), userId, motivo);
+
+    res.status(201).json({ message: "Denúncia enviada com sucesso! Agradecemos o seu feedback.", denounce });
+  } catch (error: any) {
+    console.error("Erro ao criar denúncia:", error);
+    res.status(500).json({ message: "Erro interno ao enviar a denúncia." });
+  }
+}
+
+
+/**
+ * Listar denúncias pendentes (Admin)
+ */
+export async function getPendingDenouncesController(req: Request, res: Response): Promise<void> {
+    try {
+        // @ts-ignore
+        const userType = req.user.tipo; // Verifica se é administrador
+        
+        if (userType !== 'administrador') {
+            res.status(403).json({ message: "Acesso negado. Apenas administradores podem ver denúncias." });
+            return;
+        }
+
+        const denounces = await eventService.getAllPendingDenounces();
+        res.status(200).json(denounces);
+    } catch (error: any) {
+        console.error("Erro ao listar denúncias:", error);
+        res.status(500).json({ message: "Erro interno ao listar as denúncias." });
+    }
+}
+
+/**
+ * Atualizar status de denúncia (Admin)
+ */
+export async function updateDenounceStatusController(req: Request, res: Response): Promise<void> {
+    try {
+        const denounceId = Number(req.params.id);
+        const { status } = req.body; // 'revisada' ou 'rejeitada'
+        // @ts-ignore
+        const userType = req.user.tipo;
+
+        if (userType !== 'administrador') {
+            res.status(403).json({ message: "Acesso negado." });
+            return;
+        }
+        
+        if (isNaN(denounceId) || (status !== 'revisada' && status !== 'rejeitada')) {
+             res.status(400).json({ message: "Dados inválidos." });
+             return;
+        }
+
+        const denounce = await eventService.updateDenounceStatus(denounceId, status);
+        res.status(200).json({ message: `Denúncia marcada como ${status}.`, denounce });
+        
+    } catch (error: any) {
+        console.error("Erro ao atualizar denúncia:", error);
+        res.status(500).json({ message: "Erro interno ao atualizar denúncia." });
+    }
+}
+
+/**
+ * Excluir denúncia (Admin)
+ */
+export async function deleteDenounceController(req: Request, res: Response): Promise<void> {
+    try {
+        const denounceId = Number(req.params.id);
+        // @ts-ignore
+        const userType = req.user.tipo;
+
+        if (userType !== 'administrador') {
+            res.status(403).json({ message: "Acesso negado." });
+            return;
+        }
+        
+        if (isNaN(denounceId)) {
+             res.status(400).json({ message: "ID inválido." });
+             return;
+        }
+
+        await eventService.deleteDenounce(denounceId);
+        res.status(200).json({ message: "Denúncia excluída com sucesso." });
+        
+    } catch (error: any) {
+        console.error("Erro ao excluir denúncia:", error);
+        res.status(500).json({ message: "Erro interno ao excluir denúncia." });
+    }
+}
