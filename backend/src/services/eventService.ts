@@ -1,5 +1,5 @@
 // backend/src/services/eventService.ts
-import { Evento, PrismaClient, Prisma } from "@prisma/client"; // Importar Prisma
+import { Evento, PrismaClient, Prisma, TipoUsuario } from "@prisma/client"; // Importar Prisma
 
 const prisma = new PrismaClient();
 
@@ -175,7 +175,11 @@ export const getFilteredEvents = async (filtros: any) => {
 /**
  * Excluir um evento, verificando a propriedade.
  */
-export async function deleteEvent(eventId: number, userId: number): Promise<void> {
+export async function deleteEvent(
+  eventId: number,
+  userId: number,
+  userType: TipoUsuario
+): Promise<void> {
   // 1. Busca o evento para verificar o proprietário
   const event = await prisma.evento.findUnique({
     where: { id_evento: eventId },
@@ -187,26 +191,27 @@ export async function deleteEvent(eventId: number, userId: number): Promise<void
     throw new Error('NOT_FOUND');
   }
 
-  // 3. Verifica se o usuário logado é o organizador
-  if (event.id_organizador !== userId) {
+  // 3. Verifica se o usuário logado é o organizador OU administrador
+  const isOrganizer = event.id_organizador === userId;
+  const isAdmin = userType === TipoUsuario.administrador; // <-- Checa se é admin
+
+  if (!isOrganizer && !isAdmin) { // <-- LÓGICA DE PERMISSÃO ALTERADA
     throw new Error('FORBIDDEN');
   }
 
-  // 4. Exclui o evento e suas imagens relacionadas (em uma transação)
+  // 4. Exclui o evento e suas imagens relacionadas (transação segura)
   try {
+    // ... (restante da transação de exclusão que já está segura)
     await prisma.$transaction([
-      // --- INÍCIO DA CORREÇÃO ---
-      // Deleta todos os 'filhos' primeiro
       prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
       prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
       prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
       prisma.interesse.deleteMany({ where: { id_evento: eventId } }),
-      // --- FIM DA CORREÇÃO ---
-      
+
       prisma.imagemEvento.deleteMany({
         where: { id_evento: eventId },
       }),
-      prisma.evento.delete({ // Deleta o evento principal por último
+      prisma.evento.delete({ 
         where: { id_evento: eventId },
       }),
     ]);
@@ -346,7 +351,11 @@ export async function createComment(
 /**
  * Excluir um comentário (NOVA FUNÇÃO)
  */
-export async function deleteComment(commentId: number, userId: number) {
+export async function deleteComment(
+  commentId: number,
+  userId: number,
+  userType: TipoUsuario
+) {
   // 1. Busca o comentário
   const comment = await prisma.comentario.findUnique({
     where: { id_comentario: commentId },
@@ -356,9 +365,11 @@ export async function deleteComment(commentId: number, userId: number) {
     throw new Error("Comentário não encontrado.");
   }
 
-  // 2. Verifica se o usuário logado é o dono do comentário
-  // (Poderia adicionar lógica para admin ou dono do evento aqui, mas vamos focar no dono)
-  if (comment.id_usuario !== userId) {
+  const isAuthor = comment.id_usuario === userId;
+  const isAdmin = userType === TipoUsuario.administrador; // <-- Checa se é admin
+
+  // 2. Verifica se o usuário logado é o dono do comentário OU administrador
+  if (!isAuthor && !isAdmin) { // <-- LÓGICA DE PERMISSÃO ALTERADA
     throw new Error("Você não tem permissão para excluir este comentário.");
   }
 
@@ -504,4 +515,65 @@ export async function buscarEventosPorInteresse(id_usuario: number) {
   });
 
   return interesses.map((i) => i.evento);
+}
+
+/**
+ * Criar uma nova denúncia.
+ */
+export async function createDenounce(eventId: number, userId: number, motivo: string) {
+  return prisma.denuncia.create({
+    data: {
+      id_evento: eventId,
+      id_usuario: userId,
+      motivo,
+    },
+  });
+}
+
+/**
+ * Listar todas as denúncias pendentes para o Admin.
+ */
+export async function getAllPendingDenounces() {
+  return prisma.denuncia.findMany({
+    where: { status: 'pendente' },
+    include: {
+      evento: {
+        select: {
+          id_evento: true,
+          titulo: true,
+          data: true,
+          local: true,
+        },
+      },
+      usuario: {
+        select: {
+          id_usuario: true,
+          nome: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      data_criacao: 'asc', // Mais antigas primeiro
+    },
+  });
+}
+
+/**
+ * Atualizar o status de uma denúncia.
+ */
+export async function updateDenounceStatus(denounceId: number, status: 'revisada' | 'rejeitada') {
+  return prisma.denuncia.update({
+    where: { id_denuncia: denounceId },
+    data: { status },
+  });
+}
+
+/**
+ * Excluir uma denúncia.
+ */
+export async function deleteDenounce(denounceId: number) {
+  return prisma.denuncia.delete({
+    where: { id_denuncia: denounceId },
+  });
 }

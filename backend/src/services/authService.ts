@@ -89,7 +89,11 @@ export async function loginUser({
     throw new Error("Senha incorreta");
   }
 
-  const token = generateToken({ id: usuario.id_usuario, email: usuario.email });
+  const token = generateToken({ 
+      id: usuario.id_usuario, 
+      email: usuario.email, 
+      tipo: usuario.tipo
+  });
 
   return { ...usuario, token };
 }

@@ -242,3 +242,111 @@
 .remove-photo-button:hover {
   background-color: rgba(220, 53, 69, 1); /* Vermelho sólido no hover */
 }
+
+/* --- ESTILOS PARA AdminDenounces.jsx --- */
+
+.denounce-card {
+  background-color: #fcfcfc;
+  border: 1px solid #ddd;
+  border-left: 5px solid var(--cor_5-amarelo); /* Pendente */
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.denounce-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  border-bottom: 1px dashed #eee;
+}
+
+.denounce-id {
+  font-weight: bold;
+  color: var(--cor_3-roxo_escuro);
+}
+
+.denounce-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: white;
+}
+
+.status-pendente {
+  background-color: var(--cor_5-amarelo);
+  color: var(--cor_2-preto);
+}
+.status-revisada {
+  background-color: #28a745; /* verde */
+}
+.status-rejeitada {
+  background-color: #dc3545; /* vermelho */
+}
+
+.denounce-date {
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.denounce-content h3 {
+  font-size: 1.1em;
+  color: var(--cor_3-roxo_escuro);
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.motivo-text {
+  background-color: #fff;
+  padding: 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.event-link {
+    color: var(--cor_3-roxo_escuro);
+    font-weight: 500;
+}
+.event-link:hover {
+    text-decoration: underline;
+}
+
+.denounce-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.denounce-actions button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.denounce-actions button:hover {
+  opacity: 0.8;
+}
+
+.action-btn-primary {
+  background-color: var(--cor_3-roxo_escuro);
+  color: var(--cor_1-branco);
+}
+
+.action-btn-secondary {
+  background-color: #999;
+  color: var(--cor_1-branco);
+}
+
+.action-btn-danger {
+  background-color: #dc3545;
+  color: var(--cor_1-branco);
+}
