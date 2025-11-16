@@ -8,39 +8,43 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function App({ children }) {
   useEffect(() => {
-    const handleAuthRedirect = async () => {
-
-      const currentPath = window.location.pathname;
-
-      // Só trata token se estiver no fluxo do Google Login
-      if (currentPath !== "/login" && currentPath !== "/google/callback") return;
-
+    const handleGoogleAuthRedirect = async () => {
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
-      if (token) {
-        localStorage.setItem("authToken", token);
 
-        try {
-          const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+      // Se o token NÃO existe na URL, não faz nada
+      if (!token) return;
 
-          const userData = response.data;
+      // 1. Armazena o token
+      localStorage.setItem("authToken", token);
 
-          localStorage.setItem("userId", userData.id_usuario);
-          localStorage.setItem("userName", userData.nome);
-          localStorage.setItem("userType", userData.tipo);
-          localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
-        } catch (error) {
-          console.error("Erro ao buscar dados do usuário:", error);
-          localStorage.clear();
-        } finally {
-          window.history.replaceState({}, document.title, "/");
-        }
+      try {
+        // 2. Busca os dados do usuário via /me
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const userData = response.data;
+
+        // 3. Armazena dados do usuário no localStorage
+        localStorage.setItem("userId", userData.id_usuario);
+        localStorage.setItem("userName", userData.nome);
+        localStorage.setItem("userType", userData.tipo);
+        localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
+
+      } catch (error) {
+        console.error("Erro ao buscar dados do usuário após login Google:", error);
+        localStorage.clear();
       }
+
+      // 4. Limpa a URL removendo o ?token=
+      window.history.replaceState({}, document.title, "/");
+
+      // 5. Opcional: recarregar a página
+      window.location.reload();
     };
 
-    handleAuthRedirect();
+    handleGoogleAuthRedirect();
   }, []);
 
   return (
@@ -52,7 +56,6 @@ export default function App({ children }) {
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
-        rtl={false}
         pauseOnFocusLoss
         draggable
         pauseOnHover
