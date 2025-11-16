@@ -2,59 +2,11 @@
 
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-// um estilo simples para a página
-const styles = {
-  container: {
-    padding: "40px",
-    maxWidth: "900px",
-    margin: "0 auto",
-    fontFamily: "Roboto, sans-serif",
-  },
-  header: {
-    borderBottom: "1px solid #eee",
-    paddingBottom: "20px",
-    marginBottom: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: "32px",
-    color: "#4849E8", // roxo escuro
-  },
-  button: {
-    backgroundColor: "#FEF15F", // amarelo
-    color: "#4849E8",
-    padding: "10px 20px",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-  // --- NOVOS ESTILOS PARA LINKS ---
-  linkSection: { 
-    marginTop: '30px',
-    paddingTop: '20px',
-    borderTop: '1px solid #eee',
-  },
-  adminLink: { 
-    display: 'block',
-    marginBottom: '15px',
-    fontSize: '18px',
-    fontWeight: '500',
-    color: '#4849E8',
-    textDecoration: 'none',
-    padding: '10px 15px',
-    borderRadius: '8px',
-    backgroundColor: '#f5f5ff',
-    transition: 'background-color 0.2s',
-  },
-  adminLinkHover: {
-    backgroundColor: '#e0e0ff',
-  }
-};
+import Header from "../components/Header";
+import BackLink from "../components/BackLink";
+import Button from "../components/Button"; // Para o botão Sair
+// Importamos o CSS que contém os estilos do container e dos links
+import "../pages/UserProfile.css"; 
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -66,34 +18,53 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Painel do Administrador</h1>
-        <button onClick={handleLogout} style={styles.button}>
-          Sair (Logout)
-        </button>
-      </div>
-      <h2>Bem-vindo, {userName}!</h2>
-      <p>Esta é uma área protegida, visível apenas para administradores.</p>
-      
-      {/* --- NOVA SEÇÃO DE LINKS --- */}
-      <div style={styles.linkSection}>
-        <h3>Recursos Administrativos</h3>
-        <Link 
-          to="/admin/denuncias" 
-          style={styles.adminLink}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.adminLinkHover.backgroundColor}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f5f5ff'} // Retorna a cor de fundo
-        >
-            <i className="bi bi-exclamation-triangle-fill" style={{marginRight: '8px'}}></i>
-            Gerenciar Denúncias Pendentes
-        </Link>
-        {/* Outros links de admin viriam aqui... */}
-      </div>
+    <>
+      <Header />
+      {/* 1. Contêiner de fundo padrão (com o pattern) */}
+      <div className="user-profile-container"> 
+        {/* 2. Wrapper do card centralizado e branco */}
+        <div className="profile-wrapper">
+          
+          {/* 3. Cabeçalho da Seção (título + backlink) */}
+          <div className="profile-header-section">
+            {/* O título usa o estilo padrão das páginas de perfil/cadastro */}
+            <h1 className="profile-title">Painel do Administrador</h1> 
+            <BackLink to="/" />
+          </div>
 
-      <Link to="/" style={{ ...styles.button, backgroundColor: "#eee", marginTop: '20px', display: 'inline-block', color: '#333' }}>
-        Voltar para a Home
-      </Link>
-    </div>
+          {/* Conteúdo principal dentro de um padding para alinhamento */}
+          <div style={{ padding: "0 20px" }}> 
+            <h2>Bem-vindo, {userName}!</h2>
+            <p className="muted" style={{ marginBottom: '30px', fontSize: '1em' }}>
+                Esta é uma área protegida, visível apenas para administradores.
+            </p>
+          
+            {/* Seção de Links (usando classes de padronização) */}
+            <div className="admin-link-section">
+              <h3>Recursos Administrativos</h3>
+              <Link 
+                to="/admin/denuncias" 
+                className="admin-action-link" // Estilo para o link de ação (adicionado no Passo 2)
+              >
+                  <i className="bi bi-exclamation-triangle-fill"></i>
+                  Gerenciar Denúncias Pendentes
+              </Link>
+            </div>
+
+            {/* Botão de Logout padronizado */}
+            <div style={{ marginTop: '40px', textAlign: 'center' }}>
+              <Button 
+                onClick={handleLogout} 
+                // Reutilizando o estilo de botão "perigoso" (delete-button) para Sair do painel
+                className="delete-button" 
+                style={{ maxWidth: '300px' }}
+              >
+                Sair do Painel
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
