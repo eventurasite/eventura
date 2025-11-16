@@ -22,6 +22,7 @@ export default function EventRegistration() {
     preco: "0",
     id_categoria: "",
     descricao: "",
+    url_link_externo: "", // Campo para Link Oficial
   });
   const [imagens, setImagens] = useState([]); // Armazena os arquivos
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -75,6 +76,10 @@ export default function EventRegistration() {
     eventData.append("local", formData.local);
     eventData.append("preco", formData.preco);
     eventData.append("id_categoria", formData.id_categoria);
+
+    if (formData.url_link_externo) {
+        eventData.append("url_link_externo", formData.url_link_externo);
+    }
 
     imagens.forEach((imagem) => {
       eventData.append("imagens", imagem);
@@ -179,32 +184,42 @@ export default function EventRegistration() {
                   isEditable={true}
                 />
 
-                <div className="tf">
-                  <label htmlFor="imagens">Anexar Imagens (até 5) *</label>
-                  <input
-                    id="imagens"
-                    type="file"
-                    name="imagens"
-                    onChange={handleImageChange}
-                    multiple
-                    accept="image/*"
-                    className="file-input"
-                    required
-                  />
-                  {imagePreviews.length > 0 && (
-                    <div className="image-preview-container">
-                      {imagePreviews.map((src, index) => (
-                        <img
-                          key={index}
-                          src={src}
-                          alt={`Preview ${index + 1}`}
-                          className="image-preview"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <TextField
+                  id="url_link_externo"
+                  label="Link Oficial do Evento (Opcional)"
+                  name="url_link_externo"
+                  value={formData.url_link_externo}
+                  onChange={handleChange}
+                  placeholder="https://siteoficial.com/ingressos"
+                  isEditable={true}
+                />
               </div>
+            </div>
+            
+            <div className="tf" style={{ marginTop: '5px' }}>
+              <label htmlFor="imagens">Anexar Imagens (até 5) *</label>
+              <input
+                id="imagens"
+                type="file"
+                name="imagens"
+                onChange={handleImageChange}
+                multiple
+                accept="image/*"
+                className="file-input"
+                required
+              />
+              {imagePreviews.length > 0 && (
+                <div className="image-preview-container">
+                  {imagePreviews.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Preview ${index + 1}`}
+                      className="image-preview"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="description-field">

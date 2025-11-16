@@ -596,6 +596,28 @@ const EventDetail = () => {
                 <strong>Organizador:</strong>{" "}
                 {event.organizador?.nome || "Não informado"}
               </p>
+              {/* NOVO: Link Oficial do Evento */}
+              {event.url_link_externo && (
+                <p style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
+                  <a 
+                    href={event.url_link_externo} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="submit-comment-btn" 
+                    style={{ 
+                        padding: '10px 20px', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        backgroundColor: 'var(--cor_5-amarelo)',
+                        color: 'var(--cor_3-roxo_escuro)',
+                    }}
+                  >
+                    <i className="bi bi-box-arrow-up-right"></i>
+                    Site Oficial / Comprar Ingresso
+                  </a>
+                </p>
+              )}
             </div>
           </section>
 
