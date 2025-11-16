@@ -24,6 +24,7 @@ export default function EventEdit() {
     preco: "", // Inicializa como string vazia
     id_categoria: "",
     descricao: "",
+    url_link_externo: "", // Campo para Link Oficial
   });
   const [loading, setLoading] = useState(true); // Estado para carregamento inicial
   const [submitting, setSubmitting] = useState(false); // Estado para o envio do form
@@ -74,6 +75,7 @@ export default function EventEdit() {
               : "0", // Garante que seja string
           id_categoria: eventData.id_categoria || "",
           descricao: eventData.descricao || "",
+          url_link_externo: eventData.url_link_externo || "", // CORREÇÃO: LÊ O DADO DA API
         });
       } catch (error) {
         console.error("Erro ao buscar dados do evento:", error);
@@ -114,6 +116,7 @@ export default function EventEdit() {
     const dataToSend = {
       ...formData,
       preco: parseFloat(formData.preco) || 0, // Garante que seja número
+      // O campo url_link_externo é incluído aqui automaticamente
     };
 
     try {
@@ -232,13 +235,22 @@ export default function EventEdit() {
                   isEditable={true}
                 />
 
-                {/* --- Edição de imagem não implementada nesta versão --- */}
-                {/* <div className="tf">
-                  <label htmlFor="imagens">Anexar Novas Imagens (opcional)</label>
-                  <input id="imagens" type="file" name="imagens" multiple accept="image/*" className="file-input" />
-                  <p style={{fontSize: '0.8em', color: '#666'}}>Novas imagens substituirão as antigas.</p>
-                </div> */}
+                <TextField
+                  id="url_link_externo"
+                  label="Link Oficial do Evento (Opcional)"
+                  name="url_link_externo"
+                  value={formData.url_link_externo}
+                  onChange={handleChange}
+                  placeholder="https://siteoficial.com/ingressos"
+                  isEditable={true}
+                />
               </div>
+            </div>
+
+            <div className="tf" style={{ marginTop: '5px' }}>
+              <label htmlFor="imagens">Anexar Novas Imagens (opcional)</label>
+              <input id="imagens" type="file" name="imagens" multiple accept="image/*" className="file-input" />
+              <p style={{fontSize: '0.8em', color: '#666'}}>Novas imagens substituirão as antigas.</p>
             </div>
 
             {/* Descrição */}
