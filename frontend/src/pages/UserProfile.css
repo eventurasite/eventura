@@ -350,3 +350,27 @@
   background-color: #dc3545;
   color: var(--cor_1-branco);
 }
+
+.admin-action-link { 
+    margin-top:25px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 700; 
+    color: var(--cor_3-roxo_escuro); 
+    text-decoration: none;
+    padding: 12px 20px; 
+    border-radius: 8px;
+    
+    background-color: var(--cor_5-amarelo); 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    
+    transition: all 0.2s;
+}
+
+.admin-action-link:hover {
+    background-color: #fdda0d; 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); 
+}
