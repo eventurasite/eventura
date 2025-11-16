@@ -51,7 +51,13 @@ export default function UserProfile() {
       }
 
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/auth/${userId}`);
+        const response = await axios.get(
+          `${API_BASE_URL}/api/auth/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
         const userData = response.data;
         setUser(userData);
 

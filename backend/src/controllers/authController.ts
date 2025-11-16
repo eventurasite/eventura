@@ -1,3 +1,4 @@
+// backend/src/controllers/authController.ts
 import { Request, Response } from "express";
 import {
   registerUser,
@@ -6,16 +7,18 @@ import {
   removeUser,
   findUserById,
   findAllUsers,
+  forgotPassword,
+  resetPassword,
 } from "../services/authService";
-import * as authService from "../services/authService";
 
-/**
- * Criar usuário (registro local)
- */
-export async function register(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                                   REGISTER                                 */
+/* -------------------------------------------------------------------------- */
+export async function register(req: Request, res: Response) {
   try {
     const usuario = await registerUser(req.body);
-    res.status(201).json({
+
+    return res.status(201).json({
       message: "Usuário registrado com sucesso",
       id_usuario: usuario.id_usuario,
     });
@@ -23,28 +26,29 @@ export async function register(req: Request, res: Response): Promise<void> {
     console.error(error);
 
     if (error.message.includes("senha")) {
-      res.status(400).json({ message: error.message });
-    } else if (error.message.includes("E-mail já cadastrado via Google")) {
-      res.status(409).json({ provider: "google", message: error.message });
-    } else if (error.message.includes("E-mail já cadastrado")) {
-      res.status(409).json({ message: error.message });
-    } else if (error.message.includes("Email não informado")) {
-      res.status(400).json({ message: error.message });
-    } else if (error.message.includes("Senha não informada")) {
-      res.status(400).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Erro ao registrar usuário" });
+      return res.status(400).json({ message: error.message });
     }
+
+    if (error.message.includes("E-mail já cadastrado via Google")) {
+      return res.status(409).json({ provider: "google", message: error.message });
+    }
+
+    if (error.message.includes("E-mail já cadastrado")) {
+      return res.status(409).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro ao registrar usuário" });
   }
 }
 
-/**
- * Login local (email e senha)
- */
-export async function login(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                                     LOGIN                                  */
+/* -------------------------------------------------------------------------- */
+export async function login(req: Request, res: Response) {
   try {
     const usuario = await loginUser(req.body);
-    res.status(200).json({
+
+    return res.status(200).json({
       message: "Login bem-sucedido",
       id_usuario: usuario.id_usuario,
       nome: usuario.nome,
@@ -56,146 +60,159 @@ export async function login(req: Request, res: Response): Promise<void> {
     console.error(error);
 
     if (error.code === "GOOGLE_LOGIN") {
-      res.status(400).json({ provider: "google", message: error.message });
-    } else if (error.message.includes("Usuário não encontrado")) {
-      res.status(404).json({ message: error.message });
-    } else if (error.message.includes("Senha incorreta")) {
-      res.status(401).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Erro ao realizar login" });
+      return res.status(400).json({ provider: "google", message: error.message });
     }
+
+    if (error.message.includes("Usuário não encontrado")) {
+      return res.status(404).json({ message: error.message });
+    }
+
+    if (error.message.includes("Senha incorreta")) {
+      return res.status(401).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro ao realizar login" });
   }
 }
 
-/**
- * Atualizar usuário
- */
-export async function updateUser(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                               FORGOT PASSWORD                               */
+/* -------------------------------------------------------------------------- */
+export async function forgotPasswordController(req: Request, res: Response) {
   try {
-    const targetUserId = Number(req.params.id);
-    // @ts-ignore - Ignoramos o erro do TS aqui pois sabemos que req.user é populado pelo middleware
-    const authenticatedUserId = req.user.id; // ID do usuário logado (vem do token)
+    const result = await forgotPassword(req.body.email);
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message || "Erro ao solicitar redefinição." });
+  }
+}
 
-    // Regra de segurança: um usuário só pode editar o seu próprio perfil.
-    // (Futuramente, um admin poderia ser uma exceção a essa regra).
-    if (targetUserId !== authenticatedUserId) {
-      res.status(403).json({ message: "Acesso negado. Você não tem permissão para editar este usuário." });
-      return;
+/* -------------------------------------------------------------------------- */
+/*                                RESET PASSWORD                               */
+/* -------------------------------------------------------------------------- */
+export async function resetPasswordController(req: Request, res: Response) {
+  try {
+    const { token, password } = req.body;
+    const result = await resetPassword(token, password);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    return res.status(400).json({ message: error.message || "Erro ao redefinir senha." });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 GET ME (SELF)                               */
+/* -------------------------------------------------------------------------- */
+export async function getMe(req: Request, res: Response) {
+  try {
+    // @ts-ignore
+    const userId = req.user.id;
+
+    const usuario = await findUserById(userId);
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
-    const usuario = await editUser(targetUserId, req.body);
+    return res.status(200).json(usuario);
+  } catch (error) {
+    console.error("Erro em getMe:", error);
+    return res.status(500).json({ message: "Erro ao buscar dados do usuário" });
+  }
+}
 
-    res.status(200).json({
+/* -------------------------------------------------------------------------- */
+/*                                 UPDATE USER                                 */
+/* -------------------------------------------------------------------------- */
+export async function updateUser(req: Request, res: Response) {
+  try {
+    const targetUserId = Number(req.params.id);
+
+    // @ts-ignore - Data proveniente do JWT
+    const requesterId = req.user.id;
+    // @ts-ignore
+    const requesterType = req.user.tipo;
+
+    const usuario = await editUser(requesterId, requesterType, targetUserId, req.body);
+
+    return res.status(200).json({
       message: "Usuário atualizado com sucesso",
       usuario,
     });
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao atualizar usuário" });
+
+    if (error.message === "FORBIDDEN") {
+      return res.status(403).json({ message: "Você não tem permissão para editar este usuário." });
+    }
+
+    if (error.message.includes("não encontrado")) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    return res.status(500).json({ message: "Erro ao atualizar usuário" });
   }
 }
 
-/**
- * Excluir usuário
- */
-export async function deleteUser(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                                 DELETE USER                                 */
+/* -------------------------------------------------------------------------- */
+export async function deleteUser(req: Request, res: Response) {
   try {
     const targetUserId = Number(req.params.id);
-    // @ts-ignore
-    const authenticatedUserId = req.user.id; // ID do usuário logado (vem do token)
 
-    if (targetUserId !== authenticatedUserId) {
-      res.status(403).json({ message: "Acesso negado. Você não tem permissão para excluir este usuário." });
-      return;
+    // @ts-ignore
+    const requesterId = req.user.id;
+    // @ts-ignore
+    const requesterType = req.user.tipo;
+
+    // Regras:
+    // - admin pode deletar qualquer usuário
+    // - user pode deletar apenas ele mesmo
+    if (requesterType !== "administrador" && requesterId !== targetUserId) {
+      return res.status(403).json({
+        message: "Acesso negado. Você não tem permissão para excluir este usuário.",
+      });
     }
 
     await removeUser(targetUserId);
-    res.status(200).json({ message: "Usuário removido com sucesso" });
+
+    return res.status(200).json({ message: "Usuário removido com sucesso" });
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao remover usuário" });
+    return res.status(500).json({ message: "Erro ao remover usuário" });
   }
 }
 
-/**
- * Buscar usuário por ID
- */
-export async function getUser(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                                 GET USER BY ID                              */
+/* -------------------------------------------------------------------------- */
+export async function getUser(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
     const usuario = await findUserById(id);
 
     if (!usuario) {
-      res.status(404).json({ message: "Usuário não encontrado" });
-      return;
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
-    res.status(200).json(usuario);
-  } catch (error: any) {
+    return res.status(200).json(usuario);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao buscar usuário" });
+    return res.status(500).json({ message: "Erro ao buscar usuário" });
   }
 }
 
-/**
- * Listar todos os usuários
- */
-export async function getAllUsers(req: Request, res: Response): Promise<void> {
+/* -------------------------------------------------------------------------- */
+/*                                GET ALL USERS                                */
+/* -------------------------------------------------------------------------- */
+export async function getAllUsers(req: Request, res: Response) {
   try {
     const usuarios = await findAllUsers();
-    res.status(200).json(usuarios);
-  } catch (error: any) {
+    return res.status(200).json(usuarios);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao listar usuários" });
-  }
-}
-
-/**
- * Esqueci minha senha
- */
-export async function forgotPasswordController(req: Request, res: Response) {
-  const { email } = req.body;
-  try {
-    const result = await authService.forgotPassword(email);
-    return res.status(200).json(result);
-  } catch (err: any) {
-    return res.status(400).json({ message: err.message || "Erro ao solicitar redefinição" });
-  }
-}
-
-/**
- * Redefinir senha
- */
-export async function resetPasswordController(req: Request, res: Response) {
-  const { token, password } = req.body;
-
-  try {
-    const result = await authService.resetPassword(token, password);
-    return res.status(200).json(result);
-  } catch (err: any) {
-    return res
-      .status(400)
-      .json({ message: err.message || "Erro ao redefinir senha" });
-  }
-}
-
-/**
- * Buscar dados do próprio usuário autenticado
- */
-export async function getMe(req: Request, res: Response): Promise<void> {
-  try {
-    // @ts-ignore
-    const userId = req.user.id;
-    const usuario = await findUserById(userId);
-
-    if (!usuario) {
-      res.status(404).json({ message: "Usuário não encontrado" });
-      return;
-    }
-
-    res.status(200).json(usuario);
-  } catch (error: any) {
-    console.error("Erro em getMe:", error);
-    res.status(500).json({ message: "Erro ao buscar dados do usuário" });
+    return res.status(500).json({ message: "Erro ao listar usuários" });
   }
 }

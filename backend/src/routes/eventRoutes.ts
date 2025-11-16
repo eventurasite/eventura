@@ -1,75 +1,161 @@
 // backend/src/routes/eventRoutes.ts
+
 import { Router } from "express";
-import multer from 'multer';
-import multerConfig from '../config/multer';
+import multer from "multer";
+import multerConfig from "../config/multer";
+
 import * as eventController from "../controllers/eventController";
+
 import { authenticateToken } from "../middleware/authMiddleware";
+import {
+  requireAdmin,
+  allowEventOwnerOrAdmin,
+  allowCommentOwnerOrAdmin
+} from "../middleware/permissionMiddleware";
 
 const router = Router();
 const upload = multer(multerConfig);
 
-// Rota para criar um novo evento
+// -------------------------------
+// Eventos gerais
+// -------------------------------
+
+// Criar evento — qualquer usuário autenticado pode criar
 router.post(
-  "/", 
-  authenticateToken, 
-  upload.array('imagens', 5),
+  "/",
+  authenticateToken,
+  upload.array("imagens", 5),
   eventController.createEventController
 );
 
-// Rota para listar todas as categorias
+// Listar categorias — público
 router.get("/categories", eventController.getAllCategories);
 
-// Rota para os últimos eventos
+// Últimos eventos — público
 router.get("/latest", eventController.getLatestEvents);
 
-// NOVA ROTA: Listar eventos do próprio usuário (protegida)
+// Meus eventos — autenticado
 router.get("/my-events", authenticateToken, eventController.getMyEvents);
 
-router.post("/:id/interest", authenticateToken, eventController.toggleInteresseEvento);
-router.get("/my-interests", authenticateToken, eventController.getMeusInteresses);
-
-// NOVA ROTA DE FILTRO (adicione antes de /:id)
+// Filtros — público
 router.get("/filter", eventController.getFilteredEvents);
 
-// NOVAS ROTAS DE COMENTÁRIOS
+// -------------------------------
+// Comentários
+// -------------------------------
 router.get("/:id/comments", eventController.getCommentsController);
-router.post("/:id/comments", authenticateToken, eventController.createCommentController);
-// --- ROTA DE EXCLUSÃO DE COMENTÁRIO ---
-router.delete("/comments/:commentId", authenticateToken, eventController.deleteCommentController);
 
-//ROTAS DE CURTIDAS
-router.get("/:id/likes", eventController.getTotalLikesController); // Pública
-router.get("/:id/my-like", authenticateToken, eventController.getUserLikeStatusController); // Protegida
-router.post("/:id/like", authenticateToken, eventController.toggleLikeController); // Protegida
+router.post(
+  "/:id/comments",
+  authenticateToken,
+  eventController.createCommentController
+);
 
-//ROTAS DE INTERESSES
-router.get("/:id/interests", eventController.getTotalInterestsController); // Pública
-router.get("/:id/my-interest", authenticateToken, eventController.getUserInterestStatusController); // Protegida
-router.post("/:id/interest", authenticateToken, eventController.toggleInterestController); // Protegida
+router.delete(
+  "/comments/:commentId",
+  authenticateToken,
+  allowCommentOwnerOrAdmin(),
+  eventController.deleteCommentController
+);
 
-// ROTA DE CRIAÇÃO DE DENÚNCIA (Usada pelo usuário comum)
-router.post("/denounce", authenticateToken, eventController.createDenounceController);
+// -------------------------------
+// Curtidas
+// -------------------------------
+router.get("/:id/likes", eventController.getTotalLikesController);
 
-// --- ROTAS DO ADMIN PARA DENÚNCIAS (Protegidas) ---
-// Rota para listar todas as denúncias pendentes
-router.get("/admin/denounces", authenticateToken, eventController.getPendingDenouncesController);
+router.get(
+  "/:id/my-like",
+  authenticateToken,
+  eventController.getUserLikeStatusController
+);
 
-// Rota para atualizar o status da denúncia
-router.put("/admin/denounces/:id", authenticateToken, eventController.updateDenounceStatusController);
+router.post(
+  "/:id/like",
+  authenticateToken,
+  eventController.toggleLikeController
+);
 
-// Rota para excluir uma denúncia
-router.delete("/admin/denounces/:id", authenticateToken, eventController.deleteDenounceController);
+// -------------------------------
+// Interesses
+// -------------------------------
+router.get("/:id/interests", eventController.getTotalInterestsController);
 
-// Rota para buscar um evento pelo id (deve vir ANTES da rota genérica "/")
+router.get(
+  "/:id/my-interest",
+  authenticateToken,
+  eventController.getUserInterestStatusController
+);
+
+router.post(
+  "/:id/interest",
+  authenticateToken,
+  eventController.toggleInteresseEvento
+);
+
+router.get(
+  "/my-interests",
+  authenticateToken,
+  eventController.getMeusInteresses
+);
+
+// -------------------------------
+// Denúncias
+// -------------------------------
+
+// Criar denúncia — qualquer usuário autenticado
+router.post(
+  "/denounce",
+  authenticateToken,
+  eventController.createDenounceController
+);
+
+// Rotas ADMIN para denúncias
+router.get(
+  "/admin/denounces",
+  authenticateToken,
+  requireAdmin,
+  eventController.getPendingDenouncesController
+);
+
+router.put(
+  "/admin/denounces/:id",
+  authenticateToken,
+  requireAdmin,
+  eventController.updateDenounceStatusController
+);
+
+router.delete(
+  "/admin/denounces/:id",
+  authenticateToken,
+  requireAdmin,
+  eventController.deleteDenounceController
+);
+
+// -------------------------------
+// Atualizar / Excluir Eventos
+// -------------------------------
+
+// Buscar evento por ID — público
 router.get("/:id", eventController.getEvent);
 
-// NOVA ROTA: Atualizar um evento (requer autenticação)
-router.put("/:id", authenticateToken, upload.array('imagens', 5), eventController.updateEventController);
+// Atualizar evento — organizador ou admin
+router.put(
+  "/:id",
+  authenticateToken,
+  allowEventOwnerOrAdmin(),
+  upload.array("imagens", 5),
+  eventController.updateEventController
+);
 
-//Rota para excluir um evento (requer autenticação)
-router.delete("/:id", authenticateToken, eventController.deleteEventController);
+// Excluir evento — organizador ou admin
+router.delete(
+  "/:id",
+  authenticateToken,
+  allowEventOwnerOrAdmin(),
+  eventController.deleteEventController
+);
 
-// Rota para listar todos os eventos
+// Listar todos — público
 router.get("/", eventController.getAllEvents);
 
 export default router;

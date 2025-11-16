@@ -9,35 +9,32 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function App({ children }) {
   useEffect(() => {
     const handleAuthRedirect = async () => {
+
+      const currentPath = window.location.pathname;
+
+      // Só trata token se estiver no fluxo do Google Login
+      if (currentPath !== "/login" && currentPath !== "/google/callback") return;
+
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
-
       if (token) {
-        // 1. Salva o token recebido
         localStorage.setItem("authToken", token);
 
         try {
-          // 2. Usa o token para buscar os dados do usuário
           const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
           const userData = response.data;
 
-          // 3. Salva os outros dados essenciais
           localStorage.setItem("userId", userData.id_usuario);
           localStorage.setItem("userName", userData.nome);
           localStorage.setItem("userType", userData.tipo);
           localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
         } catch (error) {
-          console.error(
-            "Erro ao buscar dados do usuário após login com Google:",
-            error
-          );
-          // Limpa em caso de erro para não manter um estado de login inconsistente
+          console.error("Erro ao buscar dados do usuário:", error);
           localStorage.clear();
         } finally {
-          // 4. Limpa o token da URL para o usuário não vê-lo
           window.history.replaceState({}, document.title, "/");
         }
       }
