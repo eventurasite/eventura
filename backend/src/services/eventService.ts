@@ -1,12 +1,13 @@
 // backend/src/services/eventService.ts
-import { Evento, PrismaClient, Prisma, TipoUsuario } from "@prisma/client"; // Importar Prisma
+import { PrismaClient, Prisma, TipoUsuario } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 /**
- * Criar um novo evento.
+ * Criar evento
+ * (permissão garantida pelo middleware)
  */
-export async function createEvent(eventData: {
+export async function createEvent(data: {
   titulo: string;
   descricao: string;
   data: Date;
@@ -14,46 +15,41 @@ export async function createEvent(eventData: {
   preco: number;
   id_categoria: number;
   id_organizador: number;
-  imagens: { url: string }[];
+  imagens: string[]; // URLs das imagens
 }) {
-  const { titulo, descricao, data, local, preco, id_categoria, id_organizador, imagens } = eventData;
-
-  // Cria o evento e as imagens associadas em uma única transação
   return prisma.evento.create({
     data: {
-      titulo,
-      descricao,
-      data,
-      local,
-      preco, // Prisma aceita number aqui
-      id_organizador,
-      id_categoria,
+      titulo: data.titulo,
+      descricao: data.descricao,
+      data: data.data,
+      local: data.local,
+      preco: data.preco,
+      id_categoria: data.id_categoria,
+      id_organizador: data.id_organizador,
+
       imagemEvento: {
-        create: imagens,
+        create: data.imagens.map((url) => ({ url })),
       },
     },
     include: {
-      imagemEvento: true, // Retorna as imagens criadas
+      imagemEvento: true,
     },
   });
 }
 
 /**
- * Listar todas as categorias de eventos.
+ * Categorias
  */
-export async function findAllCategories() {
+export function findAllCategories() {
   return prisma.categoria.findMany();
 }
 
-
 /**
- * Listar todos os eventos com suas imagens
+ * Listar todos os eventos
  */
-export async function findAllEvents() {
+export function findAllEvents() {
   return prisma.evento.findMany({
-    orderBy: {
-      data_criacao: "desc",
-    },
+    orderBy: { data_criacao: "desc" },
     include: {
       imagemEvento: true,
       categoria: true,
@@ -62,13 +58,11 @@ export async function findAllEvents() {
 }
 
 /**
- * Listar os 3 eventos mais recentes
+ * Últimos 3 eventos
  */
-export async function findLatestEvents() {
+export function findLatestEvents() {
   return prisma.evento.findMany({
-    orderBy: {
-      data_criacao: "desc",
-    },
+    orderBy: { data_criacao: "desc" },
     take: 3,
     include: {
       imagemEvento: true,
@@ -79,55 +73,48 @@ export async function findLatestEvents() {
 /**
  * Buscar evento por ID
  */
-export const getEventById = async (id: number): Promise<Evento | null> => {
-  try {
-    const event = await prisma.evento.findUnique({
-      where: { id_evento: id },
-      include: {
-        imagemEvento: true,
-        categoria: true,
-        organizador: {
-          select: {
-            id_usuario: true,
-            nome: true,
-          },
+export async function getEventById(id: number) {
+  const event = await prisma.evento.findUnique({
+    where: { id_evento: id },
+    include: {
+      imagemEvento: true,
+      categoria: true,
+      organizador: {
+        select: {
+          id_usuario: true,
+          nome: true,
         },
       },
-    });
-    // Retorna o evento completo (com tipo Decimal para preco)
-    // @ts-ignore Prisma retorna Decimal, mas para compatibilidade JS podemos converter se necessário
-    return event ? { ...event, preco: event.preco ? Number(event.preco) : 0 } : null;
-    // Ou apenas: return event; se o frontend não precisar de number
-     // return event; // <- Mantenha assim se o frontend já lida com Decimal (ou string)
-  } catch (error: any) {
-    throw new Error(`Erro ao buscar evento: ${error.message}`);
-  }
-};
+    },
+  });
 
+  if (!event) return null;
+
+  return {
+    ...event,
+    preco: Number(event.preco),
+  };
+}
 
 /**
- * Buscar eventos por organizador
+ * Eventos criados por um organizador
  */
-export async function findEventsByOrganizer(organizerId: number) {
+export function findEventsByOrganizer(organizerId: number) {
   return prisma.evento.findMany({
-    where: {
-      id_organizador: organizerId,
-    },
+    where: { id_organizador: organizerId },
     include: {
       imagemEvento: true,
       categoria: true,
     },
-    orderBy: {
-      data: 'desc',
-    },
+    orderBy: { data: "desc" },
   });
 }
 
 /**
- * Filtrar Eventos
+ * Filtro avançado
  */
-export const getFilteredEvents = async (filtros: any) => {
-  const where: Prisma.EventoWhereInput = {}; // Usar tipo Prisma para melhor autocompletar
+export async function getFilteredEvents(filtros: any) {
+  const where: Prisma.EventoWhereInput = {};
 
   // Categoria
   if (filtros.categoria) {
@@ -136,27 +123,24 @@ export const getFilteredEvents = async (filtros: any) => {
     };
   }
 
-  // Mês (range de datas)
+  // Mês
   if (filtros.mes) {
-    const year = new Date().getFullYear(); // Considerar eventos de anos futuros?
+    const year = new Date().getFullYear();
     const month = parseInt(filtros.mes);
-    if (!isNaN(month) && month >= 1 && month <= 12) {
-        const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0)); // Mês é 0-indexed
-        const endDate = new Date(Date.UTC(year, month, 1, 0, 0, 0)); // Início do próximo mês
 
-        where.data = {
-          gte: startDate,
-          lt: endDate,
-        };
+    if (month >= 1 && month <= 12) {
+      where.data = {
+        gte: new Date(Date.UTC(year, month - 1, 1)),
+        lt: new Date(Date.UTC(year, month, 1)),
+      };
     }
   }
 
-
-  // Preço (gratuito/pago)
+  // Preço
   if (filtros.preco === "gratuito") where.preco = 0;
   else if (filtros.preco === "pago") where.preco = { gt: 0 };
 
-  // Busca por nome ou local
+  // Busca geral
   if (filtros.busca) {
     where.OR = [
       { titulo: { contains: filtros.busca, mode: "insensitive" } },
@@ -166,165 +150,122 @@ export const getFilteredEvents = async (filtros: any) => {
 
   return prisma.evento.findMany({
     where,
-    include: { categoria: true, imagemEvento: true },
+    include: {
+      categoria: true,
+      imagemEvento: true,
+    },
     orderBy: { data: "asc" },
   });
-};
-
+}
 
 /**
- * Excluir um evento, verificando a propriedade.
+ * Excluir um evento
+ * (REGRA DE NEGÓCIO — owner ou admin podem excluir)
  */
 export async function deleteEvent(
   eventId: number,
   userId: number,
   userType: TipoUsuario
-): Promise<void> {
-  // 1. Busca o evento para verificar o proprietário
+) {
   const event = await prisma.evento.findUnique({
     where: { id_evento: eventId },
     select: { id_organizador: true },
   });
 
-  // 2. Verifica se o evento existe
   if (!event) {
-    throw new Error('NOT_FOUND');
+    throw new Error("NOT_FOUND");
   }
 
-  // 3. Verifica se o usuário logado é o organizador OU administrador
-  const isOrganizer = event.id_organizador === userId;
-  const isAdmin = userType === TipoUsuario.administrador; // <-- Checa se é admin
+  const isOwner = event.id_organizador === userId;
+  const isAdmin = userType === "administrador";
 
-  if (!isOrganizer && !isAdmin) { // <-- LÓGICA DE PERMISSÃO ALTERADA
-    throw new Error('FORBIDDEN');
+  if (!isOwner && !isAdmin) {
+    throw new Error("FORBIDDEN");
   }
 
-  // 4. Exclui o evento e suas imagens relacionadas (transação segura)
-  try {
-    // ... (restante da transação de exclusão que já está segura)
-    await prisma.$transaction([
-      prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
-      prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
-      prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
-      prisma.interesse.deleteMany({ where: { id_evento: eventId } }),
-
-      prisma.imagemEvento.deleteMany({
-        where: { id_evento: eventId },
-      }),
-      prisma.evento.delete({ 
-        where: { id_evento: eventId },
-      }),
-    ]);
-  } catch (dbError: any) {
-    console.error("Erro na transação de exclusão:", dbError);
-    throw new Error("Erro no banco de dados ao tentar excluir o evento.");
-  }
+  await prisma.$transaction([
+    prisma.comentario.deleteMany({ where: { id_evento: eventId } }),
+    prisma.curtida.deleteMany({ where: { id_evento: eventId } }),
+    prisma.denuncia.deleteMany({ where: { id_evento: eventId } }),
+    prisma.interesse.deleteMany({ where: { id_evento: eventId } }),
+    prisma.imagemEvento.deleteMany({ where: { id_evento: eventId } }),
+    prisma.evento.delete({ where: { id_evento: eventId } }),
+  ]);
 }
 
 /**
- * Atualizar um evento existente, verificando propriedade.
+ * Atualizar evento
+ * (permissão garantida pelo middleware)
  */
 export async function updateEvent(
   eventId: number,
   userId: number,
-  data: { // Define o tipo de 'data' explicitamente aqui
+  data: {
     titulo?: string;
     descricao?: string;
     data?: Date;
     local?: string;
-    preco?: number; // Aceita number | undefined
+    preco?: number;
     id_categoria?: number;
   }
 ) {
-  // 1. Busca o evento para verificar o proprietário
-  const event = await prisma.evento.findUnique({
+  const exists = await prisma.evento.findUnique({
     where: { id_evento: eventId },
-    select: { id_organizador: true },
   });
 
-  // 2. Verifica se o evento existe
-  if (!event) {
-    throw new Error('NOT_FOUND');
+  if (!exists) {
+    throw new Error("NOT_FOUND");
   }
 
-  // 3. Verifica se o usuário logado é o organizador
-  if (event.id_organizador !== userId) {
-    throw new Error('FORBIDDEN');
+  const updateData: Prisma.EventoUpdateInput = {};
+
+  if (data.titulo) updateData.titulo = data.titulo;
+  if (data.descricao) updateData.descricao = data.descricao;
+  if (data.data) updateData.data = data.data;
+  if (data.local) updateData.local = data.local;
+  if (data.preco !== undefined) updateData.preco = data.preco;
+  if (data.id_categoria !== undefined) {
+    updateData.categoria = { connect: { id_categoria: data.id_categoria } };
   }
 
-  // 4. Validação básica
-  if (!data.titulo && !data.descricao && !data.data && !data.local && data.preco === undefined && !data.id_categoria) {
-      throw new Error('BAD_REQUEST');
-  }
-
-  // 5. Atualiza o evento no banco de dados
-  try {
-    // Cria um objeto de dados limpo apenas com os campos fornecidos
-    const dataToUpdate: Prisma.EventoUpdateInput = {};
-    if (data.titulo !== undefined) dataToUpdate.titulo = data.titulo;
-    if (data.descricao !== undefined) dataToUpdate.descricao = data.descricao;
-    if (data.data !== undefined) dataToUpdate.data = data.data;
-    if (data.local !== undefined) dataToUpdate.local = data.local;
-    if (data.preco !== undefined) dataToUpdate.preco = data.preco; // Passa 'number' diretamente
-    if (data.id_categoria !== undefined) {
-         // Precisa conectar a categoria pelo ID
-        dataToUpdate.categoria = { connect: { id_categoria: data.id_categoria } };
-    }
-
-
-    const eventoAtualizado = await prisma.evento.update({
-      where: { id_evento: eventId },
-      data: dataToUpdate, // Usa o objeto limpo
-      include: { // Mantém a inclusão de dados relacionados
-        imagemEvento: true,
-        categoria: true,
-        organizador: { select: { id_usuario: true, nome: true } },
+  const updated = await prisma.evento.update({
+    where: { id_evento: eventId },
+    data: updateData,
+    include: {
+      imagemEvento: true,
+      categoria: true,
+      organizador: {
+        select: { id_usuario: true, nome: true },
       },
-    });
-    // @ts-ignore Converte o Decimal retornado para number antes de enviar ao frontend, se necessário
-    return eventoAtualizado ? { ...eventoAtualizado, preco: eventoAtualizado.preco ? Number(eventoAtualizado.preco) : 0 } : null;
-     // Ou apenas: return eventoAtualizado; se o frontend lida com Decimal
+    },
+  });
 
-  } catch (dbError: any) {
-    console.error("Erro no DB ao atualizar evento:", dbError);
-    if (dbError instanceof Prisma.PrismaClientValidationError) {
-        console.error("Erro de validação do Prisma:", dbError.message);
-        throw new Error('BAD_REQUEST');
-    }
-    throw new Error("Erro no banco de dados ao tentar atualizar o evento.");
-  }
+  return {
+    ...updated,
+    preco: Number(updated.preco),
+  };
 }
 
 /**
- * Buscar todos os comentários de um evento
+ * Comentários
  */
-export async function getCommentsByEventId(eventId: number) {
+export function getCommentsByEventId(eventId: number) {
   return prisma.comentario.findMany({
     where: { id_evento: eventId },
     include: {
-      // Incluímos o 'usuario' para sabermos quem comentou
       usuario: {
         select: {
           id_usuario: true,
           nome: true,
-          url_foto_perfil: true, // Se quisermos exibir a foto no futuro
+          url_foto_perfil: true,
         },
       },
     },
-    orderBy: {
-      data_criacao: 'asc', // Do mais antigo para o mais novo
-    },
+    orderBy: { data_criacao: "asc" },
   });
 }
 
-/**
- * Criar um novo comentário
- */
-export async function createComment(
-  eventId: number,
-  userId: number,
-  texto: string
-) {
+export async function createComment(eventId: number, userId: number, texto: string) {
   if (!texto || texto.trim() === "") {
     throw new Error("O texto do comentário não pode estar vazio.");
   }
@@ -333,10 +274,9 @@ export async function createComment(
     data: {
       id_evento: eventId,
       id_usuario: userId,
-      texto: texto,
+      texto,
     },
     include: {
-      // Retorna o comentário criado com os dados do usuário
       usuario: {
         select: {
           id_usuario: true,
@@ -349,31 +289,29 @@ export async function createComment(
 }
 
 /**
- * Excluir um comentário (NOVA FUNÇÃO)
+ * Excluir comentário
+ * (REGRA DE NEGÓCIO — owner ou admin podem excluir)
  */
 export async function deleteComment(
   commentId: number,
   userId: number,
   userType: TipoUsuario
 ) {
-  // 1. Busca o comentário
   const comment = await prisma.comentario.findUnique({
     where: { id_comentario: commentId },
   });
 
   if (!comment) {
-    throw new Error("Comentário não encontrado.");
+    throw new Error("NOT_FOUND");
   }
 
-  const isAuthor = comment.id_usuario === userId;
-  const isAdmin = userType === TipoUsuario.administrador; // <-- Checa se é admin
+  const isOwner = comment.id_usuario === userId;
+  const isAdmin = userType === "administrador";
 
-  // 2. Verifica se o usuário logado é o dono do comentário OU administrador
-  if (!isAuthor && !isAdmin) { // <-- LÓGICA DE PERMISSÃO ALTERADA
-    throw new Error("Você não tem permissão para excluir este comentário.");
+  if (!isOwner && !isAdmin) {
+    throw new Error("FORBIDDEN");
   }
 
-  // 3. Deleta o comentário
   await prisma.comentario.delete({
     where: { id_comentario: commentId },
   });
@@ -382,124 +320,89 @@ export async function deleteComment(
 }
 
 /**
- * Buscar o total de curtidas de um evento
+ * Curtidas
  */
-export async function getTotalLikes(eventId: number) {
+export function getTotalLikes(eventId: number) {
   return prisma.curtida.count({
     where: { id_evento: eventId },
   });
 }
 
-/**
- * Verificar se um usuário específico curtiu um evento
- */
 export async function getUserLikeStatus(eventId: number, userId: number) {
   const like = await prisma.curtida.findUnique({
     where: {
-      // Esta chave composta (id_usuario + id_evento) foi definida no schema.prisma
-      id_usuario_id_evento: {
-        id_usuario: userId,
-        id_evento: eventId,
-      },
+      id_usuario_id_evento: { id_usuario: userId, id_evento: eventId },
     },
   });
-  return { userHasLiked: !!like }; // Retorna true se o 'like' existir, false se não
+
+  return { userHasLiked: !!like };
 }
 
-/**
- * Adicionar ou remover uma curtida (toggle)
- */
 export async function toggleLike(eventId: number, userId: number) {
-  const likeExists = await prisma.curtida.findUnique({
+  const exists = await prisma.curtida.findUnique({
     where: {
-      id_usuario_id_evento: {
-        id_usuario: userId,
-        id_evento: eventId,
-      },
+      id_usuario_id_evento: { id_usuario: userId, id_evento: eventId },
     },
   });
 
-  if (likeExists) {
-    // Se já curtiu, remove a curtida
-    await prisma.curtida.delete({
-      where: { id_curtida: likeExists.id_curtida },
-    });
+  if (exists) {
+    await prisma.curtida.delete({ where: { id_curtida: exists.id_curtida } });
   } else {
-    // Se não curtiu, cria a curtida
     await prisma.curtida.create({
-      data: {
-        id_evento: eventId,
-        id_usuario: userId,
-      },
+      data: { id_evento: eventId, id_usuario: userId },
     });
   }
 
-  // Retorna o novo estado
   const totalLikes = await getTotalLikes(eventId);
+
   return {
     totalLikes,
-    userHasLiked: !likeExists, // O novo estado é o oposto do que existia
+    userHasLiked: !exists,
   };
 }
 
 /**
- * Buscar o total de interesses (inscrições) de um evento
+ * Interesses
  */
-export async function getTotalInterests(eventId: number) {
+export function getTotalInterests(eventId: number) {
   return prisma.interesse.count({
     where: { id_evento: eventId },
   });
 }
 
-/**
- * Verificar se um usuário específico demonstrou interesse (inscrição) em um evento
- */
 export async function getUserInterestStatus(eventId: number, userId: number) {
   const interest = await prisma.interesse.findUnique({
     where: {
-      id_evento_id_usuario: {
-        id_usuario: userId,
-        id_evento: eventId,
-      },
+      id_evento_id_usuario: { id_evento: eventId, id_usuario: userId },
     },
   });
+
   return { userHasInterested: !!interest };
 }
 
-/**
- * Adicionar ou remover um interesse (inscrição) - (toggle)
- */
 export async function toggleInteresse(eventId: number, userId: number) {
-  const interestExists = await prisma.interesse.findUnique({
+  const exists = await prisma.interesse.findUnique({
     where: {
-      id_evento_id_usuario: {
-        id_usuario: userId,
-        id_evento: eventId,
-      },
+      id_evento_id_usuario: { id_evento: eventId, id_usuario: userId },
     },
   });
 
-  if (interestExists) {
-    await prisma.interesse.delete({
-      where: { id_interesse: interestExists.id_interesse },
-    });
+  if (exists) {
+    await prisma.interesse.delete({ where: { id_interesse: exists.id_interesse } });
   } else {
     await prisma.interesse.create({
-      data: {
-        id_evento: eventId,
-        id_usuario: userId,
-      },
+      data: { id_evento: eventId, id_usuario: userId },
     });
   }
 
-  const totalInterests = await getTotalInterests(eventId);
+  const total = await getTotalInterests(eventId);
+
   return {
-    totalInterests,
-    userHasInterested: !interestExists,
+    totalInterests: total,
+    userHasInterested: !exists,
   };
 }
 
-// Buscar eventos que o usuário marcou interesse
 export async function buscarEventosPorInteresse(id_usuario: number) {
   const interesses = await prisma.interesse.findMany({
     where: { id_usuario },
@@ -514,13 +417,13 @@ export async function buscarEventosPorInteresse(id_usuario: number) {
     },
   });
 
-  return interesses.map((i) => i.evento);
+  return interesses.map(i => i.evento);
 }
 
 /**
- * Criar uma nova denúncia.
+ * Denúncias
  */
-export async function createDenounce(eventId: number, userId: number, motivo: string) {
+export function createDenounce(eventId: number, userId: number, motivo: string) {
   return prisma.denuncia.create({
     data: {
       id_evento: eventId,
@@ -530,49 +433,32 @@ export async function createDenounce(eventId: number, userId: number, motivo: st
   });
 }
 
-/**
- * Listar todas as denúncias pendentes para o Admin.
- */
-export async function getAllPendingDenounces() {
+export function getAllPendingDenounces() {
   return prisma.denuncia.findMany({
-    where: { status: 'pendente' },
+    where: { status: "pendente" },
     include: {
       evento: {
-        select: {
-          id_evento: true,
-          titulo: true,
-          data: true,
-          local: true,
-        },
+        select: { id_evento: true, titulo: true, data: true, local: true },
       },
       usuario: {
-        select: {
-          id_usuario: true,
-          nome: true,
-          email: true,
-        },
+        select: { id_usuario: true, nome: true, email: true },
       },
     },
-    orderBy: {
-      data_criacao: 'asc', // Mais antigas primeiro
-    },
+    orderBy: { data_criacao: "asc" },
   });
 }
 
-/**
- * Atualizar o status de uma denúncia.
- */
-export async function updateDenounceStatus(denounceId: number, status: 'revisada' | 'rejeitada') {
+export function updateDenounceStatus(
+  denounceId: number,
+  status: "revisada" | "rejeitada"
+) {
   return prisma.denuncia.update({
     where: { id_denuncia: denounceId },
     data: { status },
   });
 }
 
-/**
- * Excluir uma denúncia.
- */
-export async function deleteDenounce(denounceId: number) {
+export function deleteDenounce(denounceId: number) {
   return prisma.denuncia.delete({
     where: { id_denuncia: denounceId },
   });

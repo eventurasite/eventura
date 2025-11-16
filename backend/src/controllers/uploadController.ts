@@ -1,3 +1,4 @@
+// backend/src/controllers/uploadController.ts
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
@@ -5,6 +6,10 @@ import path from 'path';
 
 const prisma = new PrismaClient();
 
+/**
+ * Upload de foto de perfil
+ * (permissão garantida por allowOwnerOrAdmin)
+ */
 export async function uploadProfileImage(req: Request, res: Response) {
   try {
     const { id } = req.params;
@@ -28,6 +33,11 @@ export async function uploadProfileImage(req: Request, res: Response) {
     return res.status(500).json({ message: 'Erro interno ao processar o upload.' });
   }
 }
+
+/**
+ * Remover foto de perfil
+ * (permissão garantida por allowOwnerOrAdmin)
+ */
 export async function removeProfileImage(req: Request, res: Response) {
   try {
     const { id } = req.params;
@@ -40,17 +50,14 @@ export async function removeProfileImage(req: Request, res: Response) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 
-    // Verifica se existe uma foto para remover
     if (user.url_foto_perfil) {
       const filename = path.basename(user.url_foto_perfil);
       const filePath = path.resolve(__dirname, '..', '..', 'uploads', filename);
-      
-      // Deleta o arquivo físico do servidor, se ele existir
+
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      
-      // Atualiza o banco de dados, removendo a referência da foto
+
       await prisma.usuario.update({
         where: { id_usuario: Number(id) },
         data: { url_foto_perfil: null },

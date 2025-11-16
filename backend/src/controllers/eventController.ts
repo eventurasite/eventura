@@ -1,520 +1,470 @@
 // backend/src/controllers/eventController.ts
 import { Request, Response } from "express";
 import * as eventService from "../services/eventService";
-// Importar tipos necessários
-import { Evento, Prisma } from "@prisma/client";
 
 /**
  * Criar um novo evento
  */
-export async function createEventController(req: Request, res: Response): Promise<void> {
+/**
+ * Criar um novo evento
+ */
+export async function createEventController(req: Request, res: Response) {
   try {
     const { titulo, descricao, data, local, preco, id_categoria } = req.body;
+
     // @ts-ignore
-    const id_organizador = req.user.id; // Vem do token JWT
+    const id_organizador = req.user.id;
 
     const files = req.files as Express.Multer.File[];
+
     if (!files || files.length === 0) {
-      res.status(400).json({ message: "Pelo menos uma imagem é obrigatória." });
-      return;
+      return res.status(400).json({ message: "Pelo menos uma imagem é obrigatória." });
     }
 
-    const imagens = files.map(file => ({ url: `/uploads/${file.filename}` }));
+    // CORREÇÃO AQUI!
+    const imagens = files.map(file => `/uploads/${file.filename}`);
 
     const evento = await eventService.createEvent({
       titulo,
       descricao,
       data: new Date(data),
       local,
-      preco: parseFloat(preco), // Service aceita number
-      id_categoria: parseInt(id_categoria, 10),
+      preco: Number(preco),
+      id_categoria: Number(id_categoria),
       id_organizador,
       imagens,
     });
 
-    res.status(201).json({ message: "Evento criado com sucesso!", evento });
-  } catch (error: any) {
+    return res.status(201).json({ message: "Evento criado com sucesso!", evento });
+
+  } catch (error) {
     console.error("Erro ao criar evento:", error);
-    res.status(500).json({ message: "Erro interno ao criar o evento." });
+    return res.status(500).json({ message: "Erro interno ao criar o evento." });
   }
 }
 
+
 /**
- * Listar todas as categorias
+ * Listar categorias
  */
-export async function getAllCategories(req: Request, res: Response): Promise<void> {
+export async function getAllCategories(req: Request, res: Response) {
   try {
     const categorias = await eventService.findAllCategories();
-    res.status(200).json(categorias);
-  } catch (error: any) {
+    return res.status(200).json(categorias);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao listar categorias" });
+    return res.status(500).json({ message: "Erro ao listar categorias" });
   }
 }
 
 /**
  * Listar todos os eventos
  */
-export async function getAllEvents(req: Request, res: Response): Promise<void> {
+export async function getAllEvents(req: Request, res: Response) {
   try {
     const eventos = await eventService.findAllEvents();
-    res.status(200).json(eventos);
-  } catch (error: any) {
+    return res.status(200).json(eventos);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao listar eventos" });
+    return res.status(500).json({ message: "Erro ao listar eventos" });
   }
 }
 
 /**
- * Listar os 3 últimos eventos
+ * Listar últimos eventos
  */
-export async function getLatestEvents(req: Request, res: Response): Promise<void> {
+export async function getLatestEvents(req: Request, res: Response) {
   try {
     const eventos = await eventService.findLatestEvents();
-    res.status(200).json(eventos);
-  } catch (error: any) {
+    return res.status(200).json(eventos);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao listar últimos eventos" });
+    return res.status(500).json({ message: "Erro ao listar últimos eventos" });
   }
 }
 
 /**
  * Buscar evento por ID
  */
-export const getEvent = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+export async function getEvent(req: Request, res: Response) {
   try {
-    const eventId = Number(id);
+    const eventId = Number(req.params.id);
+
     if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID inválido" }); return;
+      return res.status(400).json({ message: "ID inválido." });
     }
-    const event = await eventService.getEventById(eventId);
-    if (!event) {
-      res.status(404).json({ message: "Evento não encontrado" }); return;
+
+    const evento = await eventService.getEventById(eventId);
+
+    if (!evento) {
+      return res.status(404).json({ message: "Evento não encontrado." });
     }
-    res.status(200).json(event);
+
+    return res.status(200).json(evento);
+
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
-};
+}
 
 /**
- * Listar eventos do organizador autenticado
+ * Eventos do organizador autenticado
  */
-export async function getMyEvents(req: Request, res: Response): Promise<void> {
+export async function getMyEvents(req: Request, res: Response) {
   try {
     // @ts-ignore
     const userId = req.user.id;
     const eventos = await eventService.findEventsByOrganizer(userId);
-    res.status(200).json(eventos);
-  } catch (error: any) {
+    return res.status(200).json(eventos);
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro ao listar seus eventos" });
+    return res.status(500).json({ message: "Erro ao listar seus eventos" });
   }
 }
 
 /**
- * FILTRAR EVENTOS
+ * Filtro de eventos
  */
-export const getFilteredEvents = async (req: Request, res: Response) => {
+export async function getFilteredEvents(req: Request, res: Response) {
   try {
-    const { categoria, mes, preco, busca } = req.query;
-    const eventos = await eventService.getFilteredEvents({
-      categoria: categoria as string,
-      mes: mes as string,
-      preco: preco as string,
-      busca: busca as string,
-    });
-    res.json(eventos);
+    const eventos = await eventService.getFilteredEvents(req.query);
+    return res.json(eventos);
   } catch (error) {
     console.error("Erro ao filtrar eventos:", error);
-    res.status(500).json({ message: "Erro ao filtrar eventos." });
-  }
-};
-
-/**
- * Excluir um evento
- */
-export async function deleteEventController(req: Request, res: Response): Promise<void> {
-  try {
-    const eventId = parseInt(req.params.id, 10);
-    // @ts-ignore
-    const userId = req.user.id;
-    // @ts-ignore
-    const userType = req.user.tipo; // <-- PEGA O TIPO DO USUÁRIO DO TOKEN
-    if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID do evento inválido." }); return;
-    }
-    // PASSA O userType PARA O SERVICE
-    await eventService.deleteEvent(eventId, userId, userType); 
-    res.status(200).json({ message: "Evento excluído com sucesso." });
-  } catch (error: any) {
-    console.error("Erro ao excluir evento:", error);
-    // ... (restante da lógica de erro)
-    if (error.message === 'NOT_FOUND') res.status(404).json({ message: "Evento não encontrado." });
-    else if (error.message === 'FORBIDDEN') res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
-    else res.status(500).json({ message: "Erro interno ao excluir o evento." });
+    return res.status(500).json({ message: "Erro ao filtrar eventos." });
   }
 }
 
 /**
- * Atualizar um evento existente
+ * Excluir evento
+ * (permissão garantida via allowEventOwnerOrAdmin)
  */
-export async function updateEventController(req: Request, res: Response): Promise<void> {
+export async function deleteEventController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
-    // @ts-ignore
-    const userId = req.user.id;
+    const eventId = Number(req.params.id);
 
     if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID do evento inválido." }); return;
+      return res.status(400).json({ message: "ID do evento inválido." });
     }
+
+    // @ts-ignore
+    const userId = req.user.id;
+    // @ts-ignore
+    const userType = req.user.tipo;
+
+    await eventService.deleteEvent(eventId, userId, userType);
+
+    return res.status(200).json({ message: "Evento excluído com sucesso." });
+
+  } catch (error: any) {
+    console.error("Erro ao excluir evento:", error);
+
+    if (error.message === "NOT_FOUND") {
+      return res.status(404).json({ message: "Evento não encontrado." });
+    }
+
+    if (error.message === "FORBIDDEN") {
+      return res.status(403).json({ message: "Você não tem permissão para excluir este evento." });
+    }
+
+    return res.status(500).json({ message: "Erro interno ao excluir o evento." });
+  }
+}
+
+/**
+ * Atualizar evento
+ * (permissão garantida via allowEventOwnerOrAdmin)
+ */
+export async function updateEventController(req: Request, res: Response) {
+  try {
+    const eventId = Number(req.params.id);
+
+    if (isNaN(eventId)) {
+      return res.status(400).json({ message: "ID do evento inválido." });
+    }
+
+    // @ts-ignore
+    const userId = req.user.id;
 
     const { titulo, descricao, data, local, preco, id_categoria } = req.body;
 
-    // --- CORREÇÃO APLICADA ---
-    // Define o tipo para o objeto que será passado para o service
-    // Este tipo corresponde ao esperado pela função updateEvent no service
-    const eventDataForService: {
-        titulo?: string;
-        descricao?: string;
-        data?: Date;
-        local?: string;
-        preco?: number; // Service espera number | undefined
-        id_categoria?: number;
-    } = {};
+    const eventData: any = {};
 
-    // Preenche o objeto apenas com os campos definidos que vieram do body
-    if (titulo !== undefined) eventDataForService.titulo = titulo;
-    if (descricao !== undefined) eventDataForService.descricao = descricao;
-    if (data !== undefined) eventDataForService.data = new Date(data);
-    if (local !== undefined) eventDataForService.local = local;
-    if (preco !== undefined) eventDataForService.preco = parseFloat(preco);
-    if (id_categoria !== undefined) eventDataForService.id_categoria = parseInt(id_categoria, 10);
-    // --- FIM DA CORREÇÃO ---
+    if (titulo !== undefined) eventData.titulo = titulo;
+    if (descricao !== undefined) eventData.descricao = descricao;
+    if (data !== undefined) eventData.data = new Date(data);
+    if (local !== undefined) eventData.local = local;
+    if (preco !== undefined) eventData.preco = parseFloat(preco);
+    if (id_categoria !== undefined) eventData.id_categoria = parseInt(id_categoria, 10);
 
-
-    // Verifica se há algo para atualizar
-    if (Object.keys(eventDataForService).length === 0) {
-        res.status(400).json({ message: "Nenhum dado válido fornecido para atualização." });
-        return;
+    if (Object.keys(eventData).length === 0) {
+      return res.status(400).json({ message: "Nenhum dado válido fornecido para atualização." });
     }
 
-    // Chama o service com o objeto tipado corretamente
-    const eventoAtualizado = await eventService.updateEvent(eventId, userId, eventDataForService);
+    const eventoAtualizado = await eventService.updateEvent(eventId, userId, eventData);
 
-    res.status(200).json({ message: "Evento atualizado com sucesso!", evento: eventoAtualizado });
+    return res.status(200).json({ message: "Evento atualizado com sucesso!", evento: eventoAtualizado });
 
   } catch (error: any) {
     console.error("Erro ao atualizar evento:", error);
-    if (error.message === 'NOT_FOUND') res.status(404).json({ message: "Evento não encontrado." });
-    else if (error.message === 'FORBIDDEN') res.status(403).json({ message: "Você não tem permissão para editar este evento." });
-    else if (error.message === 'BAD_REQUEST') res.status(400).json({ message: "Dados inválidos fornecidos." });
-    else res.status(500).json({ message: "Erro interno ao atualizar o evento." });
+
+    if (error.message === "NOT_FOUND") {
+      return res.status(404).json({ message: "Evento não encontrado." });
+    }
+
+    if (error.message === "FORBIDDEN") {
+      return res.status(403).json({ message: "Você não tem permissão para editar este evento." });
+    }
+
+    if (error.message === "BAD_REQUEST") {
+      return res.status(400).json({ message: "Dados inválidos." });
+    }
+
+    return res.status(500).json({ message: "Erro interno ao atualizar o evento." });
   }
 }
 
 /**
- * Buscar comentários de um evento
+ * Comentários
  */
-export async function getCommentsController(req: Request, res: Response): Promise<void> {
+export async function getCommentsController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
+
     if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID do evento inválido." }); return;
+      return res.status(400).json({ message: "ID do evento inválido." });
     }
 
     const comentarios = await eventService.getCommentsByEventId(eventId);
-    res.status(200).json(comentarios);
+    return res.status(200).json(comentarios);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao buscar comentários:", error);
-    res.status(500).json({ message: "Erro interno ao buscar comentários." });
+    return res.status(500).json({ message: "Erro interno ao buscar comentários." });
   }
 }
 
-/**
- * Criar um novo comentário
- */
-export async function createCommentController(req: Request, res: Response): Promise<void> {
+export async function createCommentController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token (authMiddleware)
+    const userId = req.user.id;
+
     const { texto } = req.body;
 
-    if (isNaN(eventId)) {
-      res.status(400).json({ message: "ID do evento inválido." }); return;
-    }
-
-    const novoComentario = await eventService.createComment(eventId, userId, texto);
-    res.status(201).json(novoComentario);
+    const comentario = await eventService.createComment(eventId, userId, texto);
+    return res.status(201).json(comentario);
 
   } catch (error: any) {
     console.error("Erro ao criar comentário:", error);
+
     if (error.message.includes("texto do comentário")) {
-      res.status(400).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Erro interno ao criar o comentário." });
+      return res.status(400).json({ message: error.message });
     }
+
+    return res.status(500).json({ message: "Erro interno ao criar comentário." });
   }
 }
 
 /**
- * Excluir um comentário (NOVO)
+ * Excluir comentário
  */
-export async function deleteCommentController(req: Request, res: Response): Promise<void> {
+export async function deleteCommentController(req: Request, res: Response) {
   try {
-    const commentId = parseInt(req.params.commentId, 10);
+    const commentId = Number(req.params.commentId);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token
+    const userId = req.user.id;
     // @ts-ignore
-    const userType = req.user.tipo; // <-- PEGA O TIPO DO USUÁRIO DO TOKEN
+    const userType = req.user.tipo;
 
-    if (isNaN(commentId)) {
-      res.status(400).json({ message: "ID de comentário inválido." });
-      return;
-    }
+    const result = await eventService.deleteComment(commentId, userId, userType);
 
-    // PASSA O userType PARA O SERVICE
-    const result = await eventService.deleteComment(commentId, userId, userType); 
-    res.status(200).json(result);
+    return res.status(200).json(result);
 
   } catch (error: any) {
     console.error("Erro ao excluir comentário:", error);
-    // ... (restante da lógica de erro)
+
     if (error.message.includes("permissão")) {
-      res.status(403).json({ message: error.message });
-    } else if (error.message.includes("não encontrado")) {
-      res.status(404).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Erro interno ao excluir comentário." });
+      return res.status(403).json({ message: error.message });
     }
+
+    if (error.message.includes("não encontrado")) {
+      return res.status(404).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro interno ao excluir comentário." });
   }
 }
 
-
 /**
- * Buscar total de curtidas (Público)
+ * Curtidas
  */
-export async function getTotalLikesController(req: Request, res: Response): Promise<void> {
+export async function getTotalLikesController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     const totalLikes = await eventService.getTotalLikes(eventId);
-    res.status(200).json({ totalLikes });
-  } catch (error: any) {
-    res.status(500).json({ message: "Erro ao buscar total de curtidas." });
+    return res.status(200).json({ totalLikes });
+  } catch {
+    return res.status(500).json({ message: "Erro ao buscar total de curtidas." });
   }
 }
 
-/**
- * Verificar se o usuário logado curtiu (Protegido)
- */
-export async function getUserLikeStatusController(req: Request, res: Response): Promise<void> {
+export async function getUserLikeStatusController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token
+    const userId = req.user.id;
 
     const status = await eventService.getUserLikeStatus(eventId, userId);
-    res.status(200).json(status);
-  } catch (error: any) {
-    res.status(500).json({ message: "Erro ao verificar curtida." });
+    return res.status(200).json(status);
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao verificar curtida." });
   }
 }
 
-/**
- * Adicionar/Remover curtida (Protegido)
- */
-export async function toggleLikeController(req: Request, res: Response): Promise<void> {
+export async function toggleLikeController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token
+    const userId = req.user.id;
 
     const novoStatus = await eventService.toggleLike(eventId, userId);
-    res.status(200).json(novoStatus);
-  } catch (error: any)
- {
-    res.status(500).json({ message: "Erro ao processar curtida." });
+    return res.status(200).json(novoStatus);
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao processar curtida." });
   }
 }
 
 /**
- * Buscar total de interesses (Público)
+ * Interesses
  */
-export async function getTotalInterestsController(req: Request, res: Response): Promise<void> {
+export async function getTotalInterestsController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     const totalInterests = await eventService.getTotalInterests(eventId);
-    res.status(200).json({ totalInterests });
-  } catch (error: any) {
-    res.status(500).json({ message: "Erro ao buscar total de interesses." });
+    return res.status(200).json({ totalInterests });
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao buscar total de interesses." });
   }
 }
 
-/**
- * Verificar se o usuário logado tem interesse (Protegido)
- */
-export async function getUserInterestStatusController(req: Request, res: Response): Promise<void> {
+export async function getUserInterestStatusController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token
+    const userId = req.user.id;
 
     const status = await eventService.getUserInterestStatus(eventId, userId);
-    res.status(200).json(status);
-  } catch (error: any) {
-    res.status(500).json({ message: "Erro ao verificar interesse." });
+    return res.status(200).json(status);
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao verificar interesse." });
   }
 }
 
-/**
- * Adicionar/Remover interesse (Protegido)
- */
-export async function toggleInterestController(req: Request, res: Response): Promise<void> {
+export async function toggleInterestController(req: Request, res: Response) {
   try {
-    const eventId = parseInt(req.params.id, 10);
+    const eventId = Number(req.params.id);
     // @ts-ignore
-    const userId = req.user.id; // Vem do token
+    const userId = req.user.id;
 
     const novoStatus = await eventService.toggleInteresse(eventId, userId);
-    res.status(200).json(novoStatus);
-  } catch (error: any) {
-    res.status(500).json({ message: "Erro ao processar interesse." });
+    return res.status(200).json(novoStatus);
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao processar interesse." });
   }
 }
 
-//POST /api/events/:id/interest → Alternar interesse
-export async function toggleInteresseEvento(req: any, res: Response) {
+export async function toggleInteresseEvento(req: Request, res: Response) {
   try {
     const id_evento = Number(req.params.id);
-    // @ts-ignore - o middleware popula req.user com os dados do token
+    // @ts-ignore
     const id_usuario = req.user.id;
 
-    if (!id_evento || isNaN(id_evento)) {
-      return res.status(400).json({ message: "ID de evento inválido." });
-    }
-
     const resultado = await eventService.toggleInteresse(id_evento, id_usuario);
-    res.status(200).json(resultado);
+    return res.status(200).json(resultado);
+
   } catch (error) {
     console.error("Erro ao alternar interesse:", error);
-    res.status(500).json({ message: "Erro ao registrar interesse." });
+    return res.status(500).json({ message: "Erro ao registrar interesse." });
   }
 }
 
-//GET /api/events/my-interests → Buscar eventos que o usuário marcou interesse
-export async function getMeusInteresses(req: any, res: Response) {
+export async function getMeusInteresses(req: Request, res: Response) {
   try {
-    // @ts-ignore - o middleware popula req.user com os dados do token
+    // @ts-ignore
     const id_usuario = req.user.id;
     const eventos = await eventService.buscarEventosPorInteresse(id_usuario);
-    res.status(200).json(eventos);
-  } catch (error) {
-    console.error("Erro ao buscar meus interesses:", error);
-    res.status(500).json({ message: "Erro ao buscar eventos de interesse." });
+    return res.status(200).json(eventos);
+
+  } catch {
+    return res.status(500).json({ message: "Erro ao buscar eventos de interesse." });
   }
 }
 
 /**
- * Criar uma denúncia (usuário comum)
+ * Denúncias
  */
-export async function createDenounceController(req: Request, res: Response): Promise<void> {
+export async function createDenounceController(req: Request, res: Response) {
   try {
     const { id_evento, motivo } = req.body;
     // @ts-ignore
-    const userId = req.user.id; // ID do usuário logado (token)
-
-    if (!id_evento || !motivo) {
-      res.status(400).json({ message: "ID do evento e motivo são obrigatórios." });
-      return;
-    }
+    const userId = req.user.id;
 
     const denounce = await eventService.createDenounce(Number(id_evento), userId, motivo);
 
-    res.status(201).json({ message: "Denúncia enviada com sucesso! Agradecemos o seu feedback.", denounce });
-  } catch (error: any) {
-    console.error("Erro ao criar denúncia:", error);
-    res.status(500).json({ message: "Erro interno ao enviar a denúncia." });
+    return res.status(201).json({
+      message: "Denúncia enviada com sucesso!",
+      denounce,
+    });
+
+  } catch {
+    return res.status(500).json({ message: "Erro interno ao enviar a denúncia." });
   }
 }
 
+export async function getPendingDenouncesController(req: Request, res: Response) {
+  try {
+    const denounces = await eventService.getAllPendingDenounces();
+    return res.status(200).json(denounces);
 
-/**
- * Listar denúncias pendentes (Admin)
- */
-export async function getPendingDenouncesController(req: Request, res: Response): Promise<void> {
-    try {
-        // @ts-ignore
-        const userType = req.user.tipo; // Verifica se é administrador
-        
-        if (userType !== 'administrador') {
-            res.status(403).json({ message: "Acesso negado. Apenas administradores podem ver denúncias." });
-            return;
-        }
-
-        const denounces = await eventService.getAllPendingDenounces();
-        res.status(200).json(denounces);
-    } catch (error: any) {
-        console.error("Erro ao listar denúncias:", error);
-        res.status(500).json({ message: "Erro interno ao listar as denúncias." });
-    }
+  } catch {
+    return res.status(500).json({ message: "Erro interno ao listar denúncias." });
+  }
 }
 
-/**
- * Atualizar status de denúncia (Admin)
- */
-export async function updateDenounceStatusController(req: Request, res: Response): Promise<void> {
-    try {
-        const denounceId = Number(req.params.id);
-        const { status } = req.body; // 'revisada' ou 'rejeitada'
-        // @ts-ignore
-        const userType = req.user.tipo;
+export async function updateDenounceStatusController(req: Request, res: Response) {
+  try {
+    const denounceId = Number(req.params.id);
+    const { status } = req.body;
 
-        if (userType !== 'administrador') {
-            res.status(403).json({ message: "Acesso negado." });
-            return;
-        }
-        
-        if (isNaN(denounceId) || (status !== 'revisada' && status !== 'rejeitada')) {
-             res.status(400).json({ message: "Dados inválidos." });
-             return;
-        }
+    const denounce = await eventService.updateDenounceStatus(denounceId, status);
 
-        const denounce = await eventService.updateDenounceStatus(denounceId, status);
-        res.status(200).json({ message: `Denúncia marcada como ${status}.`, denounce });
-        
-    } catch (error: any) {
-        console.error("Erro ao atualizar denúncia:", error);
-        res.status(500).json({ message: "Erro interno ao atualizar denúncia." });
-    }
+    return res.status(200).json({
+      message: `Denúncia marcada como ${status}.`,
+      denounce,
+    });
+
+  } catch {
+    return res.status(500).json({ message: "Erro interno ao atualizar denúncia." });
+  }
 }
 
-/**
- * Excluir denúncia (Admin)
- */
-export async function deleteDenounceController(req: Request, res: Response): Promise<void> {
-    try {
-        const denounceId = Number(req.params.id);
-        // @ts-ignore
-        const userType = req.user.tipo;
+export async function deleteDenounceController(req: Request, res: Response) {
+  try {
+    const denounceId = Number(req.params.id);
 
-        if (userType !== 'administrador') {
-            res.status(403).json({ message: "Acesso negado." });
-            return;
-        }
-        
-        if (isNaN(denounceId)) {
-             res.status(400).json({ message: "ID inválido." });
-             return;
-        }
+    await eventService.deleteDenounce(denounceId);
 
-        await eventService.deleteDenounce(denounceId);
-        res.status(200).json({ message: "Denúncia excluída com sucesso." });
-        
-    } catch (error: any) {
-        console.error("Erro ao excluir denúncia:", error);
-        res.status(500).json({ message: "Erro interno ao excluir denúncia." });
-    }
+    return res.status(200).json({
+      message: "Denúncia excluída com sucesso.",
+    });
+
+  } catch {
+    return res.status(500).json({ message: "Erro interno ao excluir denúncia." });
+  }
 }
