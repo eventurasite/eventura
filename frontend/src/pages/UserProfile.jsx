@@ -7,6 +7,7 @@ import BackLink from "../components/BackLink";
 import Button from "../components/Button";
 import TextField from "../components/TextField";
 import "./UserProfile.css";
+import { resolveImageUrl } from "../utils/resolveImageUrl";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -51,18 +52,15 @@ export default function UserProfile() {
       }
 
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/auth/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
+        const response = await axios.get(`${API_BASE_URL}/api/auth/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         const userData = response.data;
         setUser(userData);
 
         if (userData.url_foto_perfil) {
-          setPreview(`${API_BASE_URL}${userData.url_foto_perfil}`);
+          setPreview(resolveImageUrl(userData.url_foto_perfil));
         }
       } catch (error) {
         console.error("Erro ao buscar os dados do usuário:", error);
@@ -135,9 +133,7 @@ export default function UserProfile() {
       setUser(userFromApi); // <-- CORREÇÃO: Usa os dados que vieram da API
 
       if (userFromApi.url_foto_perfil) {
-        // 3. Usa a variável userFromApi aqui
-        const fullUrl = `${API_BASE_URL}${userFromApi.url_foto_perfil}`;
-        setPreview(fullUrl);
+        setPreview(resolveImageUrl(userFromApi.url_foto_perfil));
         localStorage.setItem("userPhotoUrl", userFromApi.url_foto_perfil);
       } else {
         setPreview(null);

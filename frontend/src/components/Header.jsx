@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 import "./Dropdown.css";
+import { resolveImageUrl } from "../utils/resolveImageUrl";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -20,12 +21,12 @@ function Header() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
   };
-  
+
   const handleMobileNavigation = (path) => {
     setIsMobileMenuOpen(false); // Fecha o menu
     navigate(path);
   };
-  
+
   const handleLogout = () => {
     localStorage.clear();
     setIsDropdownOpen(false);
@@ -46,10 +47,14 @@ function Header() {
         <Link to="/" className="header-logo">
           EVENTURA
         </Link>
-        
+
         {/* HAMBURGER ICON - VISÍVEL APENAS EM MOBILE */}
-        <button className="hamburger-icon" onClick={toggleMobileMenu} aria-label="Abrir Menu">
-            <i className="bi bi-list"></i>
+        <button
+          className="hamburger-icon"
+          onClick={toggleMobileMenu}
+          aria-label="Abrir Menu"
+        >
+          <i className="bi bi-list"></i>
         </button>
 
         <nav className="header-nav">
@@ -77,7 +82,7 @@ function Header() {
 
               {isAuthenticated && userPhotoUrl ? (
                 <img
-                  src={`${API_BASE_URL}${userPhotoUrl}`}
+                  src={resolveImageUrl(userPhotoUrl)}
                   alt="Avatar"
                   className="header-avatar-in-button"
                 />
@@ -110,48 +115,95 @@ function Header() {
       </div>
 
       {/* MENU MOBILE LATERAL (OFF-CANVAS) */}
-      <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        <button className="mobile-close-btn" onClick={toggleMobileMenu} aria-label="Fechar Menu">
+      <div className={`mobile-menu ${isMobileMenuOpen ? "open" : ""}`}>
+        <button
+          className="mobile-close-btn"
+          onClick={toggleMobileMenu}
+          aria-label="Fechar Menu"
+        >
           <i className="bi bi-x-lg"></i>
         </button>
-        
+
         <div className="menu-links">
-            <Link to="/sobre" onClick={() => handleMobileNavigation("/sobre")} className="mobile-menu-item">
-                Sobre
+          <Link
+            to="/sobre"
+            onClick={() => handleMobileNavigation("/sobre")}
+            className="mobile-menu-item"
+          >
+            Sobre
+          </Link>
+          <Link
+            to="/agenda"
+            onClick={() => handleMobileNavigation("/agenda")}
+            className="mobile-menu-item"
+          >
+            Agenda
+          </Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => handleMobileNavigation("/admin")}
+              className="mobile-menu-item"
+            >
+              Painel Admin
             </Link>
-            <Link to="/agenda" onClick={() => handleMobileNavigation("/agenda")} className="mobile-menu-item">
-                Agenda
-            </Link>
-            {isAdmin && (
-                <Link to="/admin" onClick={() => handleMobileNavigation("/admin")} className="mobile-menu-item">
-                    Painel Admin
-                </Link>
-            )}
+          )}
         </div>
 
         <div className="menu-links-auth">
-            <h4 className="auth-title">Minha Conta</h4>
-            {isAuthenticated ? (
-                <>
-                    <Link to="/profile" onClick={() => handleMobileNavigation("/profile")} className="mobile-menu-item">Perfil</Link>
-                    <Link to="/meuseventos" onClick={() => handleMobileNavigation("/meuseventos")} className="mobile-menu-item">Meus Eventos</Link>
-                    <Link to="/meus-interesses" onClick={() => handleMobileNavigation("/meus-interesses")} className="mobile-menu-item">Meus Interesses</Link>
-                    <button onClick={handleLogout} className="mobile-menu-item logout-btn">Sair</button>
-                </>
-            ) : (
-                <>
-                    <button onClick={() => handleMobileNavigation("/login")} className="mobile-menu-item login-btn">
-                        <i className="bi bi-box-arrow-in-right"></i> Entrar
-                    </button>
-                    <button onClick={() => handleMobileNavigation("/register")} className="mobile-menu-item register-btn">
-                        <i className="bi bi-person-plus-fill"></i> Cadastrar
-                    </button>
-                </>
-            )}
+          <h4 className="auth-title">Minha Conta</h4>
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/profile"
+                onClick={() => handleMobileNavigation("/profile")}
+                className="mobile-menu-item"
+              >
+                Perfil
+              </Link>
+              <Link
+                to="/meuseventos"
+                onClick={() => handleMobileNavigation("/meuseventos")}
+                className="mobile-menu-item"
+              >
+                Meus Eventos
+              </Link>
+              <Link
+                to="/meus-interesses"
+                onClick={() => handleMobileNavigation("/meus-interesses")}
+                className="mobile-menu-item"
+              >
+                Meus Interesses
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="mobile-menu-item logout-btn"
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => handleMobileNavigation("/login")}
+                className="mobile-menu-item login-btn"
+              >
+                <i className="bi bi-box-arrow-in-right"></i> Entrar
+              </button>
+              <button
+                onClick={() => handleMobileNavigation("/register")}
+                className="mobile-menu-item register-btn"
+              >
+                <i className="bi bi-person-plus-fill"></i> Cadastrar
+              </button>
+            </>
+          )}
         </div>
       </div>
       {/* Overlay para fechar ao clicar fora */}
-      {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={toggleMobileMenu}></div>}
+      {isMobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={toggleMobileMenu}></div>
+      )}
     </header>
   );
 }
