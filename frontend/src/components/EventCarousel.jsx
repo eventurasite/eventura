@@ -6,7 +6,6 @@ import "./EventCarousel.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// --- INÍCIO DA CORREÇÃO ---
 /**
  * Verifica se uma URL é externa (absoluta)
  * @param {string} url
@@ -31,12 +30,12 @@ const resolveImageUrl = (url) => {
   }
   return "/assets/imagens/default-event.jpg"; // Fallback
 };
-// --- FIM DA CORREÇÃO ---
 
 const EventCarousel = () => {
   const [events, setEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const cardsPerPage = 3;
+  // ESTADO DINÂMICO: 3 para desktop, 1 para mobile
+  const [cardsPerPage, setCardsPerPage] = useState(3); 
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -49,16 +48,33 @@ const EventCarousel = () => {
     };
     fetchEvents();
   }, []);
+  
+  // NOVO EFEITO: Calcula cardsPerPage baseado no tamanho da tela
+  useEffect(() => {
+    const updateCardsPerPage = () => {
+        // Breakpoint para mostrar apenas 1 card
+        if (window.innerWidth <= 768) { 
+            setCardsPerPage(1); 
+        } else {
+            setCardsPerPage(3); 
+        }
+    };
 
+    updateCardsPerPage();
+    window.addEventListener('resize', updateCardsPerPage);
+    return () => window.removeEventListener('resize', updateCardsPerPage);
+  }, []);
+
+  // FUNÇÕES DE NAVEGAÇÃO AJUSTADAS PARA PULAR PELO NUMERO DE CARDS VISÍVEIS
   const handleNext = () => {
     if (currentIndex < events.length - cardsPerPage) {
-      setCurrentIndex((prevIndex) => prevIndex + 1);
+      setCurrentIndex((prevIndex) => Math.min(events.length - cardsPerPage, prevIndex + cardsPerPage));
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prevIndex) => prevIndex - 1);
+      setCurrentIndex((prevIndex) => Math.max(0, prevIndex - cardsPerPage));
     }
   };
 
@@ -68,14 +84,13 @@ const EventCarousel = () => {
     <div className="carousel-section">
       <div className="carousel-container-fixed">
         <div className="carousel-header">
-          <h1>Confira os Próximos Eventos:</h1>
+          <h1 id="titulo">Confira os Próximos Eventos:</h1>
         </div>
         <div className="carousel-content">
           {visibleEvents.map((event) => (
             <div key={event.id_evento} className="event-card">
               <div className="image-container">
                 <img
-                  // --- CORREÇÃO APLICADA AQUI ---
                   src={resolveImageUrl(event.imagemEvento[0]?.url)}
                   alt={event.titulo}
                 />
@@ -96,7 +111,8 @@ const EventCarousel = () => {
           </button>
           <button
             onClick={handleNext}
-            disabled={currentIndex >= events.length - cardsPerPage}
+            // A lógica disabled agora usa o cardsPerPage correto
+            disabled={currentIndex >= events.length - cardsPerPage} 
           >
             Próximo <i className="bi bi-arrow-right"></i>
           </button>

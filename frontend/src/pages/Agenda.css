@@ -44,11 +44,11 @@
     margin: 5px 0 20px 0;
 }
 
-/* --- Filtros (mantido) --- */
+/* --- Filtros (Comportamento Padrão: VISÍVEL no Desktop) --- */
 .agenda-filters {
-    display: flex;
+    display: flex; /* Visível por padrão */
     align-items: flex-end;
-    gap: 15px;
+    gap: 8px; /* ALTERADO: Diminui o espaçamento horizontal entre os filtros */
     margin-bottom: 30px;
 }
 
@@ -201,28 +201,95 @@
     color: var(--cor_3-roxo_escuro);
 }
 
-/* Responsividade */
-@media (max-width: 940px) {
-    .events-grid {
-        /* Garante quebra para 2 colunas e ajuste para preencher o espaço */
-        justify-content: space-around; 
-    }
-    .agenda-event-card {
-        /* LARGURA CALCULADA PARA 2 COLUNAS */
-        width: calc(50% - 10px); 
-        max-width: 380px; 
-    }
+/* --- Estilos para Filtros Colapsáveis (Desktop First) --- */
+.filter-toggle-header {
+    display: none; /* ESCONDIDO POR PADRÃO (Desktop) */
 }
 
-@media (max-width: 600px) {
+/* O conteúdo do filtro é VISÍVEL por padrão no Desktop */
+.filter-collapsible-content {
+    max-height: none; 
+    overflow: visible;
+    transition: none; 
+    padding: 0 0; 
+}
+
+
+/* --- RESPONSIVIDADE (MOBILE ONLY) --- */
+@media (max-width: 768px) {
+    /* 1. MOSTRAR O BOTÃO DE TOGGLE NO MOBILE */
+    .filter-toggle-header {
+        display: flex; 
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        margin-top: 10px;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .filter-toggle-header:hover {
+        background-color: #f9f9f9;
+    }
+
+    .filter-toggle-header h2 {
+        font-family: 'Rubik One', sans-serif;
+        font-size: 20px;
+        color: var(--cor_3-roxo_escuro);
+        margin: 0;
+        padding: 0;
+    }
+
+    .filter-toggle-header i {
+        font-size: 1.2em;
+        color: var(--cor_3-roxo_escuro);
+        transition: transform 0.3s;
+    }
+
+    /* 2. ESCONDER O CONTEÚDO E PREPARAR PARA COLAPSO */
+    .filter-collapsible-content {
+        max-height: 0; /* Começa fechado */
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out;
+        padding: 0 10px; 
+    }
+
+    .filter-collapsible-content.open {
+        max-height: 500px; /* Expande ao abrir */
+        padding-bottom: 20px;
+    }
+    
+    /* 3. FORÇAR FILTROS EMPILHADOS NO MOBILE */
+    .agenda-filters {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 15px; 
+    }
+    
+    .filter-group {
+        padding-top: 5px;
+    }
+    
+    .filter-group:last-child {
+        align-self: auto !important; 
+    }
+    
+    .search-button {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .agenda-content-wrapper {
+        padding: 20px; 
+    }
+    
+    /* 4. RESPONSIVIDADE DO GRID DE EVENTOS */
     .events-grid {
         justify-content: flex-start;
     }
     .agenda-event-card {
-        width: 100%; /* Uma coluna em telas muito pequenas */
-    }
-    .agenda-filters {
-        flex-direction: column;
-        align-items: stretch;
+        width: 100%; 
     }
 }

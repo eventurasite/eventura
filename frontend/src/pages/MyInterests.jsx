@@ -1,3 +1,4 @@
+// frontend/src/pages/MyInterests.jsx
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import EventCard from "../components/EventCard";
@@ -15,6 +16,9 @@ export default function MyInterests() {
   const [isLoading, setIsLoading] = useState(true);
   const [categorias, setCategorias] = useState([]);
   const [filteredEventsState, setFilteredEventsState] = useState([]);
+  
+  // NOVO ESTADO PARA O COLLAPSIBLE
+  const [isFilterOpen, setIsFilterOpen] = useState(false); 
 
   // Estados temporários dos filtros
   const [tempCategory, setTempCategory] = useState("");
@@ -145,100 +149,115 @@ export default function MyInterests() {
           </div>
 
           <hr className="agenda-divider" />
+          
+          {/* --- NOVO: BOTÃO DE FILTRO COLAPSÁVEL (Mobile Only, visível via CSS) --- */}
+          <div 
+            className="filter-toggle-header" 
+            onClick={() => setIsFilterOpen(prev => !prev)}
+          >
+              <h2>Filtros <i className={`bi bi-chevron-${isFilterOpen ? 'up' : 'down'}`}></i></h2>
+          </div>
 
-          {/* --- Filtros --- */}
-          <div className="agenda-filters">
-            <div className="filter-group">
-              <label htmlFor="categoria">Categoria</label>
-              <select
-                id="categoria"
-                className="filter-select"
-                value={tempCategory}
-                onChange={(e) => setTempCategory(e.target.value)}
-              >
-                <option value="">Todas</option>
-                {categorias.map((cat) => (
-                  <option key={cat.id_categoria} value={cat.nome}>
-                    {cat.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* CONTEÚDO DO FILTRO COLAPSÁVEL (ou permanentemente visível no desktop) */}
+          <div className={`filter-collapsible-content ${isFilterOpen ? 'open' : ''}`}>
 
-            <div className="filter-group">
-              <label htmlFor="mes">Mês</label>
+            {/* --- Filtros --- */}
+            <div className="agenda-filters">
+              <div className="filter-group">
+                <label htmlFor="categoria">Categoria</label>
+                <select
+                  id="categoria"
+                  className="filter-select"
+                  value={tempCategory}
+                  onChange={(e) => setTempCategory(e.target.value)}
+                >
+                  <option value="">Todas</option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id_categoria} value={cat.nome}>
+                      {cat.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="mes">Mês</label>
+                <select
+                  id="mes"
+                  className="filter-select"
+                  value={tempMonth}
+                  onChange={(e) => setTempMonth(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+              <label htmlFor="ano">Ano</label>
               <select
-                id="mes"
+                id="ano"
                 className="filter-select"
-                value={tempMonth}
-                onChange={(e) => setTempMonth(e.target.value)}
+                value={tempYear}
+                onChange={(e) => setTempYear(e.target.value)}
               >
                 <option value="">Todos</option>
-                <option value="1">Janeiro</option>
-                <option value="2">Fevereiro</option>
-                <option value="3">Março</option>
-                <option value="4">Abril</option>
-                <option value="5">Maio</option>
-                <option value="6">Junho</option>
-                <option value="7">Julho</option>
-                <option value="8">Agosto</option>
-                <option value="9">Setembro</option>
-                <option value="10">Outubro</option>
-                <option value="11">Novembro</option>
-                <option value="12">Dezembro</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
               </select>
             </div>
 
-            <div className="filter-group">
-            <label htmlFor="ano">Ano</label>
-            <select
-              id="ano"
-              className="filter-select"
-              value={tempYear}
-              onChange={(e) => setTempYear(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-            </select>
-          </div>
+              <div className="filter-group">
+                <label htmlFor="ingresso">Ingresso</label>
+                <select
+                  id="ingresso"
+                  className="filter-select"
+                  value={tempTicket}
+                  onChange={(e) => setTempTicket(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="gratuito">Gratuito</option>
+                  <option value="pago">Pago</option>
+                </select>
+              </div>
 
-            <div className="filter-group">
-              <label htmlFor="ingresso">Ingresso</label>
-              <select
-                id="ingresso"
-                className="filter-select"
-                value={tempTicket}
-                onChange={(e) => setTempTicket(e.target.value)}
-              >
-                <option value="">Todos</option>
-                <option value="gratuito">Gratuito</option>
-                <option value="pago">Pago</option>
-              </select>
+              <div className="filter-group" style={{ alignSelf: "flex-end" }}>
+                <button
+                  className="search-button"
+                  title="Pesquisar"
+                  onClick={() => handleApplyFilters()}
+                >
+                  <i className="bi bi-search"></i> Pesquisar
+                </button>
+              </div>
             </div>
 
-            <div className="filter-group" style={{ alignSelf: "flex-end" }}>
-              <button
-                className="search-button"
-                title="Pesquisar"
-                onClick={() => handleApplyFilters()}
-              >
-                <i className="bi bi-search"></i> Pesquisar
-              </button>
+            {/* Checkbox de Eventos Passados */}
+            <div className="agenda-filters" style={{ marginTop: "10px" }}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={tempShowPastEvents}
+                  onChange={(e) => setTempShowPastEvents(e.target.checked)}
+                />{" "}
+                Mostrar eventos passados
+              </label>
             </div>
+            
           </div>
-
-          <div className="agenda-filters" style={{ marginTop: "10px" }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={tempShowPastEvents}
-                onChange={(e) => setTempShowPastEvents(e.target.checked)}
-              />{" "}
-              Mostrar eventos passados
-            </label>
-          </div>
+          {/* --- FIM DO NOVO BLOCO --- */}
 
           {/* --- Listagem --- */}
           {isLoading ? (

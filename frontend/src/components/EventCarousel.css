@@ -125,3 +125,21 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+    .carousel-content {
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 10px;
+    }
+
+    .carousel-section .event-card {
+        width: 90%; 
+        max-width: 400px;
+        flex-shrink: 1; 
+    }
+
+    #titulo {
+      font-size: 28px;
+    }
+}

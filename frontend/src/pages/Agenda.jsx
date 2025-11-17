@@ -9,16 +9,16 @@ import "./Agenda.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// REMOVEMOS a constante estática 'CATEGORIAS' daqui
-
 export default function Agenda() {
   const [allEvents, setAllEvents] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- ALTERAÇÃO 1: Novo estado para categorias dinâmicas ---
   const [categorias, setCategorias] = useState([]);
+  
+  // NOVO ESTADO PARA O COLLAPSIBLE
+  const [isFilterOpen, setIsFilterOpen] = useState(false); 
 
   // Estados temporários para filtros
   const [tempCategory, setTempCategory] = useState("");
@@ -35,7 +35,6 @@ export default function Agenda() {
   const [showPastEvents, setShowPastEvents] = useState(false);
 
   const applyFilters = (dadosRecebidos) => {
-    // ... (A lógica interna desta função não muda) ...
     const eventosParaFiltrar = dadosRecebidos || allEvents;
 
     const now = new Date().setHours(0, 0, 0, 0);
@@ -99,7 +98,7 @@ export default function Agenda() {
     fetchEvents();
   }, []);
 
-  // --- ALTERAÇÃO 2: Novo useEffect para buscar as categorias ---
+  // --- Efeito para buscar as categorias ---
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -131,98 +130,113 @@ export default function Agenda() {
             <h1>Agenda</h1>
             <p>Confira todos os eventos!</p>
           </div>
-
-          <div className="agenda-filters">
-            <div className="filter-group">
-              <label htmlFor="categoria">Categoria</label>
-              <select
-                id="categoria"
-                className="filter-select"
-                value={tempCategory}
-                onChange={(e) => setTempCategory(e.target.value)}
-              >
-                <option value="">Todas</option>
-                {/* --- ALTERAÇÃO 3: Mapeia o estado dinâmico --- */}
-                {categorias.map((cat) => (
-                  <option key={cat.id_categoria} value={cat.nome}>
-                    {cat.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* ... (Restante dos filtros de Mês e Ingresso não mudam) ... */}
-            <div className="filter-group">
-              <label htmlFor="mes">Mês</label>
-              <select
-                id="mes"
-                className="filter-select"
-                value={tempMonth}
-                onChange={(e) => setTempMonth(e.target.value)}
-              >
-                <option value="">Todos</option>
-                <option value="1">Janeiro</option>
-                <option value="2">Fevereiro</option>
-                <option value="3">Março</option>
-                <option value="4">Abril</option>
-                <option value="5">Maio</option>
-                <option value="6">Junho</option>
-                <option value="7">Julho</option>
-                <option value="8">Agosto</option>
-                <option value="9">Setembro</option>
-                <option value="10">Outubro</option>
-                <option value="11">Novembro</option>
-                <option value="12">Dezembro</option>
-              </select>
-            </div>
-            
-            <div className="filter-group">
-              <label htmlFor="ano">Ano</label>
-              <select
-                id="ano"
-                className="filter-select"
-                value={tempYear}
-                onChange={(e) => setTempYear(e.target.value)}
-              >
-                <option value="">Todos</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="ingresso">Ingresso</label>
-              <select
-                id="ingresso"
-                className="filter-select"
-                value={tempTicket}
-                onChange={(e) => setTempTicket(e.target.value)}
-              >
-                <option value="">Todos</option>
-                <option value="gratuito">Gratuito</option>
-                <option value="pago">Pago</option>
-              </select>
-            </div>
-
-            <div className="filter-group" style={{ alignSelf: "flex-end" }}>
-              <button className="search-button" onClick={() => applyFilters()}>
-                <i className="bi bi-search"></i> Pesquisar
-              </button>
-            </div>
+          
+          {/* --- NOVO: BOTÃO DE FILTRO COLAPSÁVEL (Mobile Only) --- */}
+          <div 
+            className="filter-toggle-header" 
+            onClick={() => setIsFilterOpen(prev => !prev)}
+          >
+              <h2>Filtros <i className={`bi bi-chevron-${isFilterOpen ? 'up' : 'down'}`}></i></h2>
           </div>
+          
+          {/* CONTEÚDO DO FILTRO COLAPSÁVEL (ou permanentemente visível no desktop) */}
+          <div className={`filter-collapsible-content ${isFilterOpen ? 'open' : ''}`}>
+              
+              {/* Filtros em Linha */}
+              <div className="agenda-filters">
+                <div className="filter-group">
+                  <label htmlFor="categoria">Categoria</label>
+                  <select
+                    id="categoria"
+                    className="filter-select"
+                    value={tempCategory}
+                    onChange={(e) => setTempCategory(e.target.value)}
+                  >
+                    <option value="">Todas</option>
+                    {categorias.map((cat) => (
+                      <option key={cat.id_categoria} value={cat.nome}>
+                        {cat.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          {/* ... (Restante do JSX não muda) ... */}
-          <div className="agenda-filters" style={{ marginTop: "10px" }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={tempShowPastEvents}
-                onChange={(e) => setTempShowPastEvents(e.target.checked)}
-              />{" "}
-              Mostrar eventos passados
-            </label>
+                <div className="filter-group">
+                  <label htmlFor="mes">Mês</label>
+                  <select
+                    id="mes"
+                    className="filter-select"
+                    value={tempMonth}
+                    onChange={(e) => setTempMonth(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                  </select>
+                </div>
+                
+                <div className="filter-group">
+                  <label htmlFor="ano">Ano</label>
+                  <select
+                    id="ano"
+                    className="filter-select"
+                    value={tempYear}
+                    onChange={(e) => setTempYear(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label htmlFor="ingresso">Ingresso</label>
+                  <select
+                    id="ingresso"
+                    className="filter-select"
+                    value={tempTicket}
+                    onChange={(e) => setTempTicket(e.target.value)}
+                  >
+                    <option value="">Todos</option>
+                    <option value="gratuito">Gratuito</option>
+                    <option value="pago">Pago</option>
+                  </select>
+                </div>
+
+                <div className="filter-group" style={{ alignSelf: "flex-end" }}>
+                  <button className="search-button" onClick={() => applyFilters()}>
+                    <i className="bi bi-search"></i> Pesquisar
+                  </button>
+                </div>
+              </div>
+
+              {/* Checkbox de Eventos Passados */}
+              <div className="agenda-filters" style={{ marginTop: "10px" }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={tempShowPastEvents}
+                    onChange={(e) => setTempShowPastEvents(e.target.checked)}
+                  />{" "}
+                  Mostrar eventos passados
+                </label>
+              </div>
+
           </div>
+          {/* --- FIM DO NOVO BLOCO --- */}
+          
+          <hr className="agenda-divider" /> {/* Mantido como separador da listagem */}
 
           {events.length === 0 ? (
             <p>Não há eventos cadastrados que correspondam aos filtros.</p>
