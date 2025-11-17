@@ -513,6 +513,18 @@ const EventDetail = () => {
     );
   }
 
+  // **** INÍCIO DA CORREÇÃO DE HOJE ****
+  // Formata a URL externa para garantir que seja absoluta
+  let formattedExternalUrl = event.url_link_externo;
+  if (
+    formattedExternalUrl &&
+    !formattedExternalUrl.startsWith("http://") &&
+    !formattedExternalUrl.startsWith("https://")
+  ) {
+    formattedExternalUrl = `https://${formattedExternalUrl}`;
+  }
+  // **** FIM DA CORREÇÃO DE HOJE ****
+
   // Separa imagens (igual)
   const mainImage = event.imagemEvento?.[0];
   const thumbnails = event.imagemEvento?.slice(1, 4) || [];
@@ -600,7 +612,7 @@ const EventDetail = () => {
               {event.url_link_externo && (
                 <p style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
                   <a 
-                    href={event.url_link_externo} 
+                    href={formattedExternalUrl}  // <-- CORREÇÃO APLICADA AQUI
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="submit-comment-btn" 

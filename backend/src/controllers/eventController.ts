@@ -10,7 +10,7 @@ import * as eventService from "../services/eventService";
  */
 export async function createEventController(req: Request, res: Response) {
   try {
-    const { titulo, descricao, data, local, preco, id_categoria } = req.body;
+    const { titulo, descricao, data, local, preco, id_categoria, url_link_externo } = req.body;
 
     // @ts-ignore
     const id_organizador = req.user.id;
@@ -33,6 +33,7 @@ export async function createEventController(req: Request, res: Response) {
       id_categoria: Number(id_categoria),
       id_organizador,
       imagens,
+      url_link_externo,
     });
 
     return res.status(201).json({ message: "Evento criado com sucesso!", evento });
@@ -186,7 +187,7 @@ export async function updateEventController(req: Request, res: Response) {
     // @ts-ignore
     const userId = req.user.id;
 
-    const { titulo, descricao, data, local, preco, id_categoria } = req.body;
+    const { titulo, descricao, data, local, preco, id_categoria, url_link_externo } = req.body;
 
     const eventData: any = {};
 
@@ -196,6 +197,7 @@ export async function updateEventController(req: Request, res: Response) {
     if (local !== undefined) eventData.local = local;
     if (preco !== undefined) eventData.preco = parseFloat(preco);
     if (id_categoria !== undefined) eventData.id_categoria = parseInt(id_categoria, 10);
+    if (url_link_externo !== undefined) eventData.url_link_externo = url_link_externo;
 
     if (Object.keys(eventData).length === 0) {
       return res.status(400).json({ message: "Nenhum dado válido fornecido para atualização." });

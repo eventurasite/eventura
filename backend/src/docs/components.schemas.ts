@@ -137,6 +137,8 @@
  *           type: string
  *         data_modificacao:
  *           type: string
+ *         url_link_externo:
+ *           type: string
  *         imagens:
  *           type: array
  *           items:

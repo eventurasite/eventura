@@ -57,6 +57,8 @@
  *                 items:
  *                   type: string
  *                   format: binary
+ *               url_link_externo:
+ *                 type: string
  *
  *     responses:
  *       201:
@@ -157,6 +159,8 @@
  *                 type: string
  *               id_categoria:
  *                 type: integer
+ *               url_link_externo:
+ *                 type: string
  *
  *     responses:
  *       200:
