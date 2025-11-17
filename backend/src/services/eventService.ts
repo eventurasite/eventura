@@ -16,6 +16,7 @@ export async function createEvent(data: {
   id_categoria: number;
   id_organizador: number;
   imagens: string[]; // URLs das imagens
+  url_link_externo?: string;
 }) {
   return prisma.evento.create({
     data: {
@@ -26,6 +27,7 @@ export async function createEvent(data: {
       preco: data.preco,
       id_categoria: data.id_categoria,
       id_organizador: data.id_organizador,
+      url_link_externo: data.url_link_externo,
 
       imagemEvento: {
         create: data.imagens.map((url) => ({ url })),
@@ -207,6 +209,7 @@ export async function updateEvent(
     local?: string;
     preco?: number;
     id_categoria?: number;
+    url_link_externo?: string;
   }
 ) {
   const exists = await prisma.evento.findUnique({
@@ -224,6 +227,7 @@ export async function updateEvent(
   if (data.data) updateData.data = data.data;
   if (data.local) updateData.local = data.local;
   if (data.preco !== undefined) updateData.preco = data.preco;
+  if (data.url_link_externo !== undefined) updateData.url_link_externo = data.url_link_externo;
   if (data.id_categoria !== undefined) {
     updateData.categoria = { connect: { id_categoria: data.id_categoria } };
   }

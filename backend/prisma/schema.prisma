@@ -58,6 +58,7 @@ model Evento {
   status           StatusEvento @default(ativo)
   data_criacao     DateTime     @default(now())
   data_modificacao DateTime     @updatedAt
+  url_link_externo String?
 
   id_organizador Int
   organizador    Usuario @relation(fields: [id_organizador], references: [id_usuario])
