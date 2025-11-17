@@ -149,3 +149,39 @@
     padding: 20px;
   }
 }
+
+/* --- INÍCIO: AJUSTES DE RESPONSIVIDADE (Denuncia e EventRegistration) --- */
+
+@media (max-width: 940px) {
+  .registration-wrapper {
+    /* Permite que o wrapper use a largura total */
+    max-width: 100%;
+    padding: 20px; /* Reduz o padding externo */
+  }
+}
+
+@media (max-width: 768px) {
+  /* Altera o layout do grid para uma coluna (embora a denúncia não use grid, garante consistência) */
+  .form-grid {
+    grid-template-columns: 1fr; 
+    gap: 10px;
+  }
+  
+  /* Corrige o padding interno do formulário (EventRegistration) */
+  .event-form {
+    padding: 0; /* Remove o padding horizontal no mobile para maximizar a largura */
+  }
+  
+  /* Sobrescreve o padding inline específico do formulário da DenouncePage.jsx */
+  .registration-wrapper form.event-form[style*="padding: 0 50px"] {
+    padding: 0 5px !important; /* Padding mínimo para bordas no mobile */
+  }
+
+  .registration-title {
+    font-size: 24px;
+  }
+  
+  .registration-subtitle {
+    margin-bottom: 20px;
+  }
+}

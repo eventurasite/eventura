@@ -21,6 +21,7 @@
 }
 
 .profile-header-section {
+  /* Mantido display: flex para alinhar o BackLink e o título */
   display: flex;
   align-items: center;
   gap: 20px;
@@ -46,7 +47,7 @@
   margin-bottom: 40px;
 }
 
-/* --- INÍCIO DAS ALTERAÇÕES --- */
+/* --- INÍCIO DAS ALTERAÇÕES DA FOTO --- */
 
 .profile-picture {
   position: relative;
@@ -110,7 +111,18 @@
   font-size: 14px;
 }
 
-/* --- FIM DAS ALTERAÇÕES --- */
+/* --- FIM DAS ALTERAÇÕES DA FOTO --- */
+
+/* --- CORREÇÃO DO BACKLINK --- */
+.profile-header-section .back-arrow {
+    position: relative; /* Sobrescreve o position: absolute herdado */
+    margin-left: 0; /* Remove a margem automática que o empurrava para a direita */
+    top: auto; 
+    left: auto;
+    font-size: 24px;
+    color: var(--cor_3-roxo_escuro);
+}
+/* --- FIM DA CORREÇÃO DO BACKLINK --- */
 
 
 .profile-text h2 {
@@ -373,4 +385,72 @@
     background-color: #fdda0d; 
     transform: translateY(-2px); 
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); 
+}
+
+
+/* --- RESPONSIVIDADE PARA PERFIL (max-width: 768px) --- */
+
+/* Ajuste geral para telas de tablet/mobile */
+@media (max-width: 940px) {
+    .profile-wrapper {
+        /* Permite que o wrapper utilize a maior parte da largura da tela */
+        max-width: 90%; 
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-wrapper {
+        padding: 20px; /* Reduz o padding interno */
+    }
+    
+    .profile-content {
+        padding: 0; /* Remove o padding horizontal extra do desktop */
+    }
+
+    /* 1. SEÇÃO DE FOTO E TEXTO (Empilha Verticalmente) */
+    .profile-info-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .profile-picture {
+        margin: 0 auto; /* Centraliza a foto */
+    }
+
+    .profile-text {
+        text-align: center;
+    }
+    
+    .profile-text h2 {
+        font-size: 24px; /* Reduz o tamanho do nome */
+    }
+
+
+    /* 2. SEÇÃO DE EDIÇÃO (Colapsa para 1 Coluna) */
+    .profile-edit-section {
+        grid-template-columns: 1fr; /* Colapsa o grid de 2 colunas para 1 */
+        gap: 20px;
+    }
+    
+    /* 3. SEÇÃO DE AÇÕES (Centraliza e Faz Botões Ocuparem Mais Espaço) */
+    .profile-actions {
+        flex-direction: column; /* Empilha os botões Salvar/Excluir */
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+    }
+
+    .profile-actions .save-button,
+    .profile-actions .delete-button {
+        width: 90%; /* Aumenta a largura para melhor toque em mobile */
+        max-width: 300px;
+    }
+    
+    .profile-header-section {
+        /* Garante que o título e o botão fiquem alinhados à esquerda em mobile */
+        justify-content: flex-start;
+    }
 }

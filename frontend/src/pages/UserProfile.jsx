@@ -245,8 +245,8 @@ export default function UserProfile() {
       <div className="user-profile-container">
         <div className="profile-wrapper">
           <div className="profile-header-section">
-            <h1 className="profile-title">Perfil do usuário</h1>
             <BackLink />
+            <h1 className="profile-title">Perfil do usuário</h1>
           </div>
           <div className="profile-content">
             <div className="profile-info-section">
