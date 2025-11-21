@@ -14,6 +14,7 @@ import "../components/TextField.css";
 import "./Login.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,32 +25,22 @@ export default function Register() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Captura token do Google se vier na query string
+  // Captura token do Google
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     if (token) {
       localStorage.setItem("authToken", token);
-      navigate("/"); // redireciona para home
+      navigate("/");
     }
   }, [navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    if (!agree) {
-      toast.warn("Você deve aceitar os Termos de Uso.");
-      return;
-    }
-
-    if (pwd !== confirmPwd) {
-      toast.error("As senhas não conferem.");
-      return;
-    }
-
-    if (!email) {
-      return toast.error("O campo de e-mail é obrigatório.");
-    }
+    if (!agree) return toast.warn("Você deve aceitar os Termos de Uso.");
+    if (pwd !== confirmPwd) return toast.error("As senhas não conferem.");
+    if (!email) return toast.error("O campo de e-mail é obrigatório.");
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
@@ -59,8 +50,9 @@ export default function Register() {
         senha: pwd,
       });
 
-      toast.success("Usuário registrado com sucesso!");
-      navigate("/login"); // redireciona para login após registro
+      toast.success(response.data.message);
+
+      navigate("/login");
     } catch (error) {
       console.error(error);
       if (error.response) {
@@ -183,7 +175,6 @@ export default function Register() {
         </div>
       </form>
 
-      {/* Modal de Termos */}
       <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
     </AuthLayout>
   );

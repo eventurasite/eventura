@@ -9,6 +9,7 @@ import {
   findAllUsers,
   forgotPassword,
   resetPassword,
+  verifyEmailService,
 } from "../services/authService";
 
 /* -------------------------------------------------------------------------- */
@@ -16,24 +17,23 @@ import {
 /* -------------------------------------------------------------------------- */
 export async function register(req: Request, res: Response) {
   try {
-    const usuario = await registerUser(req.body);
+    const result = await registerUser(req.body);
 
     return res.status(201).json({
-      message: "Usuário registrado com sucesso",
-      id_usuario: usuario.id_usuario,
+      message: result.message, // "Cadastro realizado! Verifique seu e-mail..."
     });
   } catch (error: any) {
     console.error(error);
 
-    if (error.message.includes("senha")) {
+    if (error.message?.includes("senha")) {
       return res.status(400).json({ message: error.message });
     }
 
-    if (error.message.includes("E-mail já cadastrado via Google")) {
+    if (error.message?.includes("Google")) {
       return res.status(409).json({ provider: "google", message: error.message });
     }
 
-    if (error.message.includes("E-mail já cadastrado")) {
+    if (error.message?.includes("E-mail já cadastrado")) {
       return res.status(409).json({ message: error.message });
     }
 
@@ -63,15 +63,45 @@ export async function login(req: Request, res: Response) {
       return res.status(400).json({ provider: "google", message: error.message });
     }
 
-    if (error.message.includes("Usuário não encontrado")) {
+    if (error.message?.includes("Usuário não encontrado")) {
       return res.status(404).json({ message: error.message });
     }
 
-    if (error.message.includes("Senha incorreta")) {
+    if (error.message?.includes("Senha incorreta")) {
       return res.status(401).json({ message: error.message });
     }
 
+    if (error.message?.includes("Confirme seu e-mail")) {
+      return res.status(403).json({ message: error.message });
+    }
+
     return res.status(500).json({ message: "Erro ao realizar login" });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           VERIFY EMAIL (NOVO)                              */
+/* -------------------------------------------------------------------------- */
+export async function verifyEmailController(req: Request, res: Response) {
+  try {
+    const token = req.query.token as string;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token não fornecido." });
+    }
+
+    const result = await verifyEmailService(token);
+
+    return res.status(200).json(result); // { message: "E-mail verificado com sucesso!" }
+
+  } catch (error: any) {
+    console.error("Erro ao verificar e-mail:", error);
+
+    if (error.message?.includes("Token")) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro ao verificar e-mail." });
   }
 }
 
@@ -129,7 +159,7 @@ export async function updateUser(req: Request, res: Response) {
   try {
     const targetUserId = Number(req.params.id);
 
-    // @ts-ignore - Data proveniente do JWT
+    // @ts-ignore
     const requesterId = req.user.id;
     // @ts-ignore
     const requesterType = req.user.tipo;
@@ -167,9 +197,6 @@ export async function deleteUser(req: Request, res: Response) {
     // @ts-ignore
     const requesterType = req.user.tipo;
 
-    // Regras:
-    // - admin pode deletar qualquer usuário
-    // - user pode deletar apenas ele mesmo
     if (requesterType !== "administrador" && requesterId !== targetUserId) {
       return res.status(403).json({
         message: "Acesso negado. Você não tem permissão para excluir este usuário.",

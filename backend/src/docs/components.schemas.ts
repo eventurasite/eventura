@@ -24,6 +24,9 @@
  *         authProvider:
  *           type: string
  *           enum: [local, google]
+ *         email_verified:
+ *           type: boolean
+ *           example: false
  *         data_criacao:
  *           type: string
  *         data_modificacao:
@@ -125,7 +128,7 @@
  *         local:
  *           type: string
  *         preco:
- *           type: string
+ *           type: number
  *         status:
  *           type: string
  *           enum: [ativo, cancelado, encerrado]
@@ -136,8 +139,6 @@
  *         data_criacao:
  *           type: string
  *         data_modificacao:
- *           type: string
- *         url_link_externo:
  *           type: string
  *         imagens:
  *           type: array

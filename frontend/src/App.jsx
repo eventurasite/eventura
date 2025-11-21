@@ -9,18 +9,19 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 export default function App({ children }) {
   useEffect(() => {
     const handleGoogleAuthRedirect = async () => {
-
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
 
       const isResetPasswordRoute =
         window.location.pathname.includes("resetpassword");
 
-      if (isResetPasswordRoute) return;
+      const isVerifyEmailRoute =
+        window.location.pathname.includes("verify-email");
+
+      if (isResetPasswordRoute || isVerifyEmailRoute) return;
 
       if (!token) return;
 
-      // 1. Armazena o token
       localStorage.setItem("authToken", token);
 
       try {
@@ -30,28 +31,26 @@ export default function App({ children }) {
 
         const userData = response.data;
 
-        // 3. Armazena dados do usuário no localStorage
         localStorage.setItem("userId", userData.id_usuario);
         localStorage.setItem("userName", userData.nome);
         localStorage.setItem("userType", userData.tipo);
         localStorage.setItem("userPhotoUrl", userData.url_foto_perfil || "");
-
       } catch (error) {
-        console.error("Erro ao buscar dados do usuário após login Google:", error);
+        console.error(
+          "Erro ao buscar dados do usuário após login Google:",
+          error
+        );
         localStorage.clear();
       }
 
-      // 4. Limpa a URL removendo o ?token=
       window.history.replaceState({}, document.title, "/");
-
-      // 5. Recarrega a página
       window.location.reload();
     };
 
     handleGoogleAuthRedirect();
   }, []);
 
-  return (
+    return (
     <>
       {children}
       <ToastContainer

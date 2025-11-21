@@ -32,6 +32,7 @@ model Usuario {
   descricao        String?
   url_foto_perfil  String?
   authProvider     String      @default("local") // "local" ou "google"
+  email_verified Boolean @default(false)
 
   // Relacionamentos
   eventos_criados Evento[]

@@ -1,7 +1,7 @@
 import { PrismaClient, TipoUsuario } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { generateToken, verifyToken } from "../utils/jwt";
-import { sendResetEmail } from "./mailService";
+import { sendResetEmail, sendEmailVerification } from "./mailService";
 import {
   validateEmail,
   validateSenha,
@@ -21,7 +21,7 @@ const userSelectData = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                REGISTER USER                               */
+/*                                REGISTER USER                                */
 /* -------------------------------------------------------------------------- */
 export async function registerUser(data: {
   nome: string;
@@ -32,7 +32,6 @@ export async function registerUser(data: {
 }) {
   const { nome, email, senha, telefone, descricao } = data;
 
-  // Validações corretas (apenas dos dados de ENTRADA)
   validateEmail(email);
   validateSenha(senha);
   validatePasswordStrength(senha);
@@ -48,7 +47,7 @@ export async function registerUser(data: {
 
   const hashedPassword = await bcrypt.hash(senha, 10);
 
-  return prisma.usuario.create({
+  const newUser = await prisma.usuario.create({
     data: {
       nome,
       email,
@@ -57,12 +56,29 @@ export async function registerUser(data: {
       descricao: descricao || "",
       tipo: TipoUsuario.comum,
       authProvider: "local",
+      email_verified: false,
     },
   });
+
+  // GERAR TOKEN
+  const verifyTokenValue = generateToken({
+    id: newUser.id_usuario,
+    purpose: "verify_email",
+  });
+
+  // MONTAR LINK DE VERIFICAÇÃO
+  const verifyLink = `${process.env.FRONTEND_URL}/verify-email?token=${verifyTokenValue}`;
+
+  // ENVIAR EMAIL
+  await sendEmailVerification(newUser.email, newUser.nome, verifyLink);
+
+  return {
+    message: "Cadastro realizado! Verifique seu e-mail para ativar sua conta.",
+  };
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  LOGIN USER                                */
+/*                                  LOGIN USER                                 */
 /* -------------------------------------------------------------------------- */
 export async function loginUser({
   email,
@@ -71,8 +87,8 @@ export async function loginUser({
   email: string;
   senha: string;
 }) {
-  validateEmail(email);      // agora sim: valida apenas ENTRADA
-  validateSenha(senha);      // valida apenas ENTRADA
+  validateEmail(email);
+  validateSenha(senha);
 
   const usuario = await prisma.usuario.findUnique({ where: { email } });
 
@@ -80,16 +96,18 @@ export async function loginUser({
     throw new Error("Usuário não encontrado");
   }
 
-  // Login de usuário Google não permite senha local
+  // BLOQUEAR LOGIN PARA NÃO VERIFICADOS
+  if (!usuario.email_verified) {
+    throw new Error("Confirme seu e-mail antes de acessar sua conta.");
+  }
+
   if (usuario.authProvider === "google" && !usuario.senha) {
     const err: any = new Error("Faça login com o Google");
     err.code = "GOOGLE_LOGIN";
     throw err;
   }
 
-  // Compara a senha informada com o hash salvo
   const isPasswordValid = await bcrypt.compare(senha, usuario.senha!);
-
   if (!isPasswordValid) {
     throw new Error("Senha incorreta");
   }
@@ -104,31 +122,58 @@ export async function loginUser({
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                FORGOT PASSWORD                              */
+/*                             VERIFY EMAIL SERVICE                             */
+/* -------------------------------------------------------------------------- */
+export async function verifyEmailService(token: string) {
+  if (!token) throw new Error("Token não informado");
+
+  let payload: any;
+  try {
+    payload = verifyToken(token);
+  } catch {
+    throw new Error("Token inválido ou expirado");
+  }
+
+  if (payload.purpose !== "verify_email") {
+    throw new Error("Token inválido");
+  }
+
+  const user = await prisma.usuario.findUnique({
+    where: { id_usuario: payload.id },
+  });
+
+  if (!user) throw new Error("Usuário não encontrado");
+
+  await prisma.usuario.update({
+    where: { id_usuario: user.id_usuario },
+    data: { email_verified: true },
+  });
+
+  return { message: "E-mail verificado com sucesso!" };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                FORGOT PASSWORD                               */
 /* -------------------------------------------------------------------------- */
 export async function forgotPassword(email: string) {
   validateEmail(email);
 
   const user = await prisma.usuario.findUnique({ where: { email } });
 
-  // Não revela se existe ou não (boa prática)
   if (!user) {
     return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
   }
 
-  const token = generateToken({
-    id: user.id_usuario,
-  });
+  const token = generateToken({ id: user.id_usuario });
 
   const resetLink = `${process.env.APP_URL}/resetpassword?token=${token}`;
-
   await sendResetEmail(user.email, user.nome, resetLink);
 
   return { message: "Se o e-mail existir, enviaremos um link de redefinição." };
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                 RESET PASSWORD                              */
+/*                                RESET PASSWORD                                */
 /* -------------------------------------------------------------------------- */
 export async function resetPassword(token: string, password: string) {
   validateSenha(password);
@@ -168,7 +213,6 @@ export async function editUser(
   targetUserId: number,
   data: any
 ) {
-  // Busca usuário alvo
   const currentUser = await prisma.usuario.findUnique({
     where: { id_usuario: targetUserId },
   });
@@ -177,15 +221,12 @@ export async function editUser(
     throw new Error("Usuário não encontrado.");
   }
 
-  /* ------------------- Permissão: admin pode editar qualquer um ------------------- */
   const isAdmin = requesterType === TipoUsuario.administrador;
 
-  /* -------- Comum só pode editar ele mesmo (middleware já protege, mas reforçamos) -------- */
   if (!isAdmin && requesterId !== targetUserId) {
     throw new Error("FORBIDDEN");
   }
 
-  /* ---------------- Bloquear mudança de e-mail para usuários Google ---------------- */
   if (
     currentUser.authProvider === "google" &&
     data.email &&
@@ -194,14 +235,13 @@ export async function editUser(
     throw new Error("Usuários autenticados com o Google não podem alterar o e-mail.");
   }
 
-  // "Lista branca" de campos permitidos
   const updatableData: {
     nome?: string;
     email?: string;
     telefone?: string;
     descricao?: string;
     url_foto_perfil?: string;
-    tipo?: TipoUsuario; // Admin pode alterar tipo
+    tipo?: TipoUsuario;
   } = {};
 
   if (data.nome) updatableData.nome = data.nome;
@@ -212,11 +252,7 @@ export async function editUser(
   if (data.telefone !== undefined) updatableData.telefone = data.telefone;
   if (data.descricao !== undefined) updatableData.descricao = data.descricao;
   if (data.url_foto_perfil) updatableData.url_foto_perfil = data.url_foto_perfil;
-
-  // Só admin pode alterar tipo de usuário
-  if (data.tipo && isAdmin) {
-    updatableData.tipo = data.tipo;
-  }
+  if (data.tipo && isAdmin) updatableData.tipo = data.tipo;
 
   return prisma.usuario.update({
     where: { id_usuario: targetUserId },
@@ -226,7 +262,7 @@ export async function editUser(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                DELETE USER                                 */
+/*                                 DELETE USER                                 */
 /* -------------------------------------------------------------------------- */
 export async function removeUser(id: number) {
   return prisma.usuario.delete({ where: { id_usuario: id } });

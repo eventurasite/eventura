@@ -32,6 +32,7 @@ async function main() {
       url_foto_perfil: "/assets/imagens/admin_logo.jpg",
       telefone: "999999999",
       descricao: "Perfil administrativo",
+      email_verified: true,
     },
   });
   console.log(`Usuário administrador criado/verificado: ${admin.email}`);
