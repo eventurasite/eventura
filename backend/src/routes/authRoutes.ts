@@ -14,7 +14,8 @@ import {
   getAllUsers,
   getMe,
   forgotPasswordController,
-  resetPasswordController
+  resetPasswordController,
+  verifyEmailController,
 } from "../controllers/authController";
 
 import {
@@ -65,6 +66,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/password/forgot", forgotPasswordController);
 router.post("/password/reset", resetPasswordController);
+router.get("/verify-email", verifyEmailController);
 
 // -------------------
 // Rotas protegidas

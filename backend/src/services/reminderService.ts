@@ -43,7 +43,7 @@ export async function sendEventReminders() {
         // Envio com template dinâmico do SendGrid
         await sendTemplateEmail({
           to: user.email,
-          templateId: process.env.SENDGRID_TEMPLATE_ID_LEMBRETE!,
+          templateId: process.env.SENDGRID_TEMPLATE_ID_REMINDER!,
           dynamicTemplateData: {
             nome: user.nome,
             evento: evento.titulo,
