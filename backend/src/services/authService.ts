@@ -265,7 +265,41 @@ export async function editUser(
 /*                                 DELETE USER                                 */
 /* -------------------------------------------------------------------------- */
 export async function removeUser(id: number) {
-  return prisma.usuario.delete({ where: { id_usuario: id } });
+  // 1. Buscar IDs de todos os eventos criados por este usuário.
+  // Isso é necessário porque a exclusão de Evento tem várias dependências (Comentario, Curtida, etc.)
+  const userEvents = await prisma.evento.findMany({
+    where: { id_organizador: id },
+    select: { id_evento: true },
+  });
+
+  const eventIds = userEvents.map(e => e.id_evento);
+
+  // 2. Executar uma transação para garantir que todas as exclusões sejam atômicas.
+  return prisma.$transaction(async (tx) => {
+    
+    // --- 2.1. Excluir Dependências dos Eventos Criados ---
+    // Se o usuário criou eventos, precisamos apagar as dependências DESSES eventos
+    if (eventIds.length > 0) {
+      await tx.comentario.deleteMany({ where: { id_evento: { in: eventIds } } });
+      await tx.curtida.deleteMany({ where: { id_evento: { in: eventIds } } });
+      await tx.denuncia.deleteMany({ where: { id_evento: { in: eventIds } } });
+      await tx.interesse.deleteMany({ where: { id_evento: { in: eventIds } } });
+      await tx.imagemEvento.deleteMany({ where: { id_evento: { in: eventIds } } });
+      
+      // 2.2. Excluir os próprios Eventos criados pelo usuário
+      await tx.evento.deleteMany({ where: { id_organizador: id } });
+    }
+    
+    // --- 2.3. Excluir Dependências Diretas do Usuário ---
+    // Interações feitas pelo usuário em eventos de terceiros
+    await tx.curtida.deleteMany({ where: { id_usuario: id } });
+    await tx.comentario.deleteMany({ where: { id_usuario: id } });
+    await tx.denuncia.deleteMany({ where: { id_usuario: id } });
+    await tx.interesse.deleteMany({ where: { id_usuario: id } });
+
+    // 2.4. Excluir o Usuário finalmente
+    await tx.usuario.delete({ where: { id_usuario: id } });
+  });
 }
 
 /* -------------------------------------------------------------------------- */
