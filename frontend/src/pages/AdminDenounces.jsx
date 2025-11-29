@@ -1,3 +1,4 @@
+// frontend/src/pages/AdminDenounces.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -58,6 +59,8 @@ function DenounceItem({ denounce, onAction }) {
         >
           Excluir Denúncia
         </button>
+        {/*
+        OPÇÕES REMOVIDAS:
         <button
           className="action-btn-secondary"
           onClick={() => onAction(denounce.id_denuncia, 'rejeitada')}
@@ -70,6 +73,7 @@ function DenounceItem({ denounce, onAction }) {
         >
           Marcar como Revisada
         </button>
+        */}
       </div>
     </div>
   );
@@ -119,6 +123,7 @@ export default function AdminDenounces() {
       successMessage = 'Denúncia excluída com sucesso.';
     } else if (action === 'revisada' || action === 'rejeitada') {
       data = { status: action };
+      method = 'PUT';
       successMessage = `Denúncia marcada como ${action}.`;
     } else {
         return;
