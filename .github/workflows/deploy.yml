@@ -1,0 +1,37 @@
+name: Deploy Eventura
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v3
+
+      - name: Ativar chave SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Copiar arquivos para o servidor
+        run: |
+          scp -r \
+            docker-compose.yml \
+            backend \
+            frontend \
+            eventura@200.131.119.235:/home/esof/projetosiftm/eventura/eventura/
+
+      - name: Rodar deploy no servidor
+        run: |
+          ssh eventura@200.131.119.235 "
+            cd /home/esof/projetosiftm/eventura/eventura &&
+            docker compose down &&
+            docker compose build --no-cache &&
+            docker compose up -d &&
+            docker compose exec backend npx prisma migrate deploy
+          "

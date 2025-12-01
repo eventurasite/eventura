@@ -1,30 +1,29 @@
 # backend/Dockerfile
-# Usando Node 22 Alpine (leve)
-FROM node:22-alpine
-
-# Definir diretório de trabalho
+# Stage de build
+FROM node:22-alpine AS builder
 WORKDIR /app
+RUN apk add --no-cache bash libc6-compat openssl curl build-base
 
-# Instalar dependências do sistema para build do Prisma
-RUN apk add --no-cache bash libc6-compat openssl curl
-
-# Copiar package.json e package-lock.json primeiro para cache de build
 COPY package*.json ./
+RUN npm ci
 
-# Instalar dependências
-RUN npm install
-
-# Copiar todo o código fonte
 COPY . .
-
-# Gerar Prisma Client com binaryTargets correto
+# Gerar Prisma Client
 RUN npx prisma generate
 
 # Compilar TypeScript
 RUN npm run build
 
-# Expor porta da aplicação
-EXPOSE 5000
+# Stage final (produção)
+FROM node:22-alpine
+WORKDIR /app
+RUN apk add --no-cache bash libc6-compat openssl curl
 
-# Comando para rodar o backend
+ENV NODE_ENV=production
+# Copia apenas o necessário do builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
+
+EXPOSE 5000
 CMD ["node", "dist/server.js"]
