@@ -13,13 +13,11 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Criar arquivo deploy.tar.gz sem .git e node_modules
+      - name: Criar pacote seguro (sem .git)
         run: |
-          tar \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --warning=no-file-changed \
-            -czf deploy.tar.gz .
+          mkdir deploy
+          cp -r backend frontend docker-compose.yml deploy/
+          tar -czf deploy.tar.gz deploy
 
       - name: Enviar deploy.tar.gz para o servidor
         uses: appleboy/scp-action@v0.1.5
@@ -39,19 +37,17 @@ jobs:
           script: |
             cd /home/esof/projetosiftm/eventura
 
-            # remover pasta antiga
+            # limpar deploy anterior
             rm -rf eventura
-
-            # criar novamente
             mkdir eventura
-
-            # mover o tar
+            
             mv deploy.tar.gz eventura/
             cd eventura
 
-            # descompactar
             tar -xzf deploy.tar.gz
 
-            # rodar o deploy
-            docker compose down
+            # agora entra na pasta deploy onde estão backend e frontend
+            cd deploy
+
+            docker compose down || true
             docker compose up -d --build
