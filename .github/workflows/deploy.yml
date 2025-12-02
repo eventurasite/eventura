@@ -18,7 +18,22 @@ jobs:
       - name: Gerar tarball seguro
         run: |
           echo "Criando tarball excluindo .git, node_modules e logs..."
-          tar --exclude='.git' --exclude='node_modules' --exclude='*.log' --warning=no-file-changed -czf deploy.tar.gz .
+          # Cria uma lista de arquivos para excluir de forma mais robusta
+          find . -name '.git' -prune -o \
+                 -name 'node_modules' -prune -o \
+                 -name '*.log' -prune -o \
+                 -type f -print > files-to-include.txt || true
+
+          # Cria o tarball com arquivos listados
+          tar -czf deploy.tar.gz --files-from files-to-include.txt 2>/dev/null || echo "Tar completado (alguns warnings possíveis)"
+
+          # Verifica se o tarball foi criado
+          if [ -f deploy.tar.gz ]; then
+            echo "Tarball criado com sucesso. Tamanho: $(du -h deploy.tar.gz | cut -f1)"
+          else
+            echo "Erro: Tarball não foi criado!"
+            exit 1
+          fi
 
       # 3. Copiar tarball para o servidor
       - name: Copiar arquivos para o servidor
@@ -39,52 +54,110 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            set -e  # Para falhar em qualquer comando que der erro
+            set -e
 
+            echo "=== INICIANDO DEPLOY ==="
             cd /home/eventura/eventura
 
-            echo "Criando pasta temporária para extração..."
-            mkdir -p deploy_temp
-            mv deploy.tar.gz deploy_temp/
-            cd deploy_temp
-
-            echo "Extraindo tarball..."
-            tar -xzf deploy.tar.gz || echo "Aviso: erro ignorado na extração"
-
-            echo "Movendo conteúdo para raiz do projeto..."
-            for dir in backend frontend docker-compose.yml; do
-              if [ -e "$dir" ]; then
-                mv "$dir" ../
-              else
-                echo "Aviso: $dir não encontrado, pulando..."
-              fi
-            done
-
-            cd ..
-            rm -rf deploy_temp deploy.tar.gz || true
-
-            # Garantir permissões Docker para o usuário
-            if ! groups $USER | grep -q '\bdocker\b'; then
-              echo "Adicionando $USER ao grupo docker..."
-              sudo usermod -aG docker $USER || true
+            echo "1. Criando backup da versão anterior..."
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            if [ -d "backend" ] || [ -d "frontend" ]; then
+              mkdir -p backups
+              BACKUP_DIR="backups/backup_$TIMESTAMP"
+              mkdir -p "$BACKUP_DIR"
+              [ -d "backend" ] && mv backend "$BACKUP_DIR/" 2>/dev/null || true
+              [ -d "frontend" ] && mv frontend "$BACKUP_DIR/" 2>/dev/null || true
+              [ -f "docker-compose.yml" ] && mv docker-compose.yml "$BACKUP_DIR/" 2>/dev/null || true
+              echo "Backup criado em: $BACKUP_DIR"
             fi
 
-            echo "Verificando Docker daemon..."
-            if ! docker info > /dev/null 2>&1; then
-              echo "Erro: Docker não está rodando ou usuário sem permissão!"
+            echo "2. Extraindo novo código..."
+            if [ ! -f "deploy.tar.gz" ]; then
+              echo "Erro: deploy.tar.gz não encontrado!"
               exit 1
             fi
 
-            # Garantir arquivos .env existentes
-            for env_file in backend/.env frontend/.env; do
-              if [ ! -f "$env_file" ]; then
-                echo "Aviso: $env_file não encontrado. Criando arquivo vazio..."
-                touch "$env_file"
-              fi
-            done
+            tar -xzf deploy.tar.gz
 
-            # Subir containers com Docker Compose
-            echo "Subindo containers..."
-            docker compose down || true
-            docker compose up -d --build || echo "Aviso: erro no Docker Compose, verificando logs..."
-            docker compose logs --tail=50
+            echo "3. Limpando arquivo temporário..."
+            rm -f deploy.tar.gz
+
+            echo "4. Verificando estrutura do projeto..."
+            ls -la
+
+            echo "5. Verificando Docker..."
+            # Verifica se o Docker está disponível
+            if ! command -v docker &> /dev/null; then
+              echo "Erro: Docker não está instalado!"
+              exit 1
+            fi
+
+            # Verifica se docker-compose está disponível
+            if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+              echo "Erro: Docker Compose não está disponível!"
+              exit 1
+            fi
+
+            echo "6. Verificando e preparando arquivos .env..."
+            # Backend .env
+            if [ ! -f "backend/.env" ]; then
+              echo "Aviso: backend/.env não encontrado. Criando com valores padrão..."
+              mkdir -p backend
+              cat > backend/.env << EOF
+            # Database
+            DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
+
+            # App
+            NODE_ENV=production
+            PORT=3001
+
+            # Security
+            JWT_SECRET=change_this_in_production
+            EOF
+            else
+              echo "backend/.env já existe. Mantendo configurações."
+            fi
+
+            # Frontend .env
+            if [ ! -f "frontend/.env" ]; then
+              echo "Aviso: frontend/.env não encontrado. Criando..."
+              mkdir -p frontend
+              cat > frontend/.env << EOF
+            REACT_APP_API_URL=/api
+            NODE_ENV=production
+            EOF
+            else
+              echo "frontend/.env já existe. Mantendo configurações."
+            fi
+
+            echo "7. Dando permissões necessárias..."
+            # Ajusta permissões se necessário
+            chmod -R 755 backend frontend 2>/dev/null || true
+
+            echo "8. Verificando se usuário está no grupo docker..."
+            if ! groups $USER | grep -q '\bdocker\b'; then
+              echo "Adicionando $USER ao grupo docker..."
+              sudo usermod -aG docker $USER || echo "Aviso: Não foi possível adicionar ao grupo docker"
+              # Aplica mudanças sem precisar logout
+              newgrp docker || true
+            fi
+
+            echo "9. Parando containers existentes..."
+            docker compose down --remove-orphans || true
+
+            echo "10. Construindo e iniciando containers..."
+            # Usa docker-compose ou docker compose
+            if command -v docker-compose &> /dev/null; then
+              docker-compose up -d --build
+            else
+              docker compose up -d --build
+            fi
+
+            echo "11. Verificando status dos containers..."
+            sleep 10
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            echo "12. Verificando logs iniciais..."
+            docker compose logs --tail=20
+
+            echo "=== DEPLOY CONCLUÍDO COM SUCESSO ==="
