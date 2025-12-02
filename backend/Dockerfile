@@ -27,3 +27,4 @@ COPY package*.json ./
 
 EXPOSE 5000
 CMD ["node", "dist/server.js"]
+
