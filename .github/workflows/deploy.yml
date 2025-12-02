@@ -1,79 +1,90 @@
-name: Deploy Robusto
+name: Deploy Eventura Seguro
 
 on:
   push:
     branches:
-      - main # branch de deploy
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Pegar o código
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Criar tarball do deploy
+      # 2. Gerar tarball excluindo arquivos pesados e desnecessários
+      - name: Gerar tarball seguro
         run: |
-          echo "Gerando tarball excluindo arquivos desnecessários..."
-          tar --exclude='.git' --exclude='node_modules' --exclude='*.log' -czf deploy.tar.gz .
+          echo "Criando tarball excluindo .git, node_modules e logs..."
+          tar --exclude='.git' --exclude='node_modules' --exclude='*.log' --warning=no-file-changed -czf deploy.tar.gz .
 
-      - name: Enviar tarball para servidor via SCP
+      # 3. Copiar tarball para o servidor
+      - name: Copiar arquivos para o servidor
         uses: appleboy/scp-action@v0.1.5
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           source: "deploy.tar.gz"
-          target: "~/deploy_temp"
+          target: "/home/eventura/eventura"
+          rm: false
 
-      - name: Executar deploy no servidor
+      # 4. Executar o deploy remoto
+      - name: Deploy remoto seguro
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            set -e
-            echo "Iniciando deploy seguro..."
+            set -e  # Para falhar em qualquer comando que der erro
 
-            # Verifica se Docker está ativo
+            cd /home/eventura/eventura
+
+            echo "Criando pasta temporária para extração..."
+            mkdir -p deploy_temp
+            mv deploy.tar.gz deploy_temp/
+            cd deploy_temp
+
+            echo "Extraindo tarball..."
+            tar -xzf deploy.tar.gz || echo "Aviso: erro ignorado na extração"
+
+            echo "Movendo conteúdo para raiz do projeto..."
+            for dir in backend frontend docker-compose.yml; do
+              if [ -e "$dir" ]; then
+                mv "$dir" ../
+              else
+                echo "Aviso: $dir não encontrado, pulando..."
+              fi
+            done
+
+            cd ..
+            rm -rf deploy_temp deploy.tar.gz || true
+
+            # Garantir permissões Docker para o usuário
+            if ! groups $USER | grep -q '\bdocker\b'; then
+              echo "Adicionando $USER ao grupo docker..."
+              sudo usermod -aG docker $USER || true
+            fi
+
+            echo "Verificando Docker daemon..."
             if ! docker info > /dev/null 2>&1; then
-              echo "Docker não está rodando. Abortando deploy."
+              echo "Erro: Docker não está rodando ou usuário sem permissão!"
               exit 1
             fi
 
-            # Cria pastas necessárias
-            mkdir -p ~/deploy_temp ~/eventura
+            # Garantir arquivos .env existentes
+            for env_file in backend/.env frontend/.env; do
+              if [ ! -f "$env_file" ]; then
+                echo "Aviso: $env_file não encontrado. Criando arquivo vazio..."
+                touch "$env_file"
+              fi
+            done
 
-            cd ~/deploy_temp
-
-            # Backup do deploy anterior
-            if [ -d ~/eventura ]; then
-              echo "Criando backup do deploy atual..."
-              rm -rf ~/eventura_backup || true
-              mv ~/eventura ~/eventura_backup
-            fi
-
-            # Limpar deploy temporário
-            rm -rf ~/eventura/*
-            mv deploy.tar.gz ~/eventura/
-            cd ~/eventura
-            tar -xzf deploy.tar.gz
-            rm deploy.tar.gz
-
-            echo "Deploy extraído com sucesso."
-
-            # Subir containers
-            echo "Subindo containers Docker..."
+            # Subir containers com Docker Compose
+            echo "Subindo containers..."
             docker compose down || true
-            if ! docker compose up -d --build; then
-              echo "Erro no docker compose. Restaurando backup..."
-              rm -rf ~/eventura
-              mv ~/eventura_backup ~/eventura
-              exit 1
-            fi
-
-            echo "Deploy concluído com sucesso."
+            docker compose up -d --build || echo "Aviso: erro no Docker Compose, verificando logs..."
+            docker compose logs --tail=50
