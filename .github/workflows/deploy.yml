@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - test-ci-cd
 
 jobs:
   deploy:
@@ -14,36 +13,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Criar pacote de deploy
+      - name: Configurar SSH
         run: |
-          # Método simples e confiável
-          tar -czf deploy.tar.gz \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='*.log' \
-            --exclude='*.tar.gz' \
-            backend frontend docker-compose.yml 2>/dev/null || echo "Pacote criado"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
 
-          echo "Pacote criado: $(ls -lh deploy.tar.gz)"
+      - name: Criar pacote
+        run: |
+          echo "Criando pacote..."
+          tar -czf deploy.tar.gz \
+            backend/ \
+            frontend/ \
+            docker-compose.yml \
+            Dockerfile* \
+            2>/dev/null || tar -czf deploy.tar.gz backend/ frontend/ docker-compose.yml
+          
+          echo "Pacote: $(ls -lh deploy.tar.gz)"
 
       - name: Enviar para servidor
         run: |
-          # Configurar SSH
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # Testar conexão
-          ssh -o StrictHostKeyChecking=no \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "mkdir -p ~/eventura && echo 'OK'"
-
-          # Enviar arquivo
-          scp -o StrictHostKeyChecking=no \
+          scp -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
               deploy.tar.gz \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/eventura/
 
-      - name: Configurar Docker e executar deploy
+      - name: Iniciar Docker e fazer deploy
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -51,102 +46,132 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
-
-            echo "=== CONFIGURAÇÃO INICIAL ==="
-
-            # 1. Adicionar usuário ao grupo docker (se necessário)
-            if ! groups $USER | grep -q '\bdocker\b'; then
-              echo "🔧 Adicionando $USER ao grupo docker..."
-              sudo usermod -aG docker $USER
-              
-              # Aplicar mudanças para a sessão atual
-              # Nota: Isso pode não funcionar em todas as situações
-              # O ideal é fazer logout/login, mas para o script usamos:
-              echo "⚠️  Usuário adicionado ao grupo docker."
-              echo "⚠️  Pode ser necessário fazer logout/login para efeitos surtirem."
-              echo "⚠️  Tentando continuar..."
+            
+            echo "=== INICIANDO DOCKER ==="
+            
+            # 1. Verificar status do Docker
+            echo "Verificando Docker..."
+            if sudo systemctl is-active docker > /dev/null 2>&1; then
+              echo "✅ Docker já está rodando"
             else
-              echo "✅ Usuário já está no grupo docker"
-            fi
-
-            # 2. Testar permissões Docker
-            echo "Testando acesso ao Docker..."
-            if docker info > /dev/null 2>&1; then
-              echo "✅ Acesso ao Docker OK"
-            else
-              echo "❌ Sem acesso ao Docker. Tentando soluções..."
+              echo "⚠️  Docker não está rodando. Iniciando..."
               
-              # Tentar com sudo
-              if sudo docker info > /dev/null 2>&1; then
-                echo "✅ Docker funciona com sudo"
-                # Definir alias para usar sudo com docker
-                alias docker="sudo docker"
-                alias docker-compose="sudo docker-compose"
+              # Tentar iniciar
+              sudo systemctl start docker
+              sleep 5
+              
+              # Verificar se iniciou
+              if sudo systemctl is-active docker > /dev/null 2>&1; then
+                echo "✅ Docker iniciado com sucesso"
               else
-                echo "❌ Docker não está rodando ou sem permissões"
-                echo "Iniciando Docker..."
-                sudo systemctl start docker || true
-                sudo systemctl enable docker || true
+                echo "❌ Falha ao iniciar Docker. Tentando instalar..."
+                
+                # Tentar instalar Docker se não existir
+                if ! command -v docker &> /dev/null; then
+                  echo "Instalando Docker..."
+                  sudo apt-get update
+                  sudo apt-get install -y docker.io docker-compose
+                fi
+                
+                # Iniciar e habilitar
+                sudo systemctl start docker
+                sudo systemctl enable docker
                 sleep 3
               fi
             fi
-
-            # 3. Ir para diretório do projeto
+            
+            # 2. Verificar se Docker está realmente funcionando
+            echo "Testando Docker..."
+            if sudo docker info > /dev/null 2>&1; then
+              echo "✅ Docker funcionando"
+            else
+              echo "❌ Docker ainda não está funcionando"
+              echo "Tentando solução alternativa..."
+              
+              # Forçar reinício
+              sudo systemctl daemon-reload
+              sudo systemctl restart docker.socket
+              sudo systemctl restart docker
+              sleep 5
+            fi
+            
+            echo "=== PREPARANDO DEPLOY ==="
             cd ~/eventura
-
-            echo "=== INICIANDO DEPLOY ==="
-
-            # 4. Verificar e extrair arquivo
+            
+            # 3. Verificar arquivo
             if [ ! -f "deploy.tar.gz" ]; then
-              echo "❌ Erro: deploy.tar.gz não encontrado!"
+              echo "❌ deploy.tar.gz não encontrado!"
               ls -la
               exit 1
             fi
-
+            
+            # 4. Extrair
+            echo "Extraindo..."
             tar -xzf deploy.tar.gz
-            rm -f deploy.tar.gz
-
-            # 5. Remover atributo 'version' obsoleto do docker-compose.yml
-            echo "Corrigindo docker-compose.yml..."
+            rm deploy.tar.gz
+            
+            # 5. Verificar estrutura
+            echo "Conteúdo extraído:"
+            ls -la
+            
+            # 6. Corrigir docker-compose se necessário
             if [ -f "docker-compose.yml" ]; then
-              # Remover a linha 'version' se existir
-              grep -v '^version:' docker-compose.yml > docker-compose-temp.yml
-              mv docker-compose-temp.yml docker-compose.yml
-              echo "✅ docker-compose.yml corrigido"
+              echo "Verificando docker-compose.yml..."
+              # Remover versão obsoleta
+              sed -i '/^version:/d' docker-compose.yml 2>/dev/null || true
+            else
+              echo "❌ docker-compose.yml não encontrado!"
+              exit 1
             fi
-
-            # 6. Verificar se podemos executar docker
-            echo "Verificando Docker Compose..."
-            DOCKER_CMD="docker"
-            COMPOSE_CMD="docker compose"
-
-            # Se não tem permissão, usa sudo
-            if ! $DOCKER_CMD info > /dev/null 2>&1; then
-              echo "Usando sudo para comandos Docker..."
-              DOCKER_CMD="sudo docker"
-              COMPOSE_CMD="sudo docker compose"
+            
+            # 7. Garantir permissões Docker para o usuário
+            echo "Configurando permissões Docker..."
+            if ! groups $USER | grep -q '\bdocker\b'; then
+              echo "Adicionando $USER ao grupo docker..."
+              sudo usermod -aG docker $USER
             fi
-
-            # 7. Parar containers antigos
+            
+            # Corrigir permissões do socket
+            sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
+            
+            echo "=== EXECUTANDO DOCKER COMPOSE ==="
+            
+            # 8. Parar containers antigos (se existirem)
             echo "Parando containers antigos..."
-            $COMPOSE_CMD down --remove-orphans 2>/dev/null || true
-
-            # 8. Construir e iniciar
+            sudo docker compose down --remove-orphans 2>/dev/null || true
+            
+            # 9. Construir containers
             echo "Construindo containers..."
-            $COMPOSE_CMD build --no-cache
-
+            sudo docker compose build --no-cache
+            
+            # 10. Iniciar containers
             echo "Iniciando containers..."
-            $COMPOSE_CMD up -d
-
-            # 9. Verificar status
+            sudo docker compose up -d
+            
+            # 11. Verificar
             echo "Aguardando inicialização..."
-            sleep 15
-
-            echo "Status dos containers:"
-            $DOCKER_CMD ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-            # 10. Verificar logs
-            echo "Últimos logs:"
-            $COMPOSE_CMD logs --tail=30 || echo "Não foi possível obter logs"
-
-            echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
+            sleep 30
+            
+            echo "=== VERIFICAÇÃO FINAL ==="
+            
+            echo "1. Status Docker:"
+            sudo systemctl status docker --no-pager | head -10
+            
+            echo ""
+            echo "2. Todos os containers:"
+            sudo docker ps -a
+            
+            echo ""
+            echo "3. Containers em execução:"
+            sudo docker ps
+            
+            echo ""
+            echo "4. Logs dos últimos 30 segundos:"
+            timeout 5 sudo docker compose logs --since=30s || echo "Não foi possível obter logs"
+            
+            echo ""
+            echo "5. Verificar portas:"
+            sudo docker port $(sudo docker ps -q --filter "name=backend" 2>/dev/null | head -1) 2>/dev/null || echo "Backend não encontrado"
+            sudo docker port $(sudo docker ps -q --filter "name=frontend" 2>/dev/null | head -1) 2>/dev/null || echo "Frontend não encontrado"
+            
+            echo "✅ DEPLOY COMPLETO!"
