@@ -7,6 +7,7 @@ import TextField from "../components/TextField";
 import BackLink from "../components/BackLink";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { resolveImageUrl } from "../utils/resolveImageUrl"; // Importar auxiliar de imagem
 
 // Reutiliza o CSS da página de registro
 import "./EventRegistration.css";
@@ -15,21 +16,30 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function EventEdit() {
   const navigate = useNavigate();
-  const { id: eventId } = useParams(); // Pega o ID do evento da URL
+  const { id: eventId } = useParams();
+  
   const [categorias, setCategorias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Estados do formulário
   const [formData, setFormData] = useState({
     titulo: "",
     data: "",
     local: "",
-    preco: "", // Inicializa como string vazia
+    preco: "",
     id_categoria: "",
     descricao: "",
-    url_link_externo: "", // Campo para Link Oficial
+    url_link_externo: "",
   });
-  const [loading, setLoading] = useState(true); // Estado para carregamento inicial
-  const [submitting, setSubmitting] = useState(false); // Estado para o envio do form
 
-  // --- Efeito para buscar categorias (igual ao registro) ---
+  // Estados para gerenciamento de imagens
+  const [existingImages, setExistingImages] = useState([]); // Imagens vindas do backend
+  const [imagesToDelete, setImagesToDelete] = useState([]); // IDs das imagens para excluir
+  const [newImages, setNewImages] = useState([]); // Novos arquivos (File objects)
+  const [newImagePreviews, setNewImagePreviews] = useState([]); // Previews dos novos arquivos
+
+  // Busca categorias
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -45,7 +55,7 @@ export default function EventEdit() {
     fetchCategories();
   }, []);
 
-  // --- NOVO EFEITO: Buscar dados do evento para preencher o form ---
+  // Busca dados do evento
   useEffect(() => {
     const fetchEventData = async () => {
       setLoading(true);
@@ -55,7 +65,7 @@ export default function EventEdit() {
         );
         const eventData = response.data;
 
-        // Formata a data para o input datetime-local (YYYY-MM-DDTHH:mm)
+        // Formata data para datetime-local
         const formattedDate = eventData.data
           ? new Date(
               new Date(eventData.data).getTime() -
@@ -72,17 +82,21 @@ export default function EventEdit() {
           preco:
             eventData.preco !== null && eventData.preco !== undefined
               ? String(eventData.preco)
-              : "0", // Garante que seja string
+              : "0",
           id_categoria: eventData.id_categoria || "",
           descricao: eventData.descricao || "",
-          url_link_externo: eventData.url_link_externo || "", // CORREÇÃO: LÊ O DADO DA API
+          url_link_externo: eventData.url_link_externo || "",
         });
+
+        // Carrega imagens existentes
+        if (eventData.imagemEvento && Array.isArray(eventData.imagemEvento)) {
+          setExistingImages(eventData.imagemEvento);
+        }
+
       } catch (error) {
         console.error("Erro ao buscar dados do evento:", error);
-        toast.error(
-          "Não foi possível carregar os dados do evento para edição."
-        );
-        navigate("/meuseventos"); // Volta se não conseguir carregar
+        toast.error("Não foi possível carregar os dados do evento.");
+        navigate("/meuseventos");
       } finally {
         setLoading(false);
       }
@@ -92,14 +106,39 @@ export default function EventEdit() {
       fetchEventData();
     }
   }, [eventId, navigate]);
-  // --- FIM DO NOVO EFEITO ---
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- handleSubmit MODIFICADO para usar PUT ---
+  // Lidar com seleção de NOVAS imagens
+  const handleNewImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Validar total de imagens (Existentes - Deletadas + Novas)
+    const currentTotal = existingImages.length + files.length;
+    if (currentTotal > 5) {
+        toast.warn(`O limite é de 5 imagens. Você já tem ${existingImages.length}.`);
+        // Opcional: impedir adição ou cortar o array
+    }
+
+    setNewImages(files);
+
+    // Gerar previews para as novas imagens
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setNewImagePreviews(previews);
+  };
+
+  // Lidar com remoção de imagens JÁ EXISTENTES (Banco de dados)
+  const handleRemoveExisting = (imgId) => {
+    // Adiciona o ID na lista de exclusão
+    setImagesToDelete((prev) => [...prev, imgId]);
+    // Remove visualmente da lista de existentes
+    setExistingImages((prev) => prev.filter((img) => img.id_imagem !== imgId));
+  };
+
+  // Envio do Formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("authToken");
@@ -112,35 +151,49 @@ export default function EventEdit() {
 
     setSubmitting(true);
 
-    // Converte preço para número antes de enviar
-    const dataToSend = {
-      ...formData,
-      preco: parseFloat(formData.preco) || 0, // Garante que seja número
-      // O campo url_link_externo é incluído aqui automaticamente
-    };
+    // Usamos FormData para enviar Arquivos + Dados
+    const dataToSend = new FormData();
+
+    // Campos de texto
+    dataToSend.append("titulo", formData.titulo);
+    dataToSend.append("descricao", formData.descricao);
+    dataToSend.append("data", formData.data);
+    dataToSend.append("local", formData.local);
+    dataToSend.append("preco", formData.preco);
+    dataToSend.append("id_categoria", formData.id_categoria);
+    if (formData.url_link_externo) {
+        dataToSend.append("url_link_externo", formData.url_link_externo);
+    }
+
+    // Lista de IDs para deletar (envia como array ou múltiplos campos com mesmo nome)
+    imagesToDelete.forEach((id) => {
+        dataToSend.append("imgIdsToDelete", id);
+    });
+
+    // Novos arquivos
+    newImages.forEach((file) => {
+        dataToSend.append("imagens", file);
+    });
 
     try {
+      // Nota: O Axios configura automaticamente o Content-Type para multipart/form-data quando recebe FormData
       await axios.put(`${API_BASE_URL}/api/events/${eventId}`, dataToSend, {
         headers: {
-          // Como não estamos enviando arquivos por enquanto, usamos JSON
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
 
       toast.success("Evento atualizado com sucesso!");
-      // Redireciona de volta para a página de detalhes do evento
       setTimeout(() => navigate(`/event/${eventId}`), 1500);
     } catch (error) {
       console.error("Erro ao atualizar evento:", error);
       toast.error(
         error.response?.data?.message || "Erro ao atualizar o evento."
       );
-      setSubmitting(false);
+    } finally {
+        setSubmitting(false);
     }
-    // Não limpa o formulário, pois o usuário será redirecionado
   };
-  // --- FIM DO handleSubmit MODIFICADO ---
 
   if (loading) {
     return (
@@ -158,11 +211,10 @@ export default function EventEdit() {
       <Header />
       <div className="registration-container">
         <div className="registration-wrapper">
-          {/* Link de volta para a página do evento */}
           <BackLink to={`/event/${eventId}`} />
           <h1 className="registration-title">Editar Evento</h1>
           <h3 className="registration-subtitle">
-            Atualize as informações do seu evento abaixo.
+            Atualize as informações e imagens do seu evento.
           </h3>
 
           <form onSubmit={handleSubmit} className="event-form">
@@ -247,10 +299,72 @@ export default function EventEdit() {
               </div>
             </div>
 
-            <div className="tf" style={{ marginTop: '5px' }}>
-              <label htmlFor="imagens">Anexar Novas Imagens (opcional)</label>
-              <input id="imagens" type="file" name="imagens" multiple accept="image/*" className="file-input" />
-              <p style={{fontSize: '0.8em', color: '#666'}}>Novas imagens substituirão as antigas.</p>
+            {/* --- GERENCIAMENTO DE IMAGENS --- */}
+            <div className="tf" style={{ marginTop: '15px' }}>
+              <label>Gerenciar Imagens</label>
+              
+              {/* Lista de Imagens Existentes */}
+              {existingImages.length > 0 && (
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {existingImages.map((img) => (
+                          <div key={img.id_imagem} style={{ position: 'relative', width: '80px', height: '80px' }}>
+                              <img 
+                                src={resolveImageUrl(img.url)} 
+                                alt="Existente" 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ccc' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExisting(img.id_imagem)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-5px',
+                                    right: '-5px',
+                                    background: '#dc3545',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px'
+                                }}
+                                title="Remover imagem"
+                              >
+                                <i className="bi bi-x-lg"></i>
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+              )}
+
+              <label htmlFor="imagens" style={{marginTop: '10px', display: 'block'}}>Adicionar Novas Imagens:</label>
+              <input 
+                id="imagens" 
+                type="file" 
+                name="imagens" 
+                multiple 
+                accept="image/*" 
+                className="file-input" 
+                onChange={handleNewImageChange}
+              />
+              
+              {/* Previews das Novas Imagens */}
+              {newImagePreviews.length > 0 && (
+                <div className="image-preview-container">
+                  {newImagePreviews.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Nova Preview ${index + 1}`}
+                      className="image-preview"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Descrição */}

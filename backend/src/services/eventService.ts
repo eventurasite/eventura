@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 /**
  * Criar evento
- * (permissão garantida pelo middleware)
  */
 export async function createEvent(data: {
   titulo: string;
@@ -162,7 +161,6 @@ export async function getFilteredEvents(filtros: any) {
 
 /**
  * Excluir um evento
- * (REGRA DE NEGÓCIO — owner ou admin podem excluir)
  */
 export async function deleteEvent(
   eventId: number,
@@ -196,8 +194,7 @@ export async function deleteEvent(
 }
 
 /**
- * Atualizar evento
- * (permissão garantida pelo middleware)
+ * Atualizar evento (Com suporte a novas imagens e exclusão de antigas)
  */
 export async function updateEvent(
   eventId: number,
@@ -210,7 +207,9 @@ export async function updateEvent(
     preco?: number;
     id_categoria?: number;
     url_link_externo?: string;
-  }
+  },
+  newImages?: string[],      // URLs de novas imagens
+  imagesToDelete?: number[]  // IDs de imagens antigas para remover
 ) {
   const exists = await prisma.evento.findUnique({
     where: { id_evento: eventId },
@@ -232,21 +231,49 @@ export async function updateEvent(
     updateData.categoria = { connect: { id_categoria: data.id_categoria } };
   }
 
-  const updated = await prisma.evento.update({
-    where: { id_evento: eventId },
-    data: updateData,
-    include: {
-      imagemEvento: true,
-      categoria: true,
-      organizador: {
-        select: { id_usuario: true, nome: true },
+  // Executa tudo numa transação para garantir integridade
+  const result = await prisma.$transaction(async (tx) => {
+    
+    // 1. Remover imagens antigas se solicitado
+    if (imagesToDelete && imagesToDelete.length > 0) {
+        await tx.imagemEvento.deleteMany({
+            where: {
+                id_evento: eventId,
+                id_imagem: { in: imagesToDelete }
+            }
+        });
+    }
+
+    // 2. Adicionar novas imagens se houver
+    if (newImages && newImages.length > 0) {
+        // Prepara os objetos para o Prisma
+        const createManyData = newImages.map(url => ({
+            url: url,
+            id_evento: eventId
+        }));
+        
+        await tx.imagemEvento.createMany({
+            data: createManyData
+        });
+    }
+
+    // 3. Atualizar dados do evento
+    return tx.evento.update({
+      where: { id_evento: eventId },
+      data: updateData,
+      include: {
+        imagemEvento: true,
+        categoria: true,
+        organizador: {
+          select: { id_usuario: true, nome: true },
+        },
       },
-    },
+    });
   });
 
   return {
-    ...updated,
-    preco: Number(updated.preco),
+    ...result,
+    preco: Number(result.preco),
   };
 }
 
@@ -294,7 +321,6 @@ export async function createComment(eventId: number, userId: number, texto: stri
 
 /**
  * Excluir comentário
- * (REGRA DE NEGÓCIO — owner ou admin podem excluir)
  */
 export async function deleteComment(
   commentId: number,
