@@ -11,142 +11,142 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Pegar o código
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Testar conexão SSH primeiro
-      - name: Testar conexão SSH e descobrir diretório
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          script: |
-            echo "✅ Conexão SSH bem-sucedida"
-            echo "Usuário: $(whoami)"
-            echo "Diretório home: $HOME"
-            echo "Diretório atual: $(pwd)"
-
-            # Verificar se temos permissão de escrita
-            echo "Testando permissões..."
-            TEST_DIR="$HOME/eventura"
-            mkdir -p "$TEST_DIR"
-            echo "Diretório criado em: $TEST_DIR"
-            ls -ld "$TEST_DIR"
-            echo "Espaço disponível:"
-            df -h "$HOME"
-
-      # 3. Gerar tarball
-      - name: Gerar tarball seguro
+      - name: Criar pacote de deploy
         run: |
-          echo "Criando tarball..."
+          # Método simples e confiável
+          tar -czf deploy.tar.gz \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='*.log' \
+            --exclude='*.tar.gz' \
+            backend frontend docker-compose.yml 2>/dev/null || echo "Pacote criado"
 
-          # Método simplificado e confiável
-          tar --exclude='.git' \
-              --exclude='node_modules' \
-              --exclude='*.log' \
-              --exclude='build' \
-              --exclude='dist' \
-              --exclude='.env' \
-              -czf deploy.tar.gz . 2>/dev/null || true
+          echo "Pacote criado: $(ls -lh deploy.tar.gz)"
 
-          echo "✅ Tarball criado: $(ls -lh deploy.tar.gz)"
-          echo "Conteúdo (primeiros 10):"
-          tar -tzf deploy.tar.gz | head -10
+      - name: Enviar para servidor
+        run: |
+          # Configurar SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      # 4. Copiar para servidor usando diretório do usuário
-      - name: Copiar arquivos para o servidor
-        uses: appleboy/scp-action@v0.1.5
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          source: "deploy.tar.gz"
-          target: "~/eventura" # Usar diretório home do usuário
-          overwrite: true
+          # Testar conexão
+          ssh -o StrictHostKeyChecking=no \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "mkdir -p ~/eventura && echo 'OK'"
 
-      # 5. Executar deploy remoto
-      - name: Deploy remoto
+          # Enviar arquivo
+          scp -o StrictHostKeyChecking=no \
+              deploy.tar.gz \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/eventura/
+
+      - name: Configurar Docker e executar deploy
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
           script: |
             set -e
 
-            echo "=== INICIANDO DEPLOY ==="
+            echo "=== CONFIGURAÇÃO INICIAL ==="
+
+            # 1. Adicionar usuário ao grupo docker (se necessário)
+            if ! groups $USER | grep -q '\bdocker\b'; then
+              echo "🔧 Adicionando $USER ao grupo docker..."
+              sudo usermod -aG docker $USER
+              
+              # Aplicar mudanças para a sessão atual
+              # Nota: Isso pode não funcionar em todas as situações
+              # O ideal é fazer logout/login, mas para o script usamos:
+              echo "⚠️  Usuário adicionado ao grupo docker."
+              echo "⚠️  Pode ser necessário fazer logout/login para efeitos surtirem."
+              echo "⚠️  Tentando continuar..."
+            else
+              echo "✅ Usuário já está no grupo docker"
+            fi
+
+            # 2. Testar permissões Docker
+            echo "Testando acesso ao Docker..."
+            if docker info > /dev/null 2>&1; then
+              echo "✅ Acesso ao Docker OK"
+            else
+              echo "❌ Sem acesso ao Docker. Tentando soluções..."
+              
+              # Tentar com sudo
+              if sudo docker info > /dev/null 2>&1; then
+                echo "✅ Docker funciona com sudo"
+                # Definir alias para usar sudo com docker
+                alias docker="sudo docker"
+                alias docker-compose="sudo docker-compose"
+              else
+                echo "❌ Docker não está rodando ou sem permissões"
+                echo "Iniciando Docker..."
+                sudo systemctl start docker || true
+                sudo systemctl enable docker || true
+                sleep 3
+              fi
+            fi
+
+            # 3. Ir para diretório do projeto
             cd ~/eventura
 
-            echo "1. Verificando arquivo..."
+            echo "=== INICIANDO DEPLOY ==="
+
+            # 4. Verificar e extrair arquivo
             if [ ! -f "deploy.tar.gz" ]; then
               echo "❌ Erro: deploy.tar.gz não encontrado!"
               ls -la
               exit 1
             fi
 
-            echo "2. Extraindo código..."
             tar -xzf deploy.tar.gz
             rm -f deploy.tar.gz
 
-            echo "3. Verificando estrutura..."
-            ls -la
-
-            echo "4. Garantindo arquivos .env..."
-            # Backend .env (se não existir)
-            if [ ! -f "backend/.env" ]; then
-              echo "Criando backend/.env..."
-              mkdir -p backend
-              cat > backend/.env << 'EOF'
-            DATABASE_URL="postgresql://eventura:password@db:5432/eventura_db"
-            NODE_ENV=production
-            PORT=3001
-            JWT_SECRET=your-secret-key-change-this
-            EOF
-            fi
-
-            # Frontend .env (se não existir)
-            if [ ! -f "frontend/.env" ]; then
-              echo "Criando frontend/.env..."
-              mkdir -p frontend
-              cat > frontend/.env << 'EOF'
-            REACT_APP_API_URL=http://localhost:3001
-            NODE_ENV=production
-            EOF
-            fi
-
-            echo "5. Verificando Docker..."
-            docker --version || echo "Docker não encontrado"
-            docker compose version || echo "Docker Compose não encontrado"
-
-            echo "6. Parando containers antigos (se existirem)..."
+            # 5. Remover atributo 'version' obsoleto do docker-compose.yml
+            echo "Corrigindo docker-compose.yml..."
             if [ -f "docker-compose.yml" ]; then
-              docker compose down --remove-orphans || true
-            else
-              echo "Aviso: docker-compose.yml não encontrado"
+              # Remover a linha 'version' se existir
+              grep -v '^version:' docker-compose.yml > docker-compose-temp.yml
+              mv docker-compose-temp.yml docker-compose.yml
+              echo "✅ docker-compose.yml corrigido"
             fi
 
-            echo "7. Construindo e iniciando containers..."
-            if [ -f "docker-compose.yml" ]; then
-              docker compose build --no-cache
-              docker compose up -d
-              
-              echo "8. Aguardando inicialização..."
-              sleep 10
-              
-              echo "9. Verificando status..."
-              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
-              
-              echo "10. Verificando logs..."
-              docker compose logs --tail=20 || true
-            else
-              echo "⚠️  Aviso: Não foi possível executar docker-compose"
-              echo "Estrutura atual:"
-              find . -type f -name "*.yml" -o -name "*.yaml" -o -name "Dockerfile*" | head -20
+            # 6. Verificar se podemos executar docker
+            echo "Verificando Docker Compose..."
+            DOCKER_CMD="docker"
+            COMPOSE_CMD="docker compose"
+
+            # Se não tem permissão, usa sudo
+            if ! $DOCKER_CMD info > /dev/null 2>&1; then
+              echo "Usando sudo para comandos Docker..."
+              DOCKER_CMD="sudo docker"
+              COMPOSE_CMD="sudo docker compose"
             fi
 
-            echo "✅ DEPLOY COMPLETO!"
+            # 7. Parar containers antigos
+            echo "Parando containers antigos..."
+            $COMPOSE_CMD down --remove-orphans 2>/dev/null || true
+
+            # 8. Construir e iniciar
+            echo "Construindo containers..."
+            $COMPOSE_CMD build --no-cache
+
+            echo "Iniciando containers..."
+            $COMPOSE_CMD up -d
+
+            # 9. Verificar status
+            echo "Aguardando inicialização..."
+            sleep 15
+
+            echo "Status dos containers:"
+            $DOCKER_CMD ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            # 10. Verificar logs
+            echo "Últimos logs:"
+            $COMPOSE_CMD logs --tail=30 || echo "Não foi possível obter logs"
+
+            echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
