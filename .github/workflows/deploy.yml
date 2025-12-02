@@ -1,5 +1,4 @@
 name: Deploy Eventura
-
 on:
   push:
     branches:
@@ -13,13 +12,19 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Criar pacote seguro (sem .git)
+      - name: Criar pacote de deploy
         run: |
           mkdir deploy
           cp -r backend frontend docker-compose.yml deploy/
+
+          # garantir .env (não falha se não existir)
+          mkdir -p deploy/backend deploy/frontend
+          cp backend/.env deploy/backend/.env || true
+          cp frontend/.env deploy/frontend/.env || true
+
           tar -czf deploy.tar.gz deploy
 
-      - name: Enviar deploy.tar.gz para o servidor
+      - name: Enviar pacote ao servidor
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -28,7 +33,7 @@ jobs:
           source: "deploy.tar.gz"
           target: "/home/esof/projetosiftm/eventura"
 
-      - name: Extrair no servidor e rodar Docker Compose
+      - name: Descompactar e rodar Docker
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -37,17 +42,22 @@ jobs:
           script: |
             cd /home/esof/projetosiftm/eventura
 
-            # limpar deploy anterior
+            # recriar pasta do projeto
             rm -rf eventura
             mkdir eventura
-            
+
             mv deploy.tar.gz eventura/
             cd eventura
 
             tar -xzf deploy.tar.gz
 
-            # agora entra na pasta deploy onde estão backend e frontend
-            cd deploy
+            # mover conteúdo para raiz (backend, frontend, docker-compose.yml)
+            mv deploy/* .
+            rm -rf deploy deploy.tar.gz
 
+            # garantir permissão do docker (importante!)
+            sudo usermod -aG docker $USER || true
+
+            # subir containers (sempre daqui)
             docker compose down || true
             docker compose up -d --build
