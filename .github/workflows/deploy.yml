@@ -1,4 +1,4 @@
-name: Deploy Eventura
+name: Deploy
 
 on:
   push:
@@ -13,24 +13,28 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Copiar arquivos para o servidor
+      - name: Criar arquivo TAR sem .git
+        run: |
+          tar --exclude='.git' --exclude='node_modules' -czf deploy.tar.gz .
+
+      - name: Enviar arquivos para o servidor
         uses: appleboy/scp-action@v0.1.5
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "."
-          target: "/home/esof/projetosiftm/eventura/eventura"
-          rm: false
+          source: "deploy.tar.gz"
+          target: "/home/esof/projetosiftm/eventura/"
 
-      - name: Rodar docker compose no servidor
-        uses: appleboy/ssh-action@v0.1.7
+      - name: Executar comandos no servidor
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/esof/projetosiftm/eventura/eventura
+            cd /home/esof/projetosiftm/eventura
+            tar -xzf deploy.tar.gz
+            rm deploy.tar.gz
             docker compose down
             docker compose up -d --build
-
