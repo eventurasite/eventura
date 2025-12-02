@@ -139,11 +139,12 @@ router.delete(
 router.get("/:id", eventController.getEvent);
 
 // Atualizar evento — organizador ou admin
+// IMPORTANTE: Aqui usamos upload.array para permitir envio de imagens na edição
 router.put(
   "/:id",
   authenticateToken,
   allowEventOwnerOrAdmin(),
-  upload.array("imagens", 5),
+  upload.array("imagens", 5), 
   eventController.updateEventController
 );
 

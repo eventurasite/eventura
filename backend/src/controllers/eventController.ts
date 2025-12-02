@@ -5,9 +5,6 @@ import * as eventService from "../services/eventService";
 /**
  * Criar um novo evento
  */
-/**
- * Criar um novo evento
- */
 export async function createEventController(req: Request, res: Response) {
   try {
     const { titulo, descricao, data, local, preco, id_categoria, url_link_externo } = req.body;
@@ -21,7 +18,6 @@ export async function createEventController(req: Request, res: Response) {
       return res.status(400).json({ message: "Pelo menos uma imagem é obrigatória." });
     }
 
-    // CORREÇÃO AQUI!
     const imagens = files.map(file => `/uploads/${file.filename}`);
 
     const evento = await eventService.createEvent({
@@ -138,7 +134,6 @@ export async function getFilteredEvents(req: Request, res: Response) {
 
 /**
  * Excluir evento
- * (permissão garantida via allowEventOwnerOrAdmin)
  */
 export async function deleteEventController(req: Request, res: Response) {
   try {
@@ -174,7 +169,7 @@ export async function deleteEventController(req: Request, res: Response) {
 
 /**
  * Atualizar evento
- * (permissão garantida via allowEventOwnerOrAdmin)
+ * (Modificado para suportar imagens)
  */
 export async function updateEventController(req: Request, res: Response) {
   try {
@@ -187,7 +182,7 @@ export async function updateEventController(req: Request, res: Response) {
     // @ts-ignore
     const userId = req.user.id;
 
-    const { titulo, descricao, data, local, preco, id_categoria, url_link_externo } = req.body;
+    const { titulo, descricao, data, local, preco, id_categoria, url_link_externo, imgIdsToDelete } = req.body;
 
     const eventData: any = {};
 
@@ -199,11 +194,35 @@ export async function updateEventController(req: Request, res: Response) {
     if (id_categoria !== undefined) eventData.id_categoria = parseInt(id_categoria, 10);
     if (url_link_externo !== undefined) eventData.url_link_externo = url_link_externo;
 
-    if (Object.keys(eventData).length === 0) {
+    // Processamento de Imagens
+    let newImagePaths: string[] = [];
+    const files = req.files as Express.Multer.File[];
+    if (files && files.length > 0) {
+        newImagePaths = files.map(file => `/uploads/${file.filename}`);
+    }
+
+    // Processamento de Exclusão (Ids chegam como string ou array de strings)
+    let idsToDelete: number[] = [];
+    if (imgIdsToDelete) {
+        if (Array.isArray(imgIdsToDelete)) {
+            idsToDelete = imgIdsToDelete.map((id: string) => Number(id));
+        } else {
+            idsToDelete = [Number(imgIdsToDelete)];
+        }
+    }
+
+    if (Object.keys(eventData).length === 0 && newImagePaths.length === 0 && idsToDelete.length === 0) {
       return res.status(400).json({ message: "Nenhum dado válido fornecido para atualização." });
     }
 
-    const eventoAtualizado = await eventService.updateEvent(eventId, userId, eventData);
+    // Chama o serviço passando dados de texto, novas imagens e IDs para deletar
+    const eventoAtualizado = await eventService.updateEvent(
+        eventId, 
+        userId, 
+        eventData, 
+        newImagePaths, 
+        idsToDelete
+    );
 
     return res.status(200).json({ message: "Evento atualizado com sucesso!", evento: eventoAtualizado });
 
