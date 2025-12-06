@@ -13,6 +13,15 @@ import {
   allowCommentOwnerOrAdmin
 } from "../middleware/permissionMiddleware";
 
+// IMPORTAÇÕES ZOD
+import { validate } from "../validation/validate";
+import { 
+    EventCreateSchema, 
+    EventUpdateSchema, 
+    CommentCreateSchema, 
+    DenounceCreateSchema 
+} from "../validation/schemas"; 
+
 const router = Router();
 const upload = multer(multerConfig);
 
@@ -20,10 +29,11 @@ const upload = multer(multerConfig);
 // Eventos gerais
 // -------------------------------
 
-// Criar evento — qualquer usuário autenticado pode criar
+// Criar evento — aplica validação Zod antes do upload de arquivos
 router.post(
   "/",
   authenticateToken,
+  validate(EventCreateSchema),
   upload.array("imagens", 5),
   eventController.createEventController
 );
@@ -48,6 +58,7 @@ router.get("/:id/comments", eventController.getCommentsController);
 router.post(
   "/:id/comments",
   authenticateToken,
+  validate(CommentCreateSchema),
   eventController.createCommentController
 );
 
@@ -106,6 +117,7 @@ router.get(
 router.post(
   "/denounce",
   authenticateToken,
+  validate(DenounceCreateSchema),
   eventController.createDenounceController
 );
 
@@ -144,6 +156,7 @@ router.put(
   "/:id",
   authenticateToken,
   allowEventOwnerOrAdmin(),
+  validate(EventUpdateSchema),
   upload.array("imagens", 5), 
   eventController.updateEventController
 );

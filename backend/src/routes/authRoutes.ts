@@ -29,6 +29,15 @@ import {
   allowOwnerOrAdmin
 } from "../middleware/permissionMiddleware";
 
+// IMPORTAÇÕES ZOD
+import { validate } from "../validation/validate";
+import { 
+    UserRegisterSchema, 
+    UserLoginSchema, 
+    PasswordResetSchema, 
+    UserUpdateSchema 
+} from "../validation/schemas"; 
+
 const router = Router();
 const upload = multer(multerConfig);
 
@@ -62,10 +71,18 @@ router.get(
 // -------------------
 // Rotas públicas
 // -------------------
-router.post("/register", register);
-router.post("/login", login);
-router.post("/password/forgot", forgotPasswordController);
-router.post("/password/reset", resetPasswordController);
+// ADICIONADO: Validação de Registro
+router.post("/register", validate(UserRegisterSchema), register);
+
+// ADICIONADO: Validação de Login
+router.post("/login", validate(UserLoginSchema), login);
+
+// ADICIONADO: Validação de ForgotPassword (usa UserLoginSchema para validar apenas o email)
+router.post("/password/forgot", validate(UserLoginSchema), forgotPasswordController);
+
+// ADICIONADO: Validação de Reset de Senha
+router.post("/password/reset", validate(PasswordResetSchema), resetPasswordController);
+
 router.get("/verify-email", verifyEmailController);
 
 // -------------------
@@ -90,10 +107,12 @@ router.delete(
 );
 
 // Editar usuário — dono ou admin
+// ADICIONADO: Validação de Edição (Corpo e Params)
 router.put(
   "/:id",
   authenticateToken,
   allowOwnerOrAdmin("id"),
+  validate(UserUpdateSchema),
   updateUser
 );
 

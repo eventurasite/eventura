@@ -2,11 +2,7 @@ import { PrismaClient, TipoUsuario } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { generateToken, verifyToken } from "../utils/jwt";
 import { sendResetEmail, sendEmailVerification } from "./mailService";
-import {
-  validateEmail,
-  validateSenha,
-  validatePasswordStrength,
-} from "../utils/validation";
+// REMOVIDO: As importações de 'validate' e 'schema' foram removidas.
 
 const prisma = new PrismaClient();
 
@@ -21,7 +17,7 @@ const userSelectData = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                REGISTER USER                                */
+/* REGISTER USER                                */
 /* -------------------------------------------------------------------------- */
 export async function registerUser(data: {
   nome: string;
@@ -32,9 +28,7 @@ export async function registerUser(data: {
 }) {
   const { nome, email, senha, telefone, descricao } = data;
 
-  validateEmail(email);
-  validateSenha(senha);
-  validatePasswordStrength(senha);
+  // A validação Zod é feita na camada de rota (middleware).
 
   const existing = await prisma.usuario.findUnique({ where: { email } });
 
@@ -78,7 +72,7 @@ export async function registerUser(data: {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  LOGIN USER                                 */
+/* LOGIN USER                                 */
 /* -------------------------------------------------------------------------- */
 export async function loginUser({
   email,
@@ -87,8 +81,7 @@ export async function loginUser({
   email: string;
   senha: string;
 }) {
-  validateEmail(email);
-  validateSenha(senha);
+  // A validação Zod é feita na camada de rota (middleware).
 
   const usuario = await prisma.usuario.findUnique({ where: { email } });
 
@@ -122,7 +115,7 @@ export async function loginUser({
 }
 
 /* -------------------------------------------------------------------------- */
-/*                             VERIFY EMAIL SERVICE                             */
+/* VERIFY EMAIL SERVICE                             */
 /* -------------------------------------------------------------------------- */
 export async function verifyEmailService(token: string) {
   if (!token) throw new Error("Token não informado");
@@ -153,10 +146,10 @@ export async function verifyEmailService(token: string) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                FORGOT PASSWORD                               */
+/* FORGOT PASSWORD                               */
 /* -------------------------------------------------------------------------- */
 export async function forgotPassword(email: string) {
-  validateEmail(email);
+  // A validação Zod é feita na camada de rota (middleware).
 
   const user = await prisma.usuario.findUnique({ where: { email } });
 
@@ -173,11 +166,10 @@ export async function forgotPassword(email: string) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                RESET PASSWORD                                */
+/* RESET PASSWORD                                */
 /* -------------------------------------------------------------------------- */
 export async function resetPassword(token: string, password: string) {
-  validateSenha(password);
-  validatePasswordStrength(password);
+  // A validação Zod é feita na camada de rota (middleware).
 
   if (!token) throw new Error("Token não informado");
 
@@ -205,7 +197,7 @@ export async function resetPassword(token: string, password: string) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  EDIT USER                                  */
+/* EDIT USER                                  */
 /* -------------------------------------------------------------------------- */
 export async function editUser(
   requesterId: number,
@@ -213,6 +205,7 @@ export async function editUser(
   targetUserId: number,
   data: any
 ) {
+  // A validação Zod é feita na camada de rota (middleware).
   const currentUser = await prisma.usuario.findUnique({
     where: { id_usuario: targetUserId },
   });
@@ -246,7 +239,7 @@ export async function editUser(
 
   if (data.nome) updatableData.nome = data.nome;
   if (data.email) {
-    validateEmail(data.email);
+    // A validação de formato do email é feita pelo Zod na rota.
     updatableData.email = data.email;
   }
   if (data.telefone !== undefined) updatableData.telefone = data.telefone;
@@ -262,7 +255,7 @@ export async function editUser(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                 DELETE USER                                 */
+/* DELETE USER                                 */
 /* -------------------------------------------------------------------------- */
 export async function removeUser(id: number) {
   // 1. Buscar IDs de todos os eventos criados por este usuário.
@@ -303,7 +296,7 @@ export async function removeUser(id: number) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               FIND USER BY ID                               */
+/* FIND USER BY ID                               */
 /* -------------------------------------------------------------------------- */
 export async function findUserById(id: number) {
   return prisma.usuario.findUnique({
@@ -313,7 +306,7 @@ export async function findUserById(id: number) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               FIND ALL USERS                                */
+/* FIND ALL USERS                                */
 /* -------------------------------------------------------------------------- */
 export async function findAllUsers() {
   return prisma.usuario.findMany({
