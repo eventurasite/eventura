@@ -35,7 +35,8 @@ import {
     UserRegisterSchema, 
     UserLoginSchema, 
     PasswordResetSchema, 
-    UserUpdateSchema 
+    UserUpdateSchema,
+    EmailSchema, 
 } from "../validation/schemas"; 
 
 const router = Router();
@@ -78,7 +79,7 @@ router.post("/register", validate(UserRegisterSchema), register);
 router.post("/login", validate(UserLoginSchema), login);
 
 // ADICIONADO: Validação de ForgotPassword (usa UserLoginSchema para validar apenas o email)
-router.post("/password/forgot", validate(UserLoginSchema), forgotPasswordController);
+router.post("/password/forgot", validate(EmailSchema), forgotPasswordController);
 
 // ADICIONADO: Validação de Reset de Senha
 router.post("/password/reset", validate(PasswordResetSchema), resetPasswordController);

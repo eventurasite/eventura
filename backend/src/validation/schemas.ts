@@ -10,12 +10,12 @@ const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 // Regex: Telefone (9 a 11 dígitos, para flexibilidade com ou sem DDD, sem pontuação)
-const PHONE_REGEX = /^\d{9,11}$/; 
+const PHONE_REGEX = /^\d{9,11}$/;
 
 // Schema Base de Senha
-// CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
 const BasePasswordSchema = z
-  .string() 
+  .string()
+  .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
   .min(8, { message: msg.MIN_LENGTH(8) })
   .regex(PASSWORD_REGEX, { message: msg.PASSWORD_COMPLEXITY });
 
@@ -29,7 +29,6 @@ const BasePasswordSchema = z
 export const UserRegisterSchema = z.object({
   body: z.object({
     // NOME (String) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     nome: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -37,7 +36,6 @@ export const UserRegisterSchema = z.object({
       .max(100, { message: msg.MAX_LENGTH(100) }),
 
     // EMAIL (String @unique) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     email: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -68,7 +66,6 @@ export const UserRegisterSchema = z.object({
 export const EmailSchema = z.object({
   body: z.object({
     // EMAIL (String @unique) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     email: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -82,18 +79,15 @@ export const EmailSchema = z.object({
 export const UserLoginSchema = z.object({
   body: z.object({
     // EMAIL - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     email: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
       .email({ message: msg.INVALID_EMAIL }),
-      
+
     // SENHA - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     senha: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }), // <-- NÃO VAZIO
-
   }),
 });
 
@@ -108,7 +102,7 @@ export const UserUpdateSchema = z.object({
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO (se presente)
       .min(3, { message: msg.MIN_LENGTH(3) })
       .max(100, { message: msg.MAX_LENGTH(100) })
-      .optional(), 
+      .optional(),
 
     // TELEFONE - Opcional, permite string vazia
     telefone: z
@@ -116,14 +110,14 @@ export const UserUpdateSchema = z.object({
       .regex(PHONE_REGEX, { message: msg.INVALID_PHONE })
       .optional()
       .or(z.literal("")),
-      
+
     // DESCRICAO - Opcional, permite string vazia
     descricao: z
       .string()
       .max(500, { message: msg.MAX_LENGTH(500) })
       .optional()
       .or(z.literal("")),
-    
+
     // EMAIL - Opcional, mas se enviado, não pode ser vazio e deve ser válido
     email: z
       .string()
@@ -134,7 +128,7 @@ export const UserUpdateSchema = z.object({
 
   params: z.object({
     id: z.string().regex(/^\d+$/, { message: msg.INVALID_ID }),
-  })
+  }),
 });
 
 /**
@@ -142,12 +136,10 @@ export const UserUpdateSchema = z.object({
  */
 export const PasswordResetSchema = z.object({
   body: z.object({
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     token: z.string().min(1, { message: msg.REQUIRED_FIELD }), // <-- NÃO VAZIO
     password: BasePasswordSchema,
   }),
 });
-
 
 // =======================================================
 // 2. SCHEMAS DE EVENTOS (MODELO: EVENTO)
@@ -159,7 +151,6 @@ export const PasswordResetSchema = z.object({
 export const EventCreateSchema = z.object({
   body: z.object({
     // TITULO (String) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     titulo: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -167,7 +158,6 @@ export const EventCreateSchema = z.object({
       .max(150, { message: msg.MAX_LENGTH(150) }),
 
     // DESCRICAO (String) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     descricao: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -175,8 +165,8 @@ export const EventCreateSchema = z.object({
       .max(5000, { message: msg.MAX_LENGTH(5000) }),
 
     // DATA (DateTime) - Obrigatório
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
-    data: z.string()
+    data: z
+      .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
       .datetime({ message: msg.INVALID_DATE_FORMAT })
       .refine(
@@ -185,7 +175,6 @@ export const EventCreateSchema = z.object({
       ),
 
     // LOCAL (String - Endereço) - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     local: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -193,15 +182,16 @@ export const EventCreateSchema = z.object({
       .max(255, { message: msg.MAX_LENGTH(255) }),
 
     // PRECO (Decimal) - Obrigatório
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     preco: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
       .transform((val) => parseFloat(val))
-      .refine((val) => !isNaN(val) && val >= 0, { message: msg.POSITIVE_PRICE }),
+      .refine(
+        (val) => !isNaN(val) && val >= 0,
+        { message: msg.POSITIVE_PRICE }
+      ),
 
     // ID_CATEGORIA (Int) - Obrigatório
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     id_categoria: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -210,10 +200,10 @@ export const EventCreateSchema = z.object({
 
     // URL_LINK_EXTERNO (String?) - Opcional, permite string vazia
     url_link_externo: z
-        .string()
-        .url({ message: msg.INVALID_URL })
-        .optional()
-        .or(z.literal("")),
+      .string()
+      .url({ message: msg.INVALID_URL })
+      .optional()
+      .or(z.literal("")),
   }),
 });
 
@@ -239,11 +229,12 @@ export const EventUpdateSchema = z.object({
       .optional(),
 
     // DATA - Opcional, mas se enviado, não pode ser vazio
-    data: z.string()
+    data: z
+      .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO (se presente)
       .datetime({ message: msg.INVALID_DATE_FORMAT })
       .optional(),
-    
+
     // LOCAL - Opcional, mas se enviado, não pode ser vazio
     local: z
       .string()
@@ -251,13 +242,16 @@ export const EventUpdateSchema = z.object({
       .min(5, { message: msg.MIN_LENGTH(5) })
       .max(255, { message: msg.MAX_LENGTH(255) })
       .optional(),
-    
+
     // PRECO - Opcional, mas se enviado, não pode ser vazio
     preco: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO (se presente)
       .transform((val) => parseFloat(val))
-      .refine((val) => !isNaN(val) && val >= 0, { message: msg.POSITIVE_PRICE })
+      .refine(
+        (val) => !isNaN(val) && val >= 0,
+        { message: msg.POSITIVE_PRICE }
+      )
       .optional(),
 
     // ID_CATEGORIA - Opcional, mas se enviado, não pode ser vazio
@@ -267,21 +261,19 @@ export const EventUpdateSchema = z.object({
       .regex(/^\d+$/, { message: msg.INVALID_ID })
       .transform((val) => parseInt(val, 10))
       .optional(),
-      
+
     // URL_LINK_EXTERNO - Opcional, permite string vazia
     url_link_externo: z
-        .string()
-        .url({ message: msg.INVALID_URL })
-        .optional()
-        .or(z.literal("")),
-        
+      .string()
+      .url({ message: msg.INVALID_URL })
+      .optional()
+      .or(z.literal("")),
   }).partial(),
 
   params: z.object({
     id: z.string().regex(/^\d+$/, { message: msg.INVALID_ID }),
   }),
 });
-
 
 // =======================================================
 // 3. SCHEMAS DE CONTEÚDO (COMENTÁRIO E DENÚNCIA)
@@ -293,7 +285,6 @@ export const EventUpdateSchema = z.object({
 export const CommentCreateSchema = z.object({
   body: z.object({
     // TEXTO - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     texto: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
@@ -302,21 +293,18 @@ export const CommentCreateSchema = z.object({
   }),
 });
 
-
 /**
  * Validação para Criação de Denúncia (POST /events/denounce)
  */
 export const DenounceCreateSchema = z.object({
   body: z.object({
     // ID_EVENTO - Obrigatório
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     id_evento: z
       .number()
       .int({ message: msg.INVALID_ID })
       .positive({ message: msg.INVALID_ID }),
 
     // MOTIVO - Obrigatório + Não vazio
-    // CORRIGIDO: Removido { required_error: msg.REQUIRED_FIELD }
     motivo: z
       .string()
       .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO

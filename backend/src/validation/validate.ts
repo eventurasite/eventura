@@ -1,8 +1,8 @@
-import { ZodType, ZodError } from "zod"; // <-- ALTERADO AQUI
+import { ZodType, ZodError } from "zod";
 import { Request, Response, NextFunction } from "express";
 
 /**
- * Interface para a Estrutura de Erro de Validação
+ * Estrutura padrão de erro de validação
  */
 export interface ValidationException {
   message: string;
@@ -11,12 +11,11 @@ export interface ValidationException {
 }
 
 /**
- * Middleware para validar o corpo da requisição usando um schema Zod.
- *
- * @param schema O schema Zod a ser utilizado na validação.
- * @returns Um middleware de Express.
+ * Middleware genérico de validação usando Zod.
+ * Valida: body, query e params (quando definidos no schema).
  */
-export const validate = (schema: ZodType) => // 
+export const validate =
+  (schema: ZodType) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
       // O Zod faz o parsing e lança um erro se falhar
@@ -26,32 +25,53 @@ export const validate = (schema: ZodType) => //
         params: req.params,
       });
 
-      // Se tudo estiver OK, continua
-      next();
+      // Se passar, segue o fluxo
+      return next();
     } catch (error) {
       if (error instanceof ZodError) {
-        // Mapeia os erros para um formato mais limpo
         const errorDetails: Record<string, string> = {};
+
+        // Monta objeto de erros campo -> mensagem
         error.issues.forEach((err) => {
-          // O Zod usa um caminho (path) para o campo
-          const path = err.path.join(".");
-          // Ignoramos o prefixo 'body.' ou 'query.'
-          const field = path.startsWith("body.") ? path.substring(5) : path;
+          let field = err.path.join(".");
+
+          // Remove prefixos body./query./params. para ficar só o nome do campo
+          const prefixes = ["body.", "query.", "params."];
+          for (const prefix of prefixes) {
+            if (field.startsWith(prefix)) {
+              field = field.substring(prefix.length);
+              break;
+            }
+          }
+
           errorDetails[field] = err.message;
         });
 
-        // Lança a exceção formatada (status 400 Bad Request)
+        // Pega o primeiro erro para usar como mensagem principal
+        const firstIssue = error.issues[0];
+        let firstField = firstIssue.path.join(".");
+
+        const prefixes = ["body.", "query.", "params."];
+        for (const prefix of prefixes) {
+          if (firstField.startsWith(prefix)) {
+            firstField = firstField.substring(prefix.length);
+            break;
+          }
+        }
+
         const validationError: ValidationException = {
-          message: "Falha na validação dos dados.",
+          // ex: "nome: O campo deve ter no máximo 100 caracteres."
+          message: `${firstField}: ${firstIssue.message}`,
           errors: errorDetails,
           status: 400,
         };
 
-        // Passa o erro para o próximo middleware de erro (se houver)
         return res.status(validationError.status).json(validationError);
       }
 
-      // Se for outro tipo de erro, retorna 500
-      return res.status(500).json({ message: "Erro interno do servidor." });
+      // Se não for erro de validação, erro interno
+      return res
+        .status(500)
+        .json({ message: "Erro interno do servidor." });
     }
   };
