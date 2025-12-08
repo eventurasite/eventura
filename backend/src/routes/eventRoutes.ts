@@ -13,6 +13,15 @@ import {
   allowCommentOwnerOrAdmin
 } from "../middleware/permissionMiddleware";
 
+// IMPORTAÇÕES ZOD
+import { validate } from "../validation/validate";
+import { 
+    EventCreateSchema, 
+    EventUpdateSchema, 
+    CommentCreateSchema, 
+    DenounceCreateSchema 
+} from "../validation/schemas"; 
+
 const router = Router();
 const upload = multer(multerConfig);
 
@@ -20,11 +29,12 @@ const upload = multer(multerConfig);
 // Eventos gerais
 // -------------------------------
 
-// Criar evento — qualquer usuário autenticado pode criar
+// Criar evento — ORDEM CORRIGIDA: Multer DEVE VIR ANTES do Zod
 router.post(
   "/",
   authenticateToken,
-  upload.array("imagens", 5),
+  upload.array("imagens", 5), // <--- 1. Multer popula req.body com campos de texto
+  validate(EventCreateSchema), // <--- 2. Zod valida o req.body preenchido
   eventController.createEventController
 );
 
@@ -48,6 +58,7 @@ router.get("/:id/comments", eventController.getCommentsController);
 router.post(
   "/:id/comments",
   authenticateToken,
+  validate(CommentCreateSchema), // Validação antes do controller
   eventController.createCommentController
 );
 
@@ -106,6 +117,7 @@ router.get(
 router.post(
   "/denounce",
   authenticateToken,
+  validate(DenounceCreateSchema),
   eventController.createDenounceController
 );
 
@@ -138,13 +150,13 @@ router.delete(
 // Buscar evento por ID — público
 router.get("/:id", eventController.getEvent);
 
-// Atualizar evento — organizador ou admin
-// IMPORTANTE: Aqui usamos upload.array para permitir envio de imagens na edição
+// Atualizar evento — ORDEM CORRIGIDA: Multer DEVE VIR ANTES do Zod
 router.put(
   "/:id",
   authenticateToken,
   allowEventOwnerOrAdmin(),
-  upload.array("imagens", 5), 
+  upload.array("imagens", 5), // <--- 1. Multer popula req.body com campos de texto
+  validate(EventUpdateSchema), // <--- 2. Zod valida o req.body preenchido
   eventController.updateEventController
 );
 

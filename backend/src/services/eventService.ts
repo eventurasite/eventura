@@ -1,6 +1,6 @@
 // backend/src/services/eventService.ts
 import { PrismaClient, Prisma, TipoUsuario } from "@prisma/client";
-
+import * as eventService from "../services/eventService";
 const prisma = new PrismaClient();
 
 /**
@@ -297,9 +297,10 @@ export function getCommentsByEventId(eventId: number) {
 }
 
 export async function createComment(eventId: number, userId: number, texto: string) {
-  if (!texto || texto.trim() === "") {
-    throw new Error("O texto do comentário não pode estar vazio.");
-  }
+  //VALIDAÇÃO MANUAL QUE FOI SUBSTITUIDA PELO ZOD
+  //if (!texto || texto.trim() === "") {
+  //  throw new Error("O texto do comentário não pode estar vazio.");
+  //}
 
   return prisma.comentario.create({
     data: {

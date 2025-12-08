@@ -35,6 +35,7 @@ const ConfirmationToast = ({ closeToast, message, onConfirm }) => (
 export default function UserProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [editableData, setEditableData] = useState(null); // Inicia como null para controlar o loading
   const [editMode, setEditMode] = useState({});
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -58,13 +59,23 @@ export default function UserProfile() {
 
         const userData = response.data;
         setUser(userData);
-
+        
+        // Sincroniza o estado de edição após carregar os dados
+        setEditableData({
+            nome: userData.nome || '',
+            email: userData.email || '',
+            telefone: userData.telefone || '',
+            descricao: userData.descricao || '',
+        });
+        
         if (userData.url_foto_perfil) {
           setPreview(resolveImageUrl(userData.url_foto_perfil));
         }
       } catch (error) {
         console.error("Erro ao buscar os dados do usuário:", error);
         toast.error("Não foi possível carregar os dados do perfil.");
+        // Evita loop de loading se a API falhar
+        setUser({}); 
       }
     };
 
@@ -77,9 +88,11 @@ export default function UserProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser((prev) => ({ ...prev, [name]: value }));
+    // Atualiza APENAS o estado local de edição.
+    setEditableData((prev) => ({ ...prev, [name]: value })); 
   };
 
+  // --- FUNÇÃO handleFileChange (RESTAURADA) ---
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -87,10 +100,11 @@ export default function UserProfile() {
       setPreview(URL.createObjectURL(file));
     }
   };
+  // --- FIM handleFileChange ---
 
   const handleSave = async () => {
     const token = localStorage.getItem("authToken");
-    let updatedUser = { ...user };
+    let updatedUser = { ...editableData }; // Usa os dados temporários aqui
 
     if (selectedFile) {
       const formData = new FormData();
@@ -121,7 +135,7 @@ export default function UserProfile() {
       // 1. Captura a resposta do backend
       const response = await axios.put(
         `${API_BASE_URL}/api/auth/${user.id_usuario}`,
-        updatedUser,
+        updatedUser, // Envia apenas os dados editados
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -130,8 +144,10 @@ export default function UserProfile() {
       // 2. Extrai o usuário ATUALIZADO da resposta
       const userFromApi = response.data.usuario;
 
-      setUser(userFromApi); // <-- CORREÇÃO: Usa os dados que vieram da API
-
+      // Sincroniza AMBOS os estados SÓ APÓS O SUCESSO DO PUT
+      setUser(userFromApi); 
+      setEditableData(userFromApi); 
+      
       if (userFromApi.url_foto_perfil) {
         setPreview(resolveImageUrl(userFromApi.url_foto_perfil));
         localStorage.setItem("userPhotoUrl", userFromApi.url_foto_perfil);
@@ -145,6 +161,7 @@ export default function UserProfile() {
       setSelectedFile(null);
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
+      // NOTE: Aqui você pode adicionar o tratamento detalhado de erro Zod 400
       toast.error(error.response?.data?.message || "Erro ao salvar o perfil.");
     }
   };
@@ -224,7 +241,8 @@ export default function UserProfile() {
     );
   };
 
-  if (!user) {
+  // Condição de carregamento
+  if (!user || !editableData) {
     return (
       <>
         <Header />
@@ -235,6 +253,7 @@ export default function UserProfile() {
     );
   }
 
+  // Renderização principal (mantida a lógica de usar editableData para inputs e user para display)
   return (
     <>
       <Header />
@@ -274,7 +293,7 @@ export default function UserProfile() {
                 )}
               </div>
               <div className="profile-text">
-                <h2>{user.nome}</h2>
+                <h2>{user.nome}</h2> {/* Display usa o user (sincronizado no Save) */}
                 <p>{user.descricao || "Sem descrição."}</p>
               </div>
             </div>
@@ -285,7 +304,7 @@ export default function UserProfile() {
                   label="Nome Completo"
                   id="nome"
                   name="nome"
-                  value={user.nome}
+                  value={editableData.nome}
                   onChange={handleChange}
                   isEditable={editMode.nome}
                   rightSlot={
@@ -301,7 +320,7 @@ export default function UserProfile() {
                   label="E-mail"
                   id="email"
                   name="email"
-                  value={user.email}
+                  value={editableData.email}
                   onChange={handleChange}
                   isEditable={user.authProvider !== "google" && editMode.email}
                   rightSlot={
@@ -323,7 +342,7 @@ export default function UserProfile() {
                   label="Telefone"
                   id="telefone"
                   name="telefone"
-                  value={user.telefone || ""}
+                  value={editableData.telefone || ""}
                   onChange={handleChange}
                   isEditable={editMode.telefone}
                   rightSlot={
@@ -342,7 +361,7 @@ export default function UserProfile() {
                 <textarea
                   id="descricao"
                   name="descricao"
-                  value={user.descricao || ""}
+                  value={editableData.descricao || ""}
                   onChange={handleChange}
                   readOnly={!editMode.descricao}
                   className={editMode.descricao ? "is-editable-textarea" : ""}

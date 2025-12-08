@@ -6,14 +6,13 @@ import { toast } from "react-toastify";
 import Header from "../components/Header";
 import BackLink from "../components/BackLink";
 import Button from "../components/Button";
-import TextField from "../components/TextField";
 // Reutiliza o estilo de contêiner (e o fundo)
 import "./UserProfile.css";
 import "./EventRegistration.css"; // Reutiliza estilos de input/botão
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
-const API_URL_DENOUNCE = `${API_BASE_URL}/api/events/denounce`; // Rota fictícia de denúncia
-const API_URL_EVENT = `${API_BASE_URL}/api/events`; // Base URL para buscar detalhes do evento
+const API_URL_DENOUNCE = `${API_BASE_URL}/api/events/denounce`; 
+const API_URL_EVENT = `${API_BASE_URL}/api/events`; 
 
 // Motivos de denúncia mockados
 const MOTIVOS_DENUNCIA = [
@@ -32,18 +31,17 @@ export default function DenouncePage() {
   const [mensagemDetalhe, setMensagemDetalhe] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // NOVO ESTADO: Armazenar o título do evento
+  // Armazenar o título do evento
   const [eventTitle, setEventTitle] = useState("Carregando Evento...");
 
-  const eventId = id;
+  const eventId = id; // String do useParams()
 
-  // NOVO useEffect: Buscar o nome do evento
+  // Buscar o nome do evento
   useEffect(() => {
     const fetchEventTitle = async () => {
       try {
-        // Chamada à API para buscar os detalhes do evento por ID
         const response = await axios.get(`${API_URL_EVENT}/${eventId}`);
-        setEventTitle(response.data.titulo); // Assume que a API retorna 'titulo'
+        setEventTitle(response.data.titulo);
       } catch (error) {
         console.error("Erro ao buscar detalhes do evento:", error);
         setEventTitle("Evento Não Encontrado");
@@ -64,24 +62,32 @@ export default function DenouncePage() {
       return;
     }
 
-    if (!motivoSelecionado && mensagemDetalhe.trim() === "") {
-      toast.error("Por favor, selecione um motivo ou descreva sua denúncia.");
-      return;
-    }
-
-    // Concatena o motivo selecionado (se houver) com a mensagem detalhada
+    // 1. Concatena e valida o motivo (Regra baseada na lógica do Zod, ex: min 10)
     const denunciaText = motivoSelecionado
       ? `Motivo: ${motivoSelecionado} - Detalhes: ${mensagemDetalhe}`
       : mensagemDetalhe.trim();
 
+    if (denunciaText.length < 10) { 
+        toast.error("A descrição da denúncia é muito curta (mínimo 10 caracteres).");
+        return;
+    }
+
+    // 2. CORREÇÃO CRÍTICA: Converte o ID do evento para número
+    const eventIdNumber = parseInt(eventId, 10);
+    if (isNaN(eventIdNumber)) {
+        toast.error("ID do evento inválido para denúncia.");
+        return;
+    }
+
+
     setLoading(true);
 
     try {
-      // A denúncia real aqui
+      // Envio da Denúncia
       const response = await axios.post(
         API_URL_DENOUNCE,
         {
-          id_evento: eventId,
+          id_evento: eventIdNumber, // <<< ENVIADO COMO NÚMERO
           motivo: denunciaText,
         },
         {
@@ -96,7 +102,24 @@ export default function DenouncePage() {
       setTimeout(() => navigate(`/event/${eventId}`), 2000);
     } catch (error) {
       console.error("Erro ao enviar denúncia:", error);
-      toast.error(error.response?.data?.message || "Erro ao enviar denúncia.");
+      
+      // >>> TRATAMENTO ROBUSTO DE ERROS ZOD (400) <<<
+      let errorMessage = "Erro ao enviar denúncia.";
+
+      if (error.response?.data?.status === 400 && error.response.data.errors) {
+        // Pega a mensagem do primeiro campo inválido
+        const firstField = Object.keys(error.response.data.errors)[0];
+        const firstMessage = error.response.data.errors[firstField];
+        
+        // Formata a mensagem para o usuário
+        errorMessage = `Falha na validação: ${firstField.toUpperCase()} - ${firstMessage}`;
+      } else if (error.response?.data?.message) {
+        // Usa a mensagem principal (pode ser erro de permissão ou outra exceção)
+        errorMessage = error.response.data.message;
+      }
+      
+      toast.error(errorMessage);
+      // >>> FIM DO TRATAMENTO <<<
     } finally {
       setLoading(false);
     }
@@ -108,7 +131,7 @@ export default function DenouncePage() {
       <div className="registration-container">
         <div className="registration-wrapper">
           <BackLink to={`/event/${eventId}`} />
-          {/* MODIFICADO AQUI: Exibe o nome do evento */}
+          {/* Exibe o nome do evento */}
           <h1 className="registration-title">Denunciar: {eventTitle}</h1>
           <h3 className="registration-subtitle">
             Selecione o motivo ou descreva o problema abaixo.

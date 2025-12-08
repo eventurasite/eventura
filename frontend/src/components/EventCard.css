@@ -31,12 +31,58 @@
 }
 
 .event-card-title {
-  margin-bottom: 8px;
-  font-size: 1.2rem;
+  font-size: 22px;
+    color: var(--cor_3-roxo_escuro);
+    margin-bottom: 5px;
+    font-weight: 700;
+    
+    /* 1. CONTENÇÃO VERTICAL (Do passo anterior) */
+    line-height: 1.4em; 
+    max-height: 2.8em; 
+    min-height: 2.8em; 
+    
+    /* 2. REGRAS PARA TRUNCAMENTO (Horizontal/Vertical) */
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+
+    /* 3. CORREÇÃO HORIZONTAL: Força a quebra de palavra */
+    word-break: break-word; 
+    
+    font-size: 18px;
+    color: var(--cor_3-roxo_escuro);
+    margin: 5px 15px 5px 15px;
+    font-weight: 700;
+    
+    /* 1. CONTENÇÃO VERTICAL (Do passo anterior) */
+    line-height: 1.4em; 
+    max-height: 2.8em; 
+    min-height: 2.8em; 
+    
+    /* 2. REGRAS PARA TRUNCAMENTO (Horizontal/Vertical) */
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+
+    /* 3. CORREÇÃO HORIZONTAL: Força a quebra de palavra */
+    word-break: break-word; 
+    
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-width: 200px;
 }
 
 .event-card-info {
   max-width: 200px;
+  overflow: hidden; 
+    text-overflow: ellipsis; 
+
+    /* 3. CORREÇÃO HORIZONTAL: Força a quebra de palavra */
+    word-break: break-word; 
+    
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-width: 200px;
 }
 
 .event-card-button {

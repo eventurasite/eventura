@@ -45,6 +45,37 @@
   align-items: center;
   gap: 30px;
   margin-bottom: 40px;
+  
+  /* NOVO: Garante que a seção inteira não seja forçada para fora */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- CONTEÇÃO DO TEXTO --- */
+.profile-text {
+  /* Permite que o container de texto use o espaço restante, mas com um limite */
+  flex-grow: 1; 
+  /* Adicionando largura máxima para evitar que o texto expanda o layout além do wrapper */
+  max-width: calc(100% - 180px); /* 180px = 150px (foto) + 30px (gap) */
+}
+
+.profile-text h2 {
+  font-family: 'Rubik One', sans-serif;
+  font-size: 28px;
+  color: var(--cor_3-roxo_escuro);
+  /* NOVO: Garante que o nome não quebre o layout em uma única linha longa */
+  word-break: break-word; 
+  overflow-wrap: break-word;
+}
+
+.profile-text p {
+  font-size: 16px;
+  color: var(--cor_2-preto);
+  margin-top: 10px;
+  line-height: 1.5;
+  /* NOVO: Garante quebra de linha para strings gigantes (descrição) */
+  word-break: break-word; 
+  overflow-wrap: break-word;
 }
 
 /* --- INÍCIO DAS ALTERAÇÕES DA FOTO --- */
@@ -452,5 +483,25 @@
     .profile-header-section {
         /* Garante que o título e o botão fiquem alinhados à esquerda em mobile */
         justify-content: flex-start;
+    }
+
+    .profile-info-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        margin-bottom: 30px;
+        max-width: 100%;
+    }
+    
+    /* NOVO: Remove a largura máxima fixa no mobile para que o texto use 100% da largura do wrapper */
+    .profile-text {
+        max-width: 100%; 
+    }
+    
+    .profile-text h2,
+    .profile-text p {
+        /* Garante que o texto se alinhe ao centro e continue a quebrar a linha */
+        word-break: break-word; 
+        overflow-wrap: break-word;
     }
 }

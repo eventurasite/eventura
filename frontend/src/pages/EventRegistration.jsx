@@ -69,10 +69,36 @@ export default function EventRegistration() {
       return;
     }
 
+    // --- CORREÇÃO: CONVERSÃO DE DATA LOCALIZADA PARA ISO 8601 ---
+    let dataToSend = formData.data;
+    
+    // Converte o formato visual (DD/MM/AAAA HH:MM) para o formato ISO (YYYY-MM-DDTHH:MM:SS.sssZ)
+    // Se o valor contiver '/' e ' ', é o formato localizado que precisa ser convertido.
+    if (dataToSend && dataToSend.includes('/') && dataToSend.includes(' ')) {
+        const [datePart, timePart] = dataToSend.split(' '); // Ex: ["28/12/2025", "13:30"]
+        const [day, month, year] = datePart.split('/'); // Ex: ["28", "12", "2025"]
+        
+        // Novo formato ISO 8601 (o Zod espera uma string neste formato)
+        dataToSend = `${year}-${month}-${day}T${timePart}:00.000Z`;
+    } else if (dataToSend && dataToSend.includes('T') && !dataToSend.endsWith('Z')) {
+        // Trata o formato datetime-local (YYYY-MM-DDTHH:MM) e adiciona o Z (UTC) para o Zod
+        dataToSend = `${dataToSend}:00.000Z`;
+    }
+    // --- FIM DA CONVERSÃO ---
+    
+    // Validação frontend (além da validação Zod no backend)
+    if (imagens.length === 0) {
+        toast.error("Pelo menos uma imagem é obrigatória.");
+        return;
+    }
+
     const eventData = new FormData();
     eventData.append("titulo", formData.titulo);
     eventData.append("descricao", formData.descricao);
-    eventData.append("data", formData.data);
+    
+    // ANEXA A DATA FORMATADA
+    eventData.append("data", dataToSend); 
+    
     eventData.append("local", formData.local);
     eventData.append("preco", formData.preco);
     eventData.append("id_categoria", formData.id_categoria);
@@ -97,9 +123,27 @@ export default function EventRegistration() {
       setTimeout(() => navigate("/"), 2000); // Redireciona para a home
     } catch (error) {
       console.error("Erro ao cadastrar evento:", error);
-      toast.error(
-        error.response?.data?.message || "Erro ao cadastrar o evento."
-      );
+      
+      // >>> TRATAMENTO ROBUSTO DE ERROS ZOD (400) <<<
+      let errorMessage = "Erro ao cadastrar o evento.";
+
+      if (error.response?.data?.status === 400 && error.response.data.errors) {
+        // Pega a mensagem do primeiro campo inválido
+        const firstField = Object.keys(error.response.data.errors)[0];
+        const firstMessage = error.response.data.errors[firstField];
+        
+        // Formata a mensagem para o usuário
+        errorMessage = `Falha na validação: ${firstField.toUpperCase()} - ${firstMessage}`;
+      } else if (error.response?.data?.message) {
+        // Usa a mensagem principal (ex: erro de permissão ou imagem obrigatória)
+        errorMessage = error.response.data.message;
+      }
+      
+      // Loga o objeto de erro completo para diagnóstico
+      console.log("RESPOSTA DE ERRO DETALHADA DO BACKEND:", error.response?.data);
+      // >>> FIM DO TRATAMENTO <<<
+
+      toast.error(errorMessage);
     }
   };
 
