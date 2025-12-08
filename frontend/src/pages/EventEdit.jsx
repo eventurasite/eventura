@@ -66,6 +66,7 @@ export default function EventEdit() {
         const eventData = response.data;
 
         // Formata data para datetime-local
+        // A lógica do slice(0, 16) remove os segundos e o Z, deixando YYYY-MM-DDTHH:MM
         const formattedDate = eventData.data
           ? new Date(
               new Date(eventData.data).getTime() -
@@ -138,7 +139,7 @@ export default function EventEdit() {
     setExistingImages((prev) => prev.filter((img) => img.id_imagem !== imgId));
   };
 
-  // Envio do Formulário
+  // Envio do Formulário - CORRIGIDO
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("authToken");
@@ -151,33 +152,45 @@ export default function EventEdit() {
 
     setSubmitting(true);
 
+    // --- CORREÇÃO: CONVERSÃO DE DATA PARA ISO 8601 COMPLETO ---
+    let dataToSend = formData.data;
+
+    // O input datetime-local retorna YYYY-MM-DDTHH:MM. 
+    // O Zod precisa do final :SS.sssZ.
+    if (dataToSend && dataToSend.includes('T') && !dataToSend.endsWith('Z')) {
+        // Converte YYYY-MM-DDTHH:MM para YYYY-MM-DDTHH:MM:00.000Z
+        dataToSend = `${dataToSend}:00.000Z`;
+    }
+    // NOTA: Se o valor for a string localizada (DD/MM/AAAA HH:MM), esta conversão falhará,
+    // e o Zod retornará "Formato de data e hora inválido.", o que é o comportamento esperado.
+
     // Usamos FormData para enviar Arquivos + Dados
-    const dataToSend = new FormData();
+    const dataForm = new FormData();
 
     // Campos de texto
-    dataToSend.append("titulo", formData.titulo);
-    dataToSend.append("descricao", formData.descricao);
-    dataToSend.append("data", formData.data);
-    dataToSend.append("local", formData.local);
-    dataToSend.append("preco", formData.preco);
-    dataToSend.append("id_categoria", formData.id_categoria);
+    dataForm.append("titulo", formData.titulo);
+    dataForm.append("descricao", formData.descricao);
+    dataForm.append("data", dataToSend); // <<< DATA CORRIGIDA ENVIADA AQUI
+    dataForm.append("local", formData.local);
+    dataForm.append("preco", formData.preco);
+    dataForm.append("id_categoria", formData.id_categoria);
     if (formData.url_link_externo) {
-        dataToSend.append("url_link_externo", formData.url_link_externo);
+        dataForm.append("url_link_externo", formData.url_link_externo);
     }
 
     // Lista de IDs para deletar (envia como array ou múltiplos campos com mesmo nome)
     imagesToDelete.forEach((id) => {
-        dataToSend.append("imgIdsToDelete", id);
+        dataForm.append("imgIdsToDelete", id);
     });
 
     // Novos arquivos
     newImages.forEach((file) => {
-        dataToSend.append("imagens", file);
+        dataForm.append("imagens", file);
     });
 
     try {
       // Nota: O Axios configura automaticamente o Content-Type para multipart/form-data quando recebe FormData
-      await axios.put(`${API_BASE_URL}/api/events/${eventId}`, dataToSend, {
+      await axios.put(`${API_BASE_URL}/api/events/${eventId}`, dataForm, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -187,14 +200,30 @@ export default function EventEdit() {
       setTimeout(() => navigate(`/event/${eventId}`), 1500);
     } catch (error) {
       console.error("Erro ao atualizar evento:", error);
-      toast.error(
-        error.response?.data?.message || "Erro ao atualizar o evento."
-      );
+      
+      // >>> TRATAMENTO ROBUSTO DE ERROS ZOD (400) <<<
+      let errorMessage = "Erro ao atualizar o evento.";
+
+      if (error.response?.data?.status === 400 && error.response.data.errors) {
+        // Pega a mensagem do primeiro campo inválido
+        const firstField = Object.keys(error.response.data.errors)[0];
+        const firstMessage = error.response.data.errors[firstField];
+        
+        // Formata a mensagem para o usuário
+        errorMessage = `Falha na validação: ${firstField.toUpperCase()} - ${firstMessage}`;
+      } else if (error.response?.data?.message) {
+        // Usa a mensagem principal (ex: erro de permissão)
+        errorMessage = error.response.data.message;
+      }
+      
+      console.log("RESPOSTA DE ERRO DETALHADA DO BACKEND:", error.response?.data);
+      // >>> FIM DO TRATAMENTO <<<
+      
+      toast.error(errorMessage);
     } finally {
         setSubmitting(false);
     }
   };
-
   if (loading) {
     return (
       <>

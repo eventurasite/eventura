@@ -12,6 +12,11 @@ const PASSWORD_REGEX =
 // Regex: Telefone (9 a 11 dígitos, para flexibilidade com ou sem DDD, sem pontuação)
 const PHONE_REGEX = /^\d{9,11}$/;
 
+// NOVO REGEX: Formato DD/MM/YYYY HH:MM
+//const DATE_TIME_REGEX = /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/;
+// Constante para limite de preço (10 Bilhões, para ser seguro e grande o suficiente)
+const MAX_PRICE_VALUE = 10000000000;
+
 // Schema Base de Senha
 const BasePasswordSchema = z
   .string()
@@ -165,13 +170,12 @@ export const EventCreateSchema = z.object({
       .max(5000, { message: msg.MAX_LENGTH(5000) }),
 
     // DATA (DateTime) - Obrigatório
-    data: z
-      .string()
-      .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO
-      .datetime({ message: msg.INVALID_DATE_FORMAT })
+    data: z.string()
+      .min(1, { message: msg.REQUIRED_FIELD })
+      .datetime({ message: msg.INVALID_DATE_FORMAT }) // <-- VOLTA A USAR O DATETIME NATIVO
       .refine(
         (val) => new Date(val).getTime() > Date.now(),
-        { message: msg.FUTURE_DATE_REQUIRED }
+        { message: msg.FUTURE_DATE_REQUIRED + " (Verifique se a data é futura)" }
       ),
 
     // LOCAL (String - Endereço) - Obrigatório + Não vazio
@@ -189,6 +193,10 @@ export const EventCreateSchema = z.object({
       .refine(
         (val) => !isNaN(val) && val >= 0,
         { message: msg.POSITIVE_PRICE }
+      )
+      .refine(
+        (val) => val <= MAX_PRICE_VALUE, // <-- VALIDAÇÃO DE LIMITE AQUI
+        { message: msg.MAX_VALUE(MAX_PRICE_VALUE) }
       ),
 
     // ID_CATEGORIA (Int) - Obrigatório
@@ -229,11 +237,13 @@ export const EventUpdateSchema = z.object({
       .optional(),
 
     // DATA - Opcional, mas se enviado, não pode ser vazio
-    data: z
-      .string()
-      .min(1, { message: msg.REQUIRED_FIELD }) // <-- NÃO VAZIO (se presente)
-      .datetime({ message: msg.INVALID_DATE_FORMAT })
-      .optional(),
+    data: z.string()
+      .min(1, { message: msg.REQUIRED_FIELD })
+      .datetime({ message: msg.INVALID_DATE_FORMAT }) // <-- VOLTA A USAR O DATETIME NATIVO
+      .refine(
+        (val) => new Date(val).getTime() > Date.now(),
+        { message: msg.FUTURE_DATE_REQUIRED + " (Verifique se a data é futura)" }
+      ),
 
     // LOCAL - Opcional, mas se enviado, não pode ser vazio
     local: z
@@ -251,6 +261,10 @@ export const EventUpdateSchema = z.object({
       .refine(
         (val) => !isNaN(val) && val >= 0,
         { message: msg.POSITIVE_PRICE }
+      )
+      .refine(
+        (val) => val <= MAX_PRICE_VALUE, // <-- VALIDAÇÃO DE LIMITE AQUI
+        { message: msg.MAX_VALUE(MAX_PRICE_VALUE) }
       )
       .optional(),
 

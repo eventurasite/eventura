@@ -29,12 +29,12 @@ const upload = multer(multerConfig);
 // Eventos gerais
 // -------------------------------
 
-// Criar evento — aplica validação Zod antes do upload de arquivos
+// Criar evento — ORDEM CORRIGIDA: Multer DEVE VIR ANTES do Zod
 router.post(
   "/",
   authenticateToken,
-  validate(EventCreateSchema),
-  upload.array("imagens", 5),
+  upload.array("imagens", 5), // <--- 1. Multer popula req.body com campos de texto
+  validate(EventCreateSchema), // <--- 2. Zod valida o req.body preenchido
   eventController.createEventController
 );
 
@@ -58,7 +58,7 @@ router.get("/:id/comments", eventController.getCommentsController);
 router.post(
   "/:id/comments",
   authenticateToken,
-  validate(CommentCreateSchema),
+  validate(CommentCreateSchema), // Validação antes do controller
   eventController.createCommentController
 );
 
@@ -150,14 +150,13 @@ router.delete(
 // Buscar evento por ID — público
 router.get("/:id", eventController.getEvent);
 
-// Atualizar evento — organizador ou admin
-// IMPORTANTE: Aqui usamos upload.array para permitir envio de imagens na edição
+// Atualizar evento — ORDEM CORRIGIDA: Multer DEVE VIR ANTES do Zod
 router.put(
   "/:id",
   authenticateToken,
   allowEventOwnerOrAdmin(),
-  validate(EventUpdateSchema),
-  upload.array("imagens", 5), 
+  upload.array("imagens", 5), // <--- 1. Multer popula req.body com campos de texto
+  validate(EventUpdateSchema), // <--- 2. Zod valida o req.body preenchido
   eventController.updateEventController
 );
 

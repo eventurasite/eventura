@@ -22,10 +22,13 @@
 
 /* Título do Evento */
 .event-title {
-    font-size: 2.2em; /* Um pouco maior para mais destaque */
+    font-size: 2.2em; 
     font-family: 'Rubik One', sans-serif;
     color: var(--primary-color, var(--fallback-primary));
     margin-bottom: 20px;
+    /* CORREÇÃO CRÍTICA PARA O TÍTULO SUPERIOR */
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Títulos das Seções */
@@ -95,6 +98,9 @@
 
 .info-grid p {
     margin-bottom: 10px;
+    /* CORREÇÃO CRÍTICA para a data, local, etc. */
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .info-grid strong {
@@ -284,6 +290,31 @@
 .comment-delete-btn:hover {
     background-color: #fce8e8;
     color: #dc3545; 
+}
+
+.event-section.description-section p {
+    /* CORREÇÃO APLICADA AQUI: Garante que palavras longas quebrem a linha */
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* -------------------- SEÇÃO DE COMENTÁRIOS -------------------- */
+/* Aplicar quebra de palavra na descrição e no nome do autor do comentário */
+
+.comment-author {
+    font-weight: bold;
+    color: var(--primary-color, var(--fallback-primary)); 
+    margin-bottom: 5px;
+    /* CORREÇÃO APLICADA AQUI */
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.comment-text {
+    line-height: 1.6;
+    /* CORREÇÃO APLICADA AQUI */
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 
