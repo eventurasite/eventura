@@ -18,7 +18,10 @@ export async function createEventController(req: Request, res: Response) {
       return res.status(400).json({ message: "Pelo menos uma imagem é obrigatória." });
     }
 
-    const imagens = files.map(file => `/uploads/${file.filename}`);
+   const imagens = files.map(
+  file => `${process.env.BASE_URL}/uploads/${file.filename}`
+);
+
 
     const evento = await eventService.createEvent({
       titulo,
